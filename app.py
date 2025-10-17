@@ -33,10 +33,6 @@ ddb_stack = GenAiVirtualAssistantDDBLambdaStack(app,
                                                 "GenAiVirtualAssistantDDBLambdaStack",
                                                 env=env_aws_settings)
 
-# Chat Lambda with API Gateway Stack
-chat_stack = ChatLambdaNodeStack(app,
-                                              "ChatLambdaNodeStack",
-                                              env=env_aws_settings)
 
 # Bedrock Stack
 bedrock_stack = GenAiVirtualAssistantBedrockStack(app,
@@ -46,12 +42,11 @@ bedrock_stack = GenAiVirtualAssistantBedrockStack(app,
                                                   input_lambda_fn_arn=ddb_stack.lambda_fn.function_arn,
                                                   input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
 
-# Frontend Streamlit (ST)
-#st_stack = GenAiVirtualAssistantVpcEcsStreamlitStack(app,
-                                            #"GenAiVirtualAssistantVpcEcsStreamlitStack",
-                                            #env=env_aws_settings,
-                                            #input_metadata=env_context_params,
-                                            #input_ddb_table_arn=ddb_stack.table.table_arn                                            )
+
+# Chat Lambda with API Gateway Stack
+chat_stack = ChatLambdaNodeStack(app,
+                                              "ChatLambdaNodeStack",
+                                              env=env_aws_settings)
 
 # Hard Dependencies
 bedrock_stack.add_dependency(s3_stack)
