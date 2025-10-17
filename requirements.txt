@@ -1,0 +1,23 @@
+# Versions are hard-coded, for stability purposes. Upgrade and test on your own.
+# For Powertools, see Pydantic version supported at https://docs.powertools.aws.dev/lambda/python/latest/utilities/parser/
+# For Boto3 Changelog see: https://github.com/boto/boto3/blob/develop/CHANGELOG.rst 
+boto3>=1.36.16,<1.37.0
+pandas==2.2.3
+streamlit==1.43.0
+awswrangler==3.11.0
+loguru==0.7.3
+
+# Optional for CDK Deployments
+aws-cdk-lib==2.177.0
+aws-cdk.aws-lambda-python-alpha==2.177.0a0
+constructs>=10.4.2,<11.0.0
+
+# Generative AI CDK and Powertools. See https://constructs.dev/packages/@cdklabs/generative-ai-cdk-constructs
+cdklabs.generative-ai-cdk-constructs==0.1.292
+aws-lambda-powertools==3.2.0
+pydantic==2.9.2
+
+# Optional:
+# faker==30.8.2
+# amazon-textract-textractor==1.8.5
+# s3fs==2024.10.0

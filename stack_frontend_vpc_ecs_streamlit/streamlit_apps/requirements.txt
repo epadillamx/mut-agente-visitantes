@@ -1,0 +1,3 @@
+# Versions are hard-coded, for stability purposes. Upgrade and test on your own.
+boto3==1.35.36
+streamlit==1.39.0
