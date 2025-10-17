@@ -4,7 +4,7 @@ from stack_backend_s3.stack_backend_s3 import GenAiVirtualAssistantS3Stack
 from stack_backend_lambda_light_etl.stack_backend_lambda_light_etl import GenAiVirtualAssistantEtlLambdaStack
 from stack_backend_bedrock.stack_backend_bedrock import GenAiVirtualAssistantBedrockStack
 from stack_frontend_ddb_lambda.stack_frontend_ddb_lambda import GenAiVirtualAssistantDDBLambdaStack
-from stack_chat_lambda_node.stack_chat_lambda import HelloWorldLambdaNodeStack
+from stack_chat_lambda_node.stack_chat_lambda import ChatLambdaNodeStack
 #from stack_frontend_vpc_ecs_streamlit.stack_frontend_vpc_ecs_streamlit import GenAiVirtualAssistantVpcEcsStreamlitStack
 
 # AWS Settings 
@@ -34,7 +34,7 @@ ddb_stack = GenAiVirtualAssistantDDBLambdaStack(app,
                                                 env=env_aws_settings)
 
 # Chat Lambda with API Gateway Stack
-chat_stack = HelloWorldLambdaNodeStack(app,
+chat_stack = ChatLambdaNodeStack(app,
                                               "ChatLambdaNodeStack",
                                               env=env_aws_settings)
 
