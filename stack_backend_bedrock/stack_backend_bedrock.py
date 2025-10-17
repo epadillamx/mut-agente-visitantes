@@ -2,6 +2,7 @@ import os
 from cdklabs.generative_ai_cdk_constructs import bedrock, opensearchserverless
 from aws_cdk import (
     Stack,
+    CfnOutput,
     aws_lambda as _lambda,
     aws_s3 as s3,
     aws_iam as iam
@@ -185,3 +186,20 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                               function_name=lambda_fn.function_name,
                               principal="bedrock.amazonaws.com",
                               source_arn=agent.agent_arn)
+
+        """
+        @ Store agent properties for other stacks
+        """
+        self.agent = agent
+        self.agent_alias = agent_alias_v1
+
+        """
+        @ Outputs
+        """
+        CfnOutput(self, "output-agent-id",
+                  value=agent.agent_id,
+                  description="Bedrock Agent ID")
+
+        CfnOutput(self, "output-agent-alias-id",
+                  value=agent_alias_v1.alias_id,
+                  description="Bedrock Agent Alias ID")
