@@ -39,7 +39,6 @@ bedrock_stack = GenAiVirtualAssistantBedrockStack(app,
                                                   "GenAiVirtualAssistantBedrockStack",
                                                   env=env_aws_settings,
                                                   input_metadata=env_context_params,
-                                                  input_lambda_fn_arn=ddb_stack.lambda_fn.function_arn,
                                                   input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
 
 
@@ -50,7 +49,6 @@ chat_stack = ChatLambdaNodeStack(app,
 
 # Hard Dependencies
 bedrock_stack.add_dependency(s3_stack)
-bedrock_stack.add_dependency(ddb_stack)
 etl_stack.add_dependency(s3_stack)
 #st_stack.add_dependency(ddb_stack)
 
