@@ -10,7 +10,6 @@ from math import ceil
 def lambda_handler(event, context):
     try:
         # Get s3_bucket and key from the S3 event
-        print(f"Event: {event}")
         s3_bucket = event['Records'][0]['s3']['bucket']['name']
         key = event['Records'][0]['s3']['object']['key']
         s3_path = f"s3://{s3_bucket}/{key}"

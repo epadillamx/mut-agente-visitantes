@@ -41,29 +41,22 @@ bedrock_stack = GenAiVirtualAssistantBedrockStack(app,
                                                   input_lambda_fn_arn=ddb_stack.lambda_fn.function_arn,
                                                   input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
 
-# API Gateway & Lambda Stack
-api_stack = GenAiVirtualAssistantApiGatewayStack(app,
+# API Gateway & Lambda Stack (now uses hardcoded Agent IDs)
+api_stackapi = GenAiVirtualAssistantApiGatewayStack(app,
                                                   "GenAiVirtualAssistantApiGatewayStack",
-                                                  env=env_aws_settings,
-                                                  input_agent_id=bedrock_stack.agent.agent_id,
-                                                  input_agent_alias_id=bedrock_stack.agent_alias.alias_id)
+                                                  env=env_aws_settings)
 
-# Frontend Streamlit (ST)
-#st_stack = GenAiVirtualAssistantVpcEcsStreamlitStack(app,
-                                            #"GenAiVirtualAssistantVpcEcsStreamlitStack",
-                                            #=env_aws_settings,
-                                            #input_metadata=env_context_params,
-                                           # input_ddb_table_arn=ddb_stack.table.table_arn                                            )
 
 # Hard Dependencies
 bedrock_stack.add_dependency(s3_stack)
 bedrock_stack.add_dependency(ddb_stack)
 etl_stack.add_dependency(s3_stack)
-api_stack.add_dependency(bedrock_stack)
+# Note: API stack no longer depends on Bedrock stack since IDs are hardcoded
+# api_stackapi.add_dependency(bedrock_stack)
 #st_stack.add_dependency(ddb_stack)
 
 # Add Tags
-for stack in [s3_stack, etl_stack, bedrock_stack, ddb_stack, api_stack]:
+for stack in [s3_stack, etl_stack, bedrock_stack, ddb_stack, api_stackapi]:
     Tags.of(stack).add("environment", env_name)
 
 app.synth()
