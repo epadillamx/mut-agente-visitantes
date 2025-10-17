@@ -4,9 +4,9 @@ import json
 import boto3
 import awswrangler as wr
 import pandas as pd
-import concurrent.futures
 from math import ceil
 from io import StringIO
+from datetime import datetime
 
 
 def lambda_handler(event, context):
@@ -14,20 +14,43 @@ def lambda_handler(event, context):
         # S3 bucket configuration
         s3_bucket = "raw-virtual-assistant-data-948270077717-us-east-1"
         
-        # Define CSV files to process with their encodings
+        # Define CSV files with optimized configurations for Bedrock KB
         csv_files = {
-            'eventos': {'filename': 'eventos.csv', 'encoding': 'utf-8'},
-            'preguntas': {'filename': 'preguntas.csv', 'encoding': 'cp1252'},
-            'stores': {'filename': 'stores.csv', 'encoding': 'utf-8'},
-            'restaurantes': {'filename': 'todas_restaurantes.csv', 'encoding': 'utf-8'}
+            'eventos': {
+                'filename': 'eventos.csv',
+                'encoding': 'utf-8',
+                'text_fields': ['titulo', 'descripcion', 'contenido'],
+                'metadata_fields': ['fecha_texto', 'hora_texto', 'lugar', 'organizador', 'tipo', 'horas'],
+                'id_field': 'titulo'
+            },
+            'preguntas': {
+                'filename': 'preguntas.csv',
+                'encoding': 'cp1252',
+                'text_fields': ['Preguntas tipo', 'Respuesta'],
+                'metadata_fields': ['Categoria'],
+                'id_field': 'Preguntas tipo'
+            },
+            'stores': {
+                'filename': 'stores.csv',
+                'encoding': 'utf-8',
+                'text_fields': ['titulo', 'content'],
+                'metadata_fields': ['lugar', 'horario', 'nivel', 'local', 'telefono', 'mail', 'tipo', 'web', 'url_web'],
+                'id_field': 'titulo'
+            },
+            'restaurantes': {
+                'filename': 'todas_restaurantes.csv',
+                'encoding': 'utf-8',
+                'text_fields': ['titulo', 'content'],
+                'metadata_fields': ['lugar', 'horario', 'nivel', 'local', 'telefono', 'mail', 'tipo', 'web', 'url_web'],
+                'id_field': 'titulo'
+            }
         }
         
         # Output configuration
-        num_rows_per_file = 50  # Adjust based on your needs
-        local_number_of_threads = 10
+        num_rows_per_file = 25  # Optimizado para chunks más pequeños y precisos
         
-        # Knowledge Base output path from environment
-        output_s3_key = os.environ.get('KB_S3_PATH', 'datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1')
+        # Knowledge Base output path - separar por tipo de documento
+        base_output_path = os.environ.get('KB_S3_PATH', 'datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1')
         
         results = {}
         
@@ -37,59 +60,65 @@ def lambda_handler(event, context):
             encoding = file_config['encoding']
             s3_path = f"s3://{s3_bucket}/{filename}"
             
-            print(f"Processing {file_type} from {s3_path} with encoding {encoding}")
+            # Crear path específico por tipo de documento
+            output_s3_key = f"{base_output_path}/{file_type}"
+            
+            print(f"Processing {file_type} from {s3_path}")
             
             try:
-                # Read CSV with robust parsing options
+                # Read CSV with robust parsing
                 df = read_csv_robust(s3_path, encoding)
                 
                 if df is None or len(df) == 0:
-                    print(f"Warning: {file_type} is empty or could not be read. Skipping...")
+                    print(f"Warning: {file_type} is empty. Skipping...")
                     results[file_type] = 0
                     continue
                 
                 print(f"Successfully read {len(df)} rows from {file_type}")
                 
-                # Apply specific transformations based on file type
-                df = transform_dataframe(df, file_type)
+                # Transform and enrich dataframe for Bedrock KB
+                df = transform_for_bedrock_kb(df, file_type, file_config)
                 
-                print(f"Writing {len(df)} rows for {file_type} to Amazon S3...")
+                print(f"Writing {len(df)} optimized documents for {file_type}...")
                 
-                # Write to S3 with metadata
-                rows_written = write_data_to_s3(
+                # Write to S3 with enhanced metadata
+                rows_written = write_bedrock_kb_format(
                     df=df,
                     file_type=file_type,
+                    file_config=file_config,
                     s3_bucket=s3_bucket,
                     output_s3_key=output_s3_key,
-                    num_rows_per_file=num_rows_per_file,
-                    max_workers=local_number_of_threads
+                    num_rows_per_file=num_rows_per_file
                 )
                 
                 results[file_type] = rows_written
+                print(f"✓ {file_type}: {rows_written} documents written")
                 
             except Exception as e:
-                print(f"Error processing {file_type}: {str(e)}")
+                print(f"✗ Error processing {file_type}: {str(e)}")
                 results[file_type] = f"Error: {str(e)}"
                 continue
         
         return {
             "statusCode": 200,
             "body": {
-                "message": f"Data successfully written to: {output_s3_key}",
-                "results": results
+                "message": "Data successfully processed for Bedrock Knowledge Base",
+                "output_path": base_output_path,
+                "results": results,
+                "timestamp": datetime.utcnow().isoformat()
             }
         }
         
     except Exception as e:
-        print(f"Error processing files: {str(e)}")
-        raise
+        print(f"Critical error: {str(e)}")
+        return {
+            "statusCode": 500,
+            "body": {"error": str(e)}
+        }
 
 
 def read_csv_robust(s3_path, encoding):
-    """
-    Read CSV with multiple fallback strategies for problematic files.
-    """
-    # Strategy 1: Try with awswrangler with robust settings
+    """Read CSV with multiple fallback strategies."""
     try:
         df = wr.s3.read_csv(
             path=s3_path,
@@ -98,225 +127,246 @@ def read_csv_robust(s3_path, encoding):
             quotechar='"',
             encoding=encoding,
             escapechar='\\',
-            on_bad_lines='skip',  # Skip bad lines instead of failing
-            engine='python'  # Python engine is more forgiving
+            on_bad_lines='skip',
+            engine='python'
         )
         return df
     except Exception as e1:
         print(f"Strategy 1 failed: {str(e1)}")
         
-        # Strategy 2: Try with different delimiter detection
         try:
             s3_client = boto3.client('s3')
             bucket, key = s3_path.replace('s3://', '').split('/', 1)
             
-            # Download file content
             obj = s3_client.get_object(Bucket=bucket, Key=key)
             content = obj['Body'].read().decode(encoding)
             
-            # Try pandas with robust settings
             df = pd.read_csv(
                 StringIO(content),
                 sep=',',
                 quotechar='"',
                 encoding=encoding,
-                escapechar='\\',
                 on_bad_lines='skip',
                 engine='python',
-                dtype=str  # Read everything as string initially
+                dtype=str
             )
             return df
         except Exception as e2:
-            print(f"Strategy 2 failed: {str(e2)}")
-            
-            # Strategy 3: Try with latin1 encoding
-            try:
-                obj = s3_client.get_object(Bucket=bucket, Key=key)
-                content = obj['Body'].read().decode('latin1')
-                
-                df = pd.read_csv(
-                    StringIO(content),
-                    sep=',',
-                    quotechar='"',
-                    on_bad_lines='skip',
-                    engine='python',
-                    dtype=str
-                )
-                return df
-            except Exception as e3:
-                print(f"Strategy 3 failed: {str(e3)}")
-                
-                # Strategy 4: Last resort - try semicolon delimiter
-                try:
-                    obj = s3_client.get_object(Bucket=bucket, Key=key)
-                    content = obj['Body'].read().decode(encoding, errors='ignore')
-                    
-                    df = pd.read_csv(
-                        StringIO(content),
-                        sep=';',
-                        quotechar='"',
-                        on_bad_lines='skip',
-                        engine='python',
-                        dtype=str
-                    )
-                    return df
-                except Exception as e4:
-                    print(f"All strategies failed. Last error: {str(e4)}")
-                    return None
+            print(f"All strategies failed: {str(e2)}")
+            return None
 
 
-def transform_dataframe(df, file_type):
-    """Apply specific transformations based on file type."""
+def transform_for_bedrock_kb(df, file_type, file_config):
+    """
+    Transform DataFrame optimized for Bedrock Knowledge Base embeddings.
+    Creates a rich text field combining relevant fields for better semantic search.
+    """
     
+    # Clean all text fields
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].replace(['nan', 'None', 'NaN', ''], '')
+    
+    # Create optimized text content for embeddings based on file type
     if file_type == 'eventos':
-        # Convert fecha_publicacion to datetime if needed
-        if 'fecha_publicacion' in df.columns:
-            df['fecha_publicacion'] = df['fecha_publicacion'].astype(str)
-        
-        # Ensure texto fields are limited in length for embeddings
-        if 'contenido' in df.columns:
-            df['contenido'] = df['contenido'].astype(str).str.slice(0, 500)
-        if 'descripcion' in df.columns:
-            df['descripcion'] = df['descripcion'].astype(str).str.slice(0, 500)
-        
-        # Add type identifier
-        df['entity_type'] = 'evento'
+        df['bedrock_text'] = df.apply(lambda row: create_evento_text(row), axis=1)
+        df['document_type'] = 'evento'
+        df['search_category'] = 'eventos_y_actividades'
         
     elif file_type == 'preguntas':
-        # Add type identifier
-        df['entity_type'] = 'pregunta'
-        
-        # Limit text fields if they exist
-        for col in df.columns:
-            if df[col].dtype == 'object':
-                df[col] = df[col].astype(str).str.slice(0, 1000)
+        df['bedrock_text'] = df.apply(lambda row: create_pregunta_text(row), axis=1)
+        df['document_type'] = 'faq'
+        df['search_category'] = 'preguntas_frecuentes'
         
     elif file_type == 'stores':
-        # Clean phone numbers if needed
-        if 'telefono' in df.columns:
-            df['telefono'] = df['telefono'].astype(str)
-        
-        # Limit content length
-        if 'content' in df.columns:
-            df['content'] = df['content'].astype(str).str.slice(0, 500)
-        
-        # Add type identifier
-        df['entity_type'] = 'tienda'
+        df['bedrock_text'] = df.apply(lambda row: create_store_text(row), axis=1)
+        df['document_type'] = 'tienda'
+        df['search_category'] = 'comercios_y_tiendas'
         
     elif file_type == 'restaurantes':
-        # Clean phone numbers
-        if 'telefono' in df.columns:
-            df['telefono'] = df['telefono'].astype(str)
-        
-        # Limit content length
-        if 'content' in df.columns:
-            df['content'] = df['content'].astype(str).str.slice(0, 500)
-        
-        # Add type identifier
-        df['entity_type'] = 'restaurante'
+        df['bedrock_text'] = df.apply(lambda row: create_restaurant_text(row), axis=1)
+        df['document_type'] = 'restaurante'
+        df['search_category'] = 'gastronomia'
     
-    # Fill NaN values with empty strings
+    # Generate unique document IDs
+    df['document_id'] = df.apply(
+        lambda row: generate_document_id(file_type, row.name, row.get(file_config['id_field'], '')),
+        axis=1
+    )
+    
+    # Remove rows with empty bedrock_text
+    df = df[df['bedrock_text'].str.len() > 20]
+    
+    # Fill remaining NaN
     df = df.fillna('')
-    
-    # Remove any completely empty rows
-    df = df.dropna(how='all')
     
     return df
 
 
-def write_data_to_s3(df, file_type, s3_bucket, output_s3_key, num_rows_per_file, max_workers):
-    """Write dataframe to S3 in chunks with metadata."""
+def create_evento_text(row):
+    """Create optimized text for evento embeddings."""
+    parts = []
+    
+    if row.get('titulo'):
+        parts.append(f"Evento: {row['titulo']}")
+    
+    if row.get('descripcion'):
+        parts.append(f"Descripción: {row['descripcion'][:500]}")
+    
+    if row.get('contenido'):
+        parts.append(f"{row['contenido'][:500]}")
+    
+    if row.get('fecha_texto'):
+        parts.append(f"Fecha: {row['fecha_texto']}")
+    
+    if row.get('hora_texto'):
+        parts.append(f"Horario: {row['hora_texto']}")
+    
+    if row.get('lugar'):
+        parts.append(f"Lugar: {row['lugar']}")
+    
+    if row.get('organizador'):
+        parts.append(f"Organiza: {row['organizador']}")
+    
+    return " | ".join(parts)
+
+
+def create_pregunta_text(row):
+    """Create optimized text for FAQ embeddings."""
+    pregunta = row.get('Preguntas tipo', '')
+    respuesta = row.get('Respuesta', '')
+    categoria = row.get('Categoria', '')
+    
+    text = f"Pregunta: {pregunta}\n\nRespuesta: {respuesta}"
+    
+    if categoria:
+        text = f"[{categoria}] {text}"
+    
+    return text
+
+
+def create_store_text(row):
+    """Create optimized text for store embeddings."""
+    parts = []
+    
+    if row.get('titulo'):
+        parts.append(f"Tienda: {row['titulo']}")
+    
+    if row.get('content'):
+        parts.append(f"{row['content'][:400]}")
+    
+    if row.get('lugar'):
+        parts.append(f"Ubicación: {row['lugar']}")
+    
+    if row.get('local'):
+        parts.append(f"Local: {row['local']}")
+    
+    if row.get('horario'):
+        parts.append(f"Horario: {row['horario']}")
+    
+    if row.get('tipo'):
+        parts.append(f"Tipo: {row['tipo']}")
+    
+    return " | ".join(parts)
+
+
+def create_restaurant_text(row):
+    """Create optimized text for restaurant embeddings."""
+    parts = []
+    
+    if row.get('titulo'):
+        parts.append(f"Restaurante: {row['titulo']}")
+    
+    if row.get('content'):
+        parts.append(f"{row['content'][:400]}")
+    
+    if row.get('lugar'):
+        parts.append(f"Ubicación: {row['lugar']}")
+    
+    if row.get('local'):
+        parts.append(f"Local: {row['local']}")
+    
+    if row.get('horario'):
+        parts.append(f"Horario: {row['horario']}")
+    
+    if row.get('tipo'):
+        parts.append(f"Tipo de cocina: {row['tipo']}")
+    
+    return " | ".join(parts)
+
+
+def generate_document_id(file_type, index, identifier):
+    """Generate unique document ID."""
+    clean_id = re.sub(r'[^a-zA-Z0-9]', '_', str(identifier)[:50])
+    return f"{file_type}_{index}_{clean_id}"
+
+
+def write_bedrock_kb_format(df, file_type, file_config, s3_bucket, output_s3_key, num_rows_per_file):
+    """
+    Write data in optimized format for Bedrock Knowledge Base.
+    Creates CSV files with text content and separate metadata JSON files.
+    """
     
     s3_client = boto3.client('s3')
-    
-    # Determine grouping strategy based on file type
-    if file_type == 'eventos':
-        # Group by tipo (if exists) or write as single type
-        group_column = 'tipo' if 'tipo' in df.columns else None
-    elif file_type in ['stores', 'restaurantes']:
-        # Group by tipo or nivel
-        group_column = 'tipo' if 'tipo' in df.columns else 'nivel' if 'nivel' in df.columns else None
-    else:
-        group_column = None
-    
-    total_rows = 0
-    
-    if group_column and group_column in df.columns:
-        # Process by groups
-        unique_values = df[group_column].unique()
-        for group_value in unique_values:
-            if not group_value or group_value == '' or str(group_value) == 'nan':
-                group_value = 'otros'
-            
-            subset = df[df[group_column] == group_value]
-            rows = write_chunks_to_s3(
-                df=subset,
-                file_type=file_type,
-                group_name=str(group_value),
-                s3_bucket=s3_bucket,
-                s3_key=output_s3_key,
-                num_rows_per_file=num_rows_per_file,
-                s3_client=s3_client
-            )
-            total_rows += rows
-    else:
-        # Write all data with single group
-        rows = write_chunks_to_s3(
-            df=df,
-            file_type=file_type,
-            group_name='all',
-            s3_bucket=s3_bucket,
-            s3_key=output_s3_key,
-            num_rows_per_file=num_rows_per_file,
-            s3_client=s3_client
-        )
-        total_rows += rows
-    
-    return total_rows
-
-
-def write_chunks_to_s3(df, file_type, group_name, s3_bucket, s3_key, num_rows_per_file, s3_client):
-    """Write DataFrame chunks to S3 with metadata files."""
     
     num_rows = len(df)
     num_files = ceil(num_rows / num_rows_per_file)
     
-    # Clean group name for filename
-    clean_group = re.sub(r"[,\s&'/\\]", "_", str(group_name))
+    total_rows = 0
     
     for i in range(num_files):
         start_row = i * num_rows_per_file
         end_row = min((i + 1) * num_rows_per_file, num_rows)
         
-        # Create filename
-        file_name = f"{file_type}_{clean_group}_part_{i+1}.csv"
-        full_path = f"s3://{s3_bucket}/{s3_key}/{file_name}"
+        df_chunk = df.iloc[start_row:end_row].copy()
         
-        # Write CSV chunk
-        df_chunk = df.iloc[start_row:end_row]
-        wr.s3.to_csv(df_chunk, full_path, index=False)
+        # File naming
+        file_name = f"{file_type}_part_{i+1:03d}.csv"
+        full_s3_path = f"s3://{s3_bucket}/{output_s3_key}/{file_name}"
         
-        # Create and write metadata
+        # Prepare data for CSV (text content + metadata columns)
+        output_columns = ['document_id', 'bedrock_text', 'document_type', 'search_category']
+        
+        # Add metadata fields
+        for field in file_config['metadata_fields']:
+            if field in df_chunk.columns:
+                output_columns.append(field)
+        
+        df_output = df_chunk[output_columns].copy()
+        
+        # Write CSV to S3
+        wr.s3.to_csv(
+            df_output,
+            full_s3_path,
+            index=False,
+            encoding='utf-8'
+        )
+        
+        # Create enhanced metadata for Bedrock KB
         metadata = {
             "metadataAttributes": {
-                "file_type": file_type,
-                "group": group_name,
-                "part_number": i + 1,
-                "total_parts": num_files,
-                "row_count": len(df_chunk),
-                "entity_type": df_chunk['entity_type'].iloc[0] if 'entity_type' in df_chunk.columns else file_type
+                "document_type": file_type,
+                "search_category": df_chunk['search_category'].iloc[0],
+                "chunk_number": i + 1,
+                "total_chunks": num_files,
+                "document_count": len(df_chunk),
+                "data_source": file_config['filename'],
+                "processing_date": datetime.utcnow().isoformat(),
+                "version": "v1"
             }
         }
         
         # Write metadata JSON
-        metadata_key = f"{s3_key}/{file_name}.metadata.json"
+        metadata_key = f"{output_s3_key}/{file_name}.metadata.json"
         s3_client.put_object(
             Bucket=s3_bucket,
             Key=metadata_key,
-            Body=json.dumps(metadata, ensure_ascii=False),
+            Body=json.dumps(metadata, ensure_ascii=False, indent=2),
             ContentType='application/json'
         )
         
-        print(f"Written: {file_name} ({len(df_chunk)} rows)")
+        total_rows += len(df_chunk)
+        print(f"  ✓ Written: {file_name} ({len(df_chunk)} documents)")
     
-    return num_rows
+    return total_rows
