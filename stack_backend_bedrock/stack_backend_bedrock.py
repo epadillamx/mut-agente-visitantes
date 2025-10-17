@@ -133,9 +133,9 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         Do not use any XML tags in the response.
         """
 
-        # Create Agent With KB and Guardrail. Confirm models; e.g. ANTHROPIC_CLAUDE_HAIKU_V1_0, ANTHROPIC_CLAUDE_3_5_HAIKU_V1_0, etc.
+        # Create Agent With KB and Guardrail. Using Claude 3 Sonnet which has stable support
         agent = bedrock.Agent(self, 'Agent01',
-                              foundation_model=bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_3_5_HAIKU_V1_0,
+                              foundation_model=bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_SONNET_V1_0,
                               instruction=agent_instruction,
                               user_input_enabled=True,
                               code_interpreter_enabled=False,

@@ -48,8 +48,7 @@ git clone [URL_DEL_REPOSITORIO]
 2. Cree un entorno virtual:
 ```
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-```
+source venv/Scripts/activate
 
 3. Instale las dependencias:
 ```
@@ -104,4 +103,9 @@ Para agregar dependencias adicionales, por ejemplo, otras bibliotecas CDK, simpl
 ## Instalacion
 ```
 cdk bootstrap aws://948270077717/us-east-1
+cd stack_frontend_vpc_ecs_streamlit/streamlit_apps
+streamlit run app-chat-with-agent.py
+
+cdk destroy GenAiVirtualAssistantBedrockStack
+cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 ```
