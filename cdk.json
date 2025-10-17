@@ -17,10 +17,10 @@
   "context": {
     "env-virtual-assistant-dev01": {
       "virtual_assistant_data_bucket_arn":"",
-      "s3_knowledge_base_prefixes":["datasets/demo_kb/knowledge-base-mut-s3-001/v1/"],
-      "ssm_secret_name": "dev/agentemut/appServerDev01Credentials",
-      "ssm_app_server_username": "adm_agentemut",
-      "ssm_app_server_password": "x2JuXCCx.p453"
+      "s3_knowledge_base_prefixes":["datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1/"],
+      "ssm_secret_name": "dev/ecomm/appServerDev01Credentials",
+      "ssm_app_server_username": "adm_app_server_01",
+      "ssm_app_server_password": "x2s0Ch4nge.Me-N0w"
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
