@@ -18,3 +18,5 @@ _staging_local_testing
 dataset
 notebooks
 frontend_docker_app
+
+**/node_modules

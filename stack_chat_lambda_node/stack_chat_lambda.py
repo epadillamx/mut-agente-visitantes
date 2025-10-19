@@ -18,6 +18,10 @@ class ChatLambdaNodeStack(Stack):
         @ Lambda function
         """
 
+        # Bedrock Agent Configuration
+        AGENT_ID = "FH6HJUBIZQ"
+        AGENT_ALIAS_ID = "LP1AND7OTN"
+
         # Create Node.js 22 Lambda function
         self.lambda_fn = _lambda.Function(
             self,
@@ -28,6 +32,10 @@ class ChatLambdaNodeStack(Stack):
             description="Lambda function that invokes Bedrock Agent for chat interactions",
             timeout=Duration.seconds(60),  # Increased timeout for Bedrock calls
             memory_size=512,  # Increased memory for better performance
+            environment={
+                "AGENT_ID": AGENT_ID,
+                "AGENT_ALIAS_ID": AGENT_ALIAS_ID
+            }
         )
 
         # Add Bedrock permissions to Lambda
