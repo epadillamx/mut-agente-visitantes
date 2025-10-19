@@ -239,3 +239,5 @@ aws bedrock-agent start-ingestion-job \
 ---
 **Fecha de actualización**: 2025-10-19
 **Versión**: 1.0
+
+python validate_bedrock_permissions.py --agent-id FH6HJUBIZQ --kb-id NRSWGGNEXW --region us-east-1

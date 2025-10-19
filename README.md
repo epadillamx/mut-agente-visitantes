@@ -31,3 +31,19 @@ cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 cdk deploy ChatLambdaNodeStack --require-approval never
 cdk destroy ChatLambdaNodeStack
 ```
+
+## UPDATE
+```
+aws ssm put-parameter \
+  --name "/whatsapp/bedrock-agent/token" \
+  --value "TU_TOKEN_REAL_DE_WHATSAPP" \
+  --type "SecureString" \
+  --overwrite
+
+aws ssm put-parameter \
+  --name "/whatsapp/bedrock-agent/phone-id" \
+  --value "TU_PHONE_ID_REAL" \
+  --type "SecureString" \
+  --overwrite
+
+  ```

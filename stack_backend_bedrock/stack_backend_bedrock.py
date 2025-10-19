@@ -5,7 +5,8 @@ from aws_cdk import (
     Stack,
     CfnOutput,
     aws_s3 as s3,
-    aws_iam as iam
+    aws_iam as iam,
+    aws_ssm as ssm
 )
 from constructs import Construct
 
@@ -69,6 +70,15 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         @ Agent Alias
         """
         agent_alias = self._create_agent_alias(agent)
+
+        # Expose agent and alias IDs as properties for other stacks
+        self.agent_id = agent.agent_id
+        self.agent_alias_id = agent_alias.alias_id
+
+        """
+        @ WhatsApp Parameter Store Setup
+        """
+        self._create_whatsapp_parameters()
 
         """
         @ Outputs
@@ -460,3 +470,108 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             description="Bedrock Knowledge Base ID",
             export_name=f"{Stack.of(self).stack_name}-KnowledgeBaseId"
         )
+
+    def _create_whatsapp_parameters(self) -> None:
+        """
+        Creates SSM Parameter Store parameters for WhatsApp credentials and Bedrock Agent IDs.
+        These parameters will be used by the Lambda function.
+        Creates placeholders that need to be updated with real values.
+        """
+        # Parameter paths
+        param_token_path = "/whatsapp/bedrock-agent/token"
+        param_phone_id_path = "/whatsapp/bedrock-agent/phone-id"
+        param_verify_token_path = "/whatsapp/bedrock-agent/verify-token"
+        param_agent_id_path = "/whatsapp/bedrock-agent/agent-id"
+        param_agent_alias_id_path = "/whatsapp/bedrock-agent/agent-alias-id"
+
+        # Create AGENT_ID parameter
+        agent_id_param = ssm.StringParameter(
+            self,
+            "BedrockAgentIdParameter",
+            parameter_name=param_agent_id_path,
+            string_value=self.agent_id,
+            description="Bedrock Agent ID",
+            type=ssm.ParameterType.STRING,
+            tier=ssm.ParameterTier.STANDARD
+        )
+
+        # Create AGENT_ALIAS_ID parameter
+        agent_alias_id_param = ssm.StringParameter(
+            self,
+            "BedrockAgentAliasIdParameter",
+            parameter_name=param_agent_alias_id_path,
+            string_value=self.agent_alias_id,
+            description="Bedrock Agent Alias ID",
+            type=ssm.ParameterType.STRING,
+            tier=ssm.ParameterTier.STANDARD
+        )
+
+        # Create TOKEN_WHATS parameter
+        token_param = ssm.StringParameter(
+            self,
+            "WhatsAppTokenParameter",
+            parameter_name=param_token_path,
+            string_value="PLACEHOLDER_UPDATE_WITH_REAL_TOKEN",
+            description="WhatsApp Business API Access Token - Update with real value",
+            type=ssm.ParameterType.STRING,
+            tier=ssm.ParameterTier.STANDARD
+        )
+
+        # Create IPHONE_ID_WHATS parameter
+        phone_param = ssm.StringParameter(
+            self,
+            "WhatsAppPhoneIdParameter",
+            parameter_name=param_phone_id_path,
+            string_value="PLACEHOLDER_UPDATE_WITH_PHONE_ID",
+            description="WhatsApp Business Phone Number ID - Update with real value",
+            type=ssm.ParameterType.STRING,
+            tier=ssm.ParameterTier.STANDARD
+        )
+
+        # Create VERIFY_TOKEN parameter
+        verify_param = ssm.StringParameter(
+            self,
+            "WhatsAppVerifyTokenParameter",
+            parameter_name=param_verify_token_path,
+            string_value="mi_token_secreto_123",
+            description="WhatsApp Webhook Verification Token",
+            type=ssm.ParameterType.STRING,
+            tier=ssm.ParameterTier.STANDARD
+        )
+
+        # Output parameter names
+        CfnOutput(
+            self,
+            "output-param-agent-id",
+            value=agent_id_param.parameter_name,
+            description="SSM Parameter name for Bedrock Agent ID"
+        )
+
+        CfnOutput(
+            self,
+            "output-param-agent-alias-id",
+            value=agent_alias_id_param.parameter_name,
+            description="SSM Parameter name for Bedrock Agent Alias ID"
+        )
+
+        CfnOutput(
+            self,
+            "output-param-token",
+            value=token_param.parameter_name,
+            description="SSM Parameter name for WhatsApp Token (UPDATE VALUE IN AWS CONSOLE)"
+        )
+
+        CfnOutput(
+            self,
+            "output-param-phone-id",
+            value=phone_param.parameter_name,
+            description="SSM Parameter name for WhatsApp Phone ID (UPDATE VALUE IN AWS CONSOLE)"
+        )
+
+        CfnOutput(
+            self,
+            "output-param-verify-token",
+            value=verify_param.parameter_name,
+            description="SSM Parameter name for WhatsApp Verify Token"
+        )
+

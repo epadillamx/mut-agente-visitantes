@@ -1,7 +1,7 @@
 {
-  "name": "bedrock-agent-chat-lambda",
+  "name": "bedrock-agent-whatsapp-lambda",
   "version": "1.0.0",
-  "description": "Lambda function to invoke Bedrock Agent for chat interactions",
+  "description": "Lambda function to invoke Bedrock Agent for WhatsApp chat interactions",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,12 +10,14 @@
     "bedrock",
     "agent",
     "chat",
+    "whatsapp",
     "aws",
     "lambda"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-bedrock-agent-runtime": "^3.600.0"
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.600.0",
+    "@aws-sdk/client-ssm": "^3.600.0"
   }
 }
