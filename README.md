@@ -10,10 +10,6 @@ source venv/Scripts/activate
 python -m pip install -r requirements.txt
 ```
 
-
-
-Para agregar dependencias adicionales, por ejemplo, otras bibliotecas CDK, simplemente agrégalas a tu archivo setup.py y vuelve a ejecutar el comando pip install -r requirements.txt.
-
 ## Comandos Útiles
 
  * `cdk ls`          list all stacks in the app
@@ -30,6 +26,8 @@ streamlit run app-chat-with-agent.py
 
 cdk destroy GenAiVirtualAssistantBedrockStack
 cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
+
+
 cdk deploy GenAiVirtualAssistantApiGatewayStack --require-approval never
 cdk destroy GenAiVirtualAssistantApiGatewayStack
 ```

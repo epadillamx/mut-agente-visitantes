@@ -44,8 +44,8 @@ bedrock_stack = GenAiVirtualAssistantBedrockStack(app,
 
 # Chat Lambda with API Gateway Stack
 chat_stack = ChatLambdaNodeStack(app,
-                                              "ChatLambdaNodeStack",
-                                              env=env_aws_settings)
+                                 "ChatLambdaNodeStack",
+                                 env=env_aws_settings)
 
 # Hard Dependencies
 bedrock_stack.add_dependency(s3_stack)

@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from cdklabs.generative_ai_cdk_constructs import bedrock
 from aws_cdk import (
     Stack,
-    aws_s3 as s3
+    CfnOutput,
+    aws_s3 as s3,
+    aws_iam as iam
 )
 from constructs import Construct
 
@@ -50,6 +52,9 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         kb = self._create_knowledge_base()
         self._create_data_sources(kb)
 
+        # Configure open access permissions for Knowledge Base
+        self._configure_kb_permissions(kb)
+
         """
         @ Guardrails Setup
         """
@@ -64,6 +69,11 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         @ Agent Alias
         """
         agent_alias = self._create_agent_alias(agent)
+
+        """
+        @ Outputs
+        """
+        self._create_outputs(agent, agent_alias, kb)
 
     def _get_knowledge_base_config(self) -> KnowledgeBaseConfig:
         """Returns the Knowledge Base configuration based on provided specifications"""
@@ -159,6 +169,110 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                 chunking_strategy=bedrock.ChunkingStrategy.fixed_size(
                     max_tokens=config.max_tokens,
                     overlap_percentage=config.overlap_percentage
+                )
+            )
+
+    def _configure_kb_permissions(self, kb: bedrock.VectorKnowledgeBase) -> None:
+        """
+        Configures IAM permissions to allow access to the Knowledge Base.
+        Adds necessary Bedrock permissions to the Knowledge Base role.
+        """
+        # Add Bedrock full access permissions to the Knowledge Base role
+        if hasattr(kb, 'role') and kb.role:
+            kb.role.add_managed_policy(
+                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonBedrockFullAccess")
+            )
+
+            # Add custom policy for Knowledge Base operations
+            kb.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "bedrock:InvokeModel",
+                        "bedrock:InvokeModelWithResponseStream",
+                        "bedrock:Retrieve",
+                        "bedrock:RetrieveAndGenerate"
+                    ],
+                    resources=["*"]
+                )
+            )
+
+            # Grant S3 read permissions to Knowledge Base role
+            kb.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "s3:GetObject",
+                        "s3:ListBucket"
+                    ],
+                    resources=[
+                        self.s3_bucket_arn,
+                        f"{self.s3_bucket_arn}/*"
+                    ]
+                )
+            )
+
+    def _configure_agent_permissions(self, agent: bedrock.Agent, kb: bedrock.VectorKnowledgeBase) -> None:
+        """
+        Configures IAM permissions for the Bedrock Agent.
+        Grants access to invoke models, access knowledge base, and read from S3.
+        """
+        # Add permissions to agent role
+        if hasattr(agent, 'role') and agent.role:
+            # Grant Bedrock model invocation permissions
+            agent.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "bedrock:InvokeModel",
+                        "bedrock:InvokeModelWithResponseStream",
+                        "bedrock:GetFoundationModel",
+                        "bedrock:ListFoundationModels"
+                    ],
+                    resources=[
+                        f"arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
+                        f"arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0"
+                    ]
+                )
+            )
+
+            # Grant Knowledge Base access permissions
+            agent.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "bedrock:Retrieve",
+                        "bedrock:RetrieveAndGenerate",
+                        "bedrock:GetKnowledgeBase",
+                        "bedrock:ListKnowledgeBases"
+                    ],
+                    resources=["*"]  # Knowledge Base ARN will be resolved at runtime
+                )
+            )
+
+            # Grant S3 read permissions to agent
+            agent.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "s3:GetObject",
+                        "s3:ListBucket"
+                    ],
+                    resources=[
+                        self.s3_bucket_arn,
+                        f"{self.s3_bucket_arn}/*"
+                    ]
+                )
+            )
+
+            # Grant permissions to use guardrails
+            agent.role.add_to_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "bedrock:ApplyGuardrail"
+                    ],
+                    resources=["*"]
                 )
             )
 
@@ -292,7 +406,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         agent = bedrock.Agent(
             self,
             'VirtualAssistantAgent',
-            foundation_model=bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_SONNET_V1_0,
+            foundation_model=bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
             instruction=self._get_agent_instruction(),
             user_input_enabled=True,
             code_interpreter_enabled=False,
@@ -300,6 +414,9 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             knowledge_bases=[kb],
             guardrail=guardrail
         )
+
+        # Configure agent permissions
+        self._configure_agent_permissions(agent, kb)
 
         return agent
 
@@ -314,3 +431,32 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         )
 
         return agent_alias
+
+    def _create_outputs(self, agent: bedrock.Agent, agent_alias: bedrock.AgentAlias, kb: bedrock.VectorKnowledgeBase) -> None:
+        """Creates CloudFormation outputs for the stack resources"""
+        # Agent ID
+        CfnOutput(
+            self,
+            "output-agent-id",
+            value=agent.agent_id,
+            description="Bedrock Agent ID",
+            export_name=f"{Stack.of(self).stack_name}-AgentId"
+        )
+
+        # Agent Alias ID
+        CfnOutput(
+            self,
+            "output-agent-alias-id",
+            value=agent_alias.alias_id,
+            description="Bedrock Agent Alias ID",
+            export_name=f"{Stack.of(self).stack_name}-AgentAliasId"
+        )
+
+        # Knowledge Base ID
+        CfnOutput(
+            self,
+            "output-knowledge-base-id",
+            value=kb.knowledge_base_id,
+            description="Bedrock Knowledge Base ID",
+            export_name=f"{Stack.of(self).stack_name}-KnowledgeBaseId"
+        )

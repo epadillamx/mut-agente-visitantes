@@ -4,6 +4,7 @@ from aws_cdk import (
     Duration,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
+    aws_iam as iam,
 )
 from constructs import Construct
 import os
@@ -24,9 +25,13 @@ class ChatLambdaNodeStack(Stack):
             runtime=_lambda.Runtime.NODEJS_22_X,
             handler="index.handler",
             code=_lambda.Code.from_asset(os.path.join(os.path.dirname(__file__), "lambda")),
-            description="Lambda function that receives a value and responds with 'Hola Mundo'",
-            timeout=Duration.seconds(30),
+            description="Lambda function that invokes Bedrock Agent for chat interactions",
+            timeout=Duration.seconds(60),  # Increased timeout for Bedrock calls
+            memory_size=512,  # Increased memory for better performance
         )
+
+        # Add Bedrock permissions to Lambda
+        self._configure_lambda_permissions()
 
         """
         @ API Gateway
@@ -72,4 +77,37 @@ class ChatLambdaNodeStack(Stack):
             "output-api-gateway-url",
             value=api.url,
             description="API Gateway URL"
+        )
+
+    def _configure_lambda_permissions(self) -> None:
+        """
+        Configures IAM permissions for the Lambda function to invoke Bedrock Agent.
+        """
+        # Grant permissions to invoke Bedrock Agent
+        self.lambda_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeAgent",
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                    "bedrock:GetAgent",
+                    "bedrock:ListAgents",
+                    "bedrock:GetAgentAlias",
+                    "bedrock:ListAgentAliases"
+                ],
+                resources=["*"]
+            )
+        )
+
+        # Grant permissions to access Knowledge Base (if Lambda needs direct access)
+        self.lambda_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:Retrieve",
+                    "bedrock:RetrieveAndGenerate"
+                ],
+                resources=["*"]
+            )
         )
