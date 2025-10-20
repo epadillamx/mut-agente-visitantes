@@ -10,8 +10,8 @@ const { BedrockAgentRuntimeClient, InvokeAgentCommand } = require("@aws-sdk/clie
 async function getAgente(userId, question, messageId) {
     try {
         // Get Agent IDs directly from environment variables
-        const AGENT_ID = process.env.AGENT_ID || 'FH6HJUBIZQ';
-        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || 'LP1AND7OTN';
+        const AGENT_ID = process.env.AGENT_ID || '';
+        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || '';
         const REGION = process.env.AWS_REGION || 'us-east-1';
 
         console.log(`📞 Invocando Bedrock Agent para usuario: ${userId}`);
@@ -27,14 +27,11 @@ async function getAgente(userId, question, messageId) {
         // Create Bedrock Agent Runtime client
         const client = new BedrockAgentRuntimeClient({ region: REGION });
 
-        // Usar el userId como sessionId para mantener contexto de conversación
-        const sessionId = `whatsapp-${userId}`;
-
         // Prepare the command
         const command = new InvokeAgentCommand({
             agentId: AGENT_ID,
             agentAliasId: AGENT_ALIAS_ID,
-            sessionId: sessionId,
+            sessionId: userId,
             inputText: question
         });
 
@@ -44,50 +41,78 @@ async function getAgente(userId, question, messageId) {
         // Invoke the agent
         const response = await client.send(command);
 
-        // Process the streaming response
+        console.log(`🔄 Respuesta inicial recibida, procesando stream...`);
+
+        // Process the streaming response - IMPORTANTE: Esperamos a que todo el stream se complete
         let agentResponse = '';
         let citations = [];
+        let chunkCount = 0;
 
         if (response.completion) {
-            for await (const event of response.completion) {
-                if (event.chunk) {
-                    const chunk = event.chunk;
-                    if (chunk.bytes) {
-                        const decodedChunk = new TextDecoder().decode(chunk.bytes);
+            try {
+                // Iteramos y esperamos TODOS los eventos del stream
+                for await (const event of response.completion) {
+                    console.log(`📦 Procesando evento ${++chunkCount}:`, JSON.stringify(Object.keys(event)));
+                    
+                    // Procesar chunks de texto
+                    if (event.chunk && event.chunk.bytes) {
+                        const decodedChunk = new TextDecoder('utf-8').decode(event.chunk.bytes);
                         agentResponse += decodedChunk;
+                        
+                    }
+
+                    // Extraer citations si están disponibles
+                    if (event.attribution && event.attribution.citations) {
+                        citations.push(...event.attribution.citations);
+                       
+                    }
+
+                    // Log otros tipos de eventos para debugging
+                    if (event.trace) {
+                        console.log(`🔍 Trace event recibido`);
+                    }
+                    if (event.returnControl) {
+                        console.log(`🎮 Return control event recibido`);
                     }
                 }
 
-                // Extract citations if available
-                if (event.attribution) {
-                    const attribution = event.attribution;
-                    if (attribution.citations) {
-                        citations.push(...attribution.citations);
-                    }
-                }
+                console.log(`✅ Stream completado. Total de chunks procesados: ${chunkCount}`);
+            } catch (streamError) {
+                console.error('❌ Error procesando stream:', streamError);
+                throw streamError;
             }
+        } else {
+            console.warn('⚠️ No se recibió completion stream en la respuesta');
         }
 
         const endTime = Date.now();
         const duration = endTime - startTime;
 
-        console.log(`✅ Respuesta recibida en ${duration}ms`);
-        console.log(`📝 Respuesta del agente: ${agentResponse.substring(0, 100)}...`);
+        console.log(`✅ Respuesta completa recibida en ${duration}ms`);
+        console.log(`📏 Longitud total de la respuesta: ${agentResponse.length} caracteres`);
+        console.log(`📝 Respuesta del agente: ${agentResponse.substring(0, 200)}${agentResponse.length > 200 ? '...' : ''}`);
         
         if (citations.length > 0) {
-            console.log(`📚 Citations encontradas: ${citations.length}`);
+            console.log(`📚 Total de citations encontradas: ${citations.length}`);
         }
 
-        // Si la respuesta está vacía, devolver mensaje por defecto
+        // Validar que la respuesta no esté vacía
         if (!agentResponse || agentResponse.trim() === '') {
-            console.log('⚠️ Respuesta vacía del agente');
+            console.log('⚠️ Respuesta vacía del agente después de procesar el stream');
             return 'Lo siento, no pude procesar tu pregunta en este momento. ¿Puedes intentarlo de nuevo?';
         }
 
-        return agentResponse.trim();
+        const finalResponse = agentResponse.trim();
+        console.log(`🎯 Retornando respuesta final (${finalResponse.length} caracteres)`);
+        
+        return finalResponse;
 
     } catch (error) {
-        console.error('❌ Error invocando Bedrock Agent:', error);
+        console.error('❌ Error invocando Bedrock Agent:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
 
         // Handle specific error types
         if (error.name === 'AccessDeniedException') {
@@ -102,9 +127,16 @@ async function getAgente(userId, question, messageId) {
         } else if (error.name === 'ValidationException') {
             console.error('⚠️ Error de validación:', error.message);
             return 'Lo siento, hubo un problema con tu pregunta. ¿Puedes reformularla?';
+        } else if (error.name === 'ServiceUnavailableException') {
+            console.error('🔧 Servicio no disponible temporalmente');
+            return 'Lo siento, el servicio no está disponible en este momento. Por favor, intenta más tarde.';
+        } else if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+            console.error('🌐 Error de conexión o timeout');
+            return 'Lo siento, hubo un problema de conexión. Por favor, intenta de nuevo.';
         }
 
         // Error genérico
+        console.error('❓ Error no categorizado:', error.name || 'Unknown');
         return 'Lo siento, hubo un error procesando tu pregunta. Por favor, intenta de nuevo.';
     }
 }

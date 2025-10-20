@@ -19,11 +19,11 @@ class ChatLambdaNodeStack(Stack):
         """
         
         # Default values for configuration (can be overridden via environment)
-        DEFAULT_AGENT_ID = "CHANGE_ME"
-        DEFAULT_AGENT_ALIAS_ID = "CHANGE_ME"
-        DEFAULT_TOKEN_WHATS = "CHANGE_ME"
-        DEFAULT_IPHONE_ID = "CHANGE_ME"
-        DEFAULT_VERIFY_TOKEN = "CHANGE_ME"
+        DEFAULT_AGENT_ID = "EJVTR9GKUE"
+        DEFAULT_AGENT_ALIAS_ID = "DV8JJEPK8M"
+        DEFAULT_TOKEN_WHATS = "EAARiF0M4rZBwBPFb4inzWTd3izfO8koHUTHvZAea8xWLOhWec33COWTmosXyYyUHmLoprWBnZCR1Rf2kiFKF8F4LrFenzB0ryLzyzYx8PTCeOUpi1IVdgkVgVfHoGGzDnIJvMM6nYoALpm5Jh24AlnXPyNfL4tgdSlGDkIoGm2bnkySlqI6gqC59bXbnwZDZD"
+        DEFAULT_IPHONE_ID = "671787702683016"
+        DEFAULT_VERIFY_TOKEN = "gASgcVFirbcJ735%$32"
 
         # Create Node.js 22 Lambda function
         self.lambda_fn = _lambda.Function(
@@ -33,8 +33,8 @@ class ChatLambdaNodeStack(Stack):
             handler="index.handler",
             code=_lambda.Code.from_asset(os.path.join(os.path.dirname(__file__), "lambda")),
             description="Lambda function that invokes Bedrock Agent for WhatsApp chat interactions",
-            timeout=Duration.seconds(60),  # Increased timeout for Bedrock calls
-            memory_size=512,  # Increased memory for better performance
+            timeout=Duration.seconds(120),  # Increased timeout for Bedrock calls
+            memory_size=1024,
             environment={
                 # Bedrock Agent configuration
                 "AGENT_ID": DEFAULT_AGENT_ID,

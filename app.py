@@ -3,7 +3,7 @@ from aws_cdk import Environment, App, Tags
 from stack_backend_s3.stack_backend_s3 import GenAiVirtualAssistantS3Stack
 from stack_backend_lambda_light_etl.stack_backend_lambda_light_etl import GenAiVirtualAssistantEtlLambdaStack
 from stack_backend_bedrock.stack_backend_bedrock import GenAiVirtualAssistantBedrockStack
-from stack_frontend_ddb_lambda.stack_frontend_ddb_lambda import GenAiVirtualAssistantDDBLambdaStack
+
 from stack_chat_lambda_node.stack_chat_lambda import ChatLambdaNodeStack
 #from stack_frontend_vpc_ecs_streamlit.stack_frontend_vpc_ecs_streamlit import GenAiVirtualAssistantVpcEcsStreamlitStack
 
@@ -28,10 +28,7 @@ etl_stack = GenAiVirtualAssistantEtlLambdaStack(app,
                                                 input_metadata=env_context_params,
                                                 input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
 
-# DynamoDB & Lambda Stack.
-ddb_stack = GenAiVirtualAssistantDDBLambdaStack(app,
-                                                "GenAiVirtualAssistantDDBLambdaStack",
-                                                env=env_aws_settings)
+
 
 
 # Bedrock Stack
@@ -53,7 +50,7 @@ etl_stack.add_dependency(s3_stack)
 #st_stack.add_dependency(ddb_stack)
 
 # Add Tags
-for stack in [s3_stack, etl_stack, bedrock_stack, ddb_stack, chat_stack]:
+for stack in [s3_stack, etl_stack, bedrock_stack, chat_stack]:
     Tags.of(stack).add("environment", env_name)
 
 app.synth()

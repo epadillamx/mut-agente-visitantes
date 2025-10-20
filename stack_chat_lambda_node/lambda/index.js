@@ -10,19 +10,23 @@ const { accumulateMessage } = require('./acumulacion');
  * - POST /chat - Endpoint directo para pruebas
  */
 exports.handler = async (event) => {
-    console.log('📥 Event received:', JSON.stringify(event, null, 2));
+    //console.log('📥 Event received:', JSON.stringify(event, null, 2));
 
     const httpMethod = event.httpMethod || event.requestContext?.http?.method;
     const path = event.path || event.requestContext?.http?.path || '/';
-    
+
     try {
+        console.log("httpMethod*" + httpMethod);
+        console.log("path*" + path);
         // GET /webhook - Verificación de webhook de WhatsApp
         if (httpMethod === 'GET' && path.includes('/webhook')) {
             return handleWebhookVerification(event);
         }
 
         // POST /webhook - Recibir mensajes de WhatsApp
+
         if (httpMethod === 'POST' && path.includes('/webhook')) {
+            console.log("************** POST /webhook **************");
             return await handleWhatsAppMessage(event);
         }
 
@@ -71,7 +75,7 @@ async function handleWebhookVerification(event) {
         const mode = queryParams['hub.mode'];
         const token = queryParams['hub.verify_token'];
         const challenge = queryParams['hub.challenge'];
-        
+
         // Obtener VERIFY_TOKEN desde variable de entorno
         const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'mi_token_secreto_123';
 
@@ -129,36 +133,34 @@ async function handleWhatsAppMessage(event) {
                                 console.log(`messageId: ${messageId}`);
 
                                 try {
-                                    // Marcar mensaje como leído
-                                    console.log(`===================01==================`);
-                                    MarkStatusMessage(messageId);
 
-                                    console.log(`===================02==================`);
-                                    console.log(`📱 Recibido de ${from}:`, messageBody);
 
-                                    // Acumular mensajes del usuario
-                                    const messagePromise = accumulateMessage(from, messageBody);
+                                    await MarkStatusMessage(messageId);
 
-                                    console.log(`===================03==================`);
 
-                                    if (messagePromise) {
+                                    //const messagePromise = accumulateMessage(from, messageBody);
+
+
+                                    const agentResponse = await getAgente(from, messageBody, messageId);
+                                    await sendMessage(from, agentResponse);
+                                    /*if (messagePromise) {
                                         // Procesar mensajes acumulados (async, no esperar)
                                         messagePromise
                                             .then(async (message_full) => {
                                                 if (message_full != null && message_full.trim() !== '') {
-                                                    console.log(`===================04==================`);
+     
                                                     console.log(`📝 Mensaje completo de ${from}:`, message_full);
 
                                                     // Llamar al agente de Bedrock
                                                     const agentResponse = await getAgente(from, message_full, messageId);
 
+                                                    console.log("******D1");
+                                                    console.log(agentResponse);
+
+                                                    console.log("*****D08");
+
                                                     // Enviar respuesta si no es mensaje duplicado
-                                                    if (agentResponse !== '#REPLICA#') {
-                                                        console.log(`💬 Enviando respuesta a ${from}`);
-                                                        await sendMessage(from, agentResponse);
-                                                    } else {
-                                                        console.log(`⏭️ Mensaje duplicado ignorado`);
-                                                    }
+                                                    await sendMessage(from, agentResponse);
                                                 }
                                             })
                                             .catch(error => {
@@ -166,19 +168,19 @@ async function handleWhatsAppMessage(event) {
                                                 // Enviar mensaje de error al usuario
                                                 sendMessage(from, 'Lo siento, hubo un error procesando tu mensaje. Por favor, intenta de nuevo.');
                                             });
-                                    }
+                                    }*/
 
                                 } catch (processError) {
                                     console.error('❌ Error procesando mensaje:', processError);
                                     // Enviar mensaje de error al usuario
                                     if (from) {
-                                        await sendMessage(from, 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.');
+                                        await sendMessage(from, '¿Puedes repetirme tu pregunta, por favor?');
                                     }
                                 }
                             } else {
                                 console.log(`⚠️ Tipo de mensaje no soportado: ${messageType}`);
                                 if (from && messageType !== 'reaction') {
-                                    await sendMessage(from, 'Lo siento, solo puedo procesar mensajes de texto en este momento.');
+                                    await sendMessage(from, '¿Puedes repetirme tu pregunta?');
                                 }
                             }
                         }
@@ -187,16 +189,16 @@ async function handleWhatsAppMessage(event) {
             }
 
             // Responder inmediatamente a WhatsApp con 200 OK
-            return createResponse(200, { 
-                status: 'ok', 
-                message: 'Mensaje recibido' 
+            return createResponse(200, {
+                status: 'ok',
+                message: 'Mensaje recibido'
             });
 
         } else {
             console.log('⚠️ Objeto no es whatsapp_business_account:', body.object);
-            return createResponse(200, { 
-                status: 'ignored', 
-                message: 'No es un mensaje de WhatsApp' 
+            return createResponse(200, {
+                status: 'ignored',
+                message: 'No es un mensaje de WhatsApp'
             });
         }
 
