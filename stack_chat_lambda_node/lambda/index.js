@@ -1,7 +1,6 @@
 const { getAgente } = require('./getAgente');
 const { sendMessage, MarkStatusMessage } = require('./send.message');
 const { accumulateMessage } = require('./acumulacion');
-const { getParameter } = require('./ssmHelper');
 
 /**
  * Lambda Handler - Procesa peticiones de API Gateway
@@ -73,9 +72,8 @@ async function handleWebhookVerification(event) {
         const token = queryParams['hub.verify_token'];
         const challenge = queryParams['hub.challenge'];
         
-        // Obtener VERIFY_TOKEN desde Parameter Store
-        const verifyTokenPath = process.env.PARAM_VERIFY_TOKEN || '/whatsapp/bedrock-agent/verify-token';
-        const VERIFY_TOKEN = await getParameter(verifyTokenPath);
+        // Obtener VERIFY_TOKEN desde variable de entorno
+        const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'mi_token_secreto_123';
 
         console.log('🔍 Verificación webhook:', { mode, token, challenge });
 
@@ -109,7 +107,7 @@ async function handleWebhookVerification(event) {
 async function handleWhatsAppMessage(event) {
     try {
         const body = JSON.parse(event.body || '{}');
-        console.log('📨 Webhook POST recibido:', JSON.stringify(body, null, 2));
+        //console.log('📨 Webhook POST recibido:', JSON.stringify(body, null, 2));
 
         // Verificar que es una notificación de WhatsApp
         if (body.object === 'whatsapp_business_account') {
@@ -127,21 +125,28 @@ async function handleWhatsAppMessage(event) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;
 
+                                console.log(`messageBody: ${messageBody}`);
+                                console.log(`messageId: ${messageId}`);
+
                                 try {
                                     // Marcar mensaje como leído
+                                    console.log(`===================01==================`);
                                     MarkStatusMessage(messageId);
 
-                                    console.log(`===================MENSAJE==================`);
+                                    console.log(`===================02==================`);
                                     console.log(`📱 Recibido de ${from}:`, messageBody);
 
                                     // Acumular mensajes del usuario
                                     const messagePromise = accumulateMessage(from, messageBody);
+
+                                    console.log(`===================03==================`);
 
                                     if (messagePromise) {
                                         // Procesar mensajes acumulados (async, no esperar)
                                         messagePromise
                                             .then(async (message_full) => {
                                                 if (message_full != null && message_full.trim() !== '') {
+                                                    console.log(`===================04==================`);
                                                     console.log(`📝 Mensaje completo de ${from}:`, message_full);
 
                                                     // Llamar al agente de Bedrock

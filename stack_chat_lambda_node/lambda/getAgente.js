@@ -1,5 +1,4 @@
 const { BedrockAgentRuntimeClient, InvokeAgentCommand } = require("@aws-sdk/client-bedrock-agent-runtime");
-const { getParameter } = require('./ssmHelper');
 
 /**
  * Invoca al agente de Bedrock con la pregunta del usuario
@@ -10,12 +9,9 @@ const { getParameter } = require('./ssmHelper');
  */
 async function getAgente(userId, question, messageId) {
     try {
-        // Get Agent IDs from Parameter Store
-        const PARAM_AGENT_ID = process.env.PARAM_AGENT_ID || '/whatsapp/bedrock-agent/agent-id';
-        const PARAM_AGENT_ALIAS_ID = process.env.PARAM_AGENT_ALIAS_ID || '/whatsapp/bedrock-agent/agent-alias-id';
-        
-        const AGENT_ID = await getParameter(PARAM_AGENT_ID, false);  // No requiere decryption
-        const AGENT_ALIAS_ID = await getParameter(PARAM_AGENT_ALIAS_ID, false);
+        // Get Agent IDs directly from environment variables
+        const AGENT_ID = process.env.AGENT_ID || 'FH6HJUBIZQ';
+        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || 'LP1AND7OTN';
         const REGION = process.env.AWS_REGION || 'us-east-1';
 
         console.log(`📞 Invocando Bedrock Agent para usuario: ${userId}`);

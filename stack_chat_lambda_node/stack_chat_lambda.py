@@ -5,7 +5,6 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_iam as iam,
-    aws_ssm as ssm,
 )
 from constructs import Construct
 import os
@@ -19,12 +18,12 @@ class ChatLambdaNodeStack(Stack):
         @ Lambda function
         """
         
-        # Parameter Store paths for all configuration
-        PARAM_AGENT_ID = "/whatsapp/bedrock-agent/agent-id"
-        PARAM_AGENT_ALIAS_ID = "/whatsapp/bedrock-agent/agent-alias-id"
-        PARAM_TOKEN_WHATS = "/whatsapp/bedrock-agent/token"
-        PARAM_IPHONE_ID = "/whatsapp/bedrock-agent/phone-id"
-        PARAM_VERIFY_TOKEN = "/whatsapp/bedrock-agent/verify-token"
+        # Default values for configuration (can be overridden via environment)
+        DEFAULT_AGENT_ID = "CHANGE_ME"
+        DEFAULT_AGENT_ALIAS_ID = "CHANGE_ME"
+        DEFAULT_TOKEN_WHATS = "CHANGE_ME"
+        DEFAULT_IPHONE_ID = "CHANGE_ME"
+        DEFAULT_VERIFY_TOKEN = "CHANGE_ME"
 
         # Create Node.js 22 Lambda function
         self.lambda_fn = _lambda.Function(
@@ -37,27 +36,19 @@ class ChatLambdaNodeStack(Stack):
             timeout=Duration.seconds(60),  # Increased timeout for Bedrock calls
             memory_size=512,  # Increased memory for better performance
             environment={
-                # Parameter Store paths for Bedrock Agent IDs
-                "PARAM_AGENT_ID": PARAM_AGENT_ID,
-                "PARAM_AGENT_ALIAS_ID": PARAM_AGENT_ALIAS_ID,
-                # Parameter Store paths for WhatsApp credentials
-                "PARAM_TOKEN_WHATS": PARAM_TOKEN_WHATS,
-                "PARAM_IPHONE_ID": PARAM_IPHONE_ID,
-                "PARAM_VERIFY_TOKEN": PARAM_VERIFY_TOKEN
+                # Bedrock Agent configuration
+                "AGENT_ID": DEFAULT_AGENT_ID,
+                "AGENT_ALIAS_ID": DEFAULT_AGENT_ALIAS_ID,
+                # WhatsApp credentials
+                "TOKEN_WHATS": DEFAULT_TOKEN_WHATS,
+                "IPHONE_ID_WHATS": DEFAULT_IPHONE_ID,
+                "VERIFY_TOKEN": DEFAULT_VERIFY_TOKEN
             }
         )
 
         # Add Bedrock permissions to Lambda
         self._configure_lambda_permissions()
-        
-        # Add SSM Parameter Store permissions
-        self._configure_ssm_permissions(
-            PARAM_AGENT_ID, 
-            PARAM_AGENT_ALIAS_ID, 
-            PARAM_TOKEN_WHATS, 
-            PARAM_IPHONE_ID, 
-            PARAM_VERIFY_TOKEN
-        )
+
 
         """
         @ API Gateway
@@ -166,28 +157,5 @@ class ChatLambdaNodeStack(Stack):
                     "bedrock:RetrieveAndGenerate"
                 ],
                 resources=["*"]
-            )
-        )
-
-    def _configure_ssm_permissions(self, param_agent_id: str, param_agent_alias_id: str, 
-                                   param_token: str, param_phone: str, param_verify: str) -> None:
-        """
-        Configures IAM permissions for the Lambda function to read SSM Parameter Store.
-        """
-        # Grant permissions to read specific parameters from SSM
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "ssm:GetParameter",
-                    "ssm:GetParameters"
-                ],
-                resources=[
-                    f"arn:aws:ssm:{Stack.of(self).region}:{Stack.of(self).account}:parameter{param_agent_id}",
-                    f"arn:aws:ssm:{Stack.of(self).region}:{Stack.of(self).account}:parameter{param_agent_alias_id}",
-                    f"arn:aws:ssm:{Stack.of(self).region}:{Stack.of(self).account}:parameter{param_token}",
-                    f"arn:aws:ssm:{Stack.of(self).region}:{Stack.of(self).account}:parameter{param_phone}",
-                    f"arn:aws:ssm:{Stack.of(self).region}:{Stack.of(self).account}:parameter{param_verify}"
-                ]
             )
         )

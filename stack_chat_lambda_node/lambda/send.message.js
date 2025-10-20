@@ -1,26 +1,23 @@
 
-const { getWhatsAppCredentials } = require('./ssmHelper');
-
-// Cache de credenciales
-let credentialsCache = null;
-
 /**
- * Obtiene las credenciales de WhatsApp (con cache)
+ * Obtiene las credenciales de WhatsApp desde variables de entorno
  */
-async function getCredentials() {
-    if (!credentialsCache) {
-        credentialsCache = await getWhatsAppCredentials();
-    }
-    return credentialsCache;
+function getCredentials() {
+    return {
+        token: process.env.TOKEN_WHATS || 'PLACEHOLDER_UPDATE_WITH_REAL_TOKEN',
+        phoneId: process.env.IPHONE_ID_WHATS || 'PLACEHOLDER_UPDATE_WITH_PHONE_ID'
+    };
 }
 
 async function MarkStatusMessage(message_id) {
     try {
-        const credentials = await getCredentials();
-
+        console.log(`MarkStatusMessage 1   ================`);
+        const credentials = getCredentials();
+        console.log(`MarkStatusMessage 2 >>>>>>>>>>>>>>>>>>>>>>> ${credentials.token} como leído...`);
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("Authorization", `Bearer ${credentials.token}`);
+
 
         const raw = JSON.stringify({
             "messaging_product": "whatsapp",
@@ -66,7 +63,7 @@ async function MarkStatusMessage(message_id) {
 
 async function sendMessage(phone, userMessage) {
     try {
-        const credentials = await getCredentials();
+        const credentials = getCredentials();
 
         console.log(`===================RESPUESTA==================`);
         console.log(`RESPUESTA ${phone}:`, userMessage);
