@@ -24,7 +24,7 @@ cdk bootstrap aws://948270077717/us-east-1
 cd stack_frontend_vpc_ecs_streamlit/streamlit_apps
 streamlit run app-chat-with-agent.py
 
-cdk destroy GenAiVirtualAssistantBedrockStack
+cdk destroy GenAiVirtualAssistantBedrockStack -require-approval never
 cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 
 
