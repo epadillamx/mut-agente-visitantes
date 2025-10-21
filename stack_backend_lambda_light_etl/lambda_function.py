@@ -1,3 +1,22 @@
+"""
+Lambda Function para Bedrock Knowledge Base
+Versión: 2.2 - Fix Preguntas con separador correcto
+
+CAMBIOS EN ESTA VERSIÓN:
+- ✅ Fix separador CSV de preguntas (;)
+- ✅ Fix nombres de columnas (pregunta, respuesta, texto_embedding, categoria_nombre)
+- ✅ Usa SOLO la columna 'texto_embedding' del CSV
+- ✅ No reconstruye el texto, usa directamente lo que viene en el CSV
+
+CSV ENTRADA (PREGUNTAS_OPTIMIZADO_VECTORDB.csv):
+- pregunta (minúscula)
+- respuesta (minúscula)
+- texto_embedding ← USAMOS ESTA COLUMNA
+- categoria_nombre
+- categoria_completa
+- SEPARADOR: ; (punto y coma)
+"""
+
 import re
 import os
 import json
@@ -9,130 +28,226 @@ from io import StringIO
 from datetime import datetime
 
 
+# ============================================================================
+# HANDLER PRINCIPAL - CONFIGURACIÓN ACTUALIZADA
+# ============================================================================
+
 def lambda_handler(event, context):
+    """
+    Transforma CSVs optimizados a formato Bedrock KB con chunks vectoriales.
+    Versión 3.0 - Lee archivos vectoriales preparados
+    """
     try:
-        # S3 bucket configuration
         s3_bucket = "raw-virtual-assistant-data-948270077717-us-east-1"
         
-        # Define CSV files with optimized configurations for Bedrock KB
+        # Configuración actualizada para archivos vectoriales preparados
         csv_files = {
             'eventos': {
-                'filename': 'eventos.csv',
+                'filename': 'eventos_vectorial.csv',
                 'encoding': 'utf-8',
-                'text_fields': ['titulo', 'descripcion', 'contenido'],
-                'metadata_fields': ['fecha_texto', 'hora_texto', 'lugar', 'organizador', 'tipo', 'horas'],
-                'id_field': 'titulo'
+                'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
+                'metadata_fields': [
+                    'titulo', 'descripcion', 'fecha_texto', 'hora_texto', 'lugar', 
+                    'organizador', 'tipo', 'horas', 'link', 'document_type', 'search_category'
+                ],
+                'id_field': 'titulo',
+                'format': 'jsonl'
             },
             'preguntas': {
-                'filename': 'preguntas.csv',
-                'encoding': 'cp1252',
-                'text_fields': ['Preguntas tipo', 'Respuesta'],
-                'metadata_fields': ['Categoria'],
-                'id_field': 'Preguntas tipo'
+                'filename': 'preguntas_vectorial.csv',
+                'encoding': 'utf-8',
+                'separator': ';',  # ← CSV usa punto y coma
+                'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
+                'metadata_fields': ['pregunta', 'respuesta', 'categoria_nombre', 'categoria_completa'],
+                'id_field': 'pregunta',
+                'format': 'jsonl'
             },
             'stores': {
-                'filename': 'stores.csv',
+                'filename': 'stores_vectorial.csv',
                 'encoding': 'utf-8',
-                'text_fields': ['titulo', 'content'],
-                'metadata_fields': ['lugar', 'horario', 'nivel', 'local', 'telefono', 'mail', 'tipo', 'web', 'url_web'],
-                'id_field': 'titulo'
+                'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
+                'metadata_fields': [
+                    'titulo', 'lugar', 'horario', 'nivel', 'local', 'telefono', 
+                    'mail', 'tipo', 'web', 'url_web', 'link', 'document_type', 'search_category'
+                ],
+                'id_field': 'titulo',
+                'format': 'jsonl'
             },
             'restaurantes': {
-                'filename': 'todas_restaurantes.csv',
+                'filename': 'restaurantes_vectorial.csv',
                 'encoding': 'utf-8',
-                'text_fields': ['titulo', 'content'],
-                'metadata_fields': ['lugar', 'horario', 'nivel', 'local', 'telefono', 'mail', 'tipo', 'web', 'url_web'],
-                'id_field': 'titulo'
+                'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
+                'metadata_fields': [
+                    'titulo', 'lugar', 'horario', 'nivel', 'local', 'telefono', 
+                    'mail', 'tipo', 'web', 'url_web', 'link', 'document_type', 'search_category'
+                ],
+                'id_field': 'titulo',
+                'format': 'jsonl'
             }
         }
         
-        # Output configuration
-        num_rows_per_file = 25  # Optimizado para chunks más pequeños y precisos
+        # Chunks optimizados para base vectorial
+        num_rows_per_file = {
+            'preguntas': 10,     # ~75 FAQs → ~8 archivos
+            'eventos': 8,        # ~26 eventos → ~4 archivos
+            'stores': 20,        # ~127 tiendas → ~7 archivos
+            'restaurantes': 15   # ~79 restaurantes → ~6 archivos
+        }
         
-        # Knowledge Base output path - separar por tipo de documento
-        base_output_path = os.environ.get('KB_S3_PATH', 'datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1')
+        base_output_path = os.environ.get('KB_S3_PATH', 
+            'datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1')
         
         results = {}
+        stats = {
+            'total_documents': 0,
+            'total_chunks': 0,
+            'by_type': {}
+        }
         
-        # Process each CSV file
+        print("\n" + "="*80)
+        print("🚀 TRANSFORMACIÓN A BASE VECTORIAL - BEDROCK KB v3.0")
+        print("="*80)
+        print("📋 Modo: Lectura directa de archivos vectoriales preparados")
+        print("="*80)
+        
+        # Procesar cada dataset
         for file_type, file_config in csv_files.items():
             filename = file_config['filename']
             encoding = file_config['encoding']
             s3_path = f"s3://{s3_bucket}/{filename}"
-            
-            # Crear path específico por tipo de documento
             output_s3_key = f"{base_output_path}/{file_type}"
             
-            print(f"Processing {file_type} from {s3_path}")
+            print(f"\n{'='*80}")
+            print(f"📂 {file_type.upper()}")
+            print(f"   Input:  {filename}")
+            print(f"   Output: {output_s3_key}")
+            print(f"   Formato: {file_config['format'].upper()}")
+            print(f"   Chunk: {num_rows_per_file.get(file_type)} docs/archivo")
+            print(f"{'='*80}")
             
             try:
-                # Read CSV with robust parsing
-                df = read_csv_robust(s3_path, encoding)
+                # Leer CSV optimizado
+                separator = file_config.get('separator', ',')
+                df = read_csv_robust(s3_path, encoding, file_type, separator)
                 
                 if df is None or len(df) == 0:
-                    print(f"Warning: {file_type} is empty. Skipping...")
+                    print(f"⚠️  {file_type} vacío o no encontrado")
                     results[file_type] = 0
                     continue
                 
-                print(f"Successfully read {len(df)} rows from {file_type}")
+                print(f"✅ Leídos {len(df)} registros")
+                print(f"   Columnas: {list(df.columns)}")
                 
-                # Transform and enrich dataframe for Bedrock KB
+                # Validar columnas requeridas
+                required = file_config['text_fields'] + [file_config['id_field']]
+                missing = [col for col in required if col not in df.columns]
+                if missing:
+                    print(f"⚠️  Columnas faltantes: {missing}")
+                
+                # Transformar para Bedrock KB
                 df = transform_for_bedrock_kb(df, file_type, file_config)
                 
-                print(f"Writing {len(df)} optimized documents for {file_type}...")
+                # Estadísticas
+                avg_length = df['bedrock_text'].str.len().mean()
+                print(f"✅ {len(df)} documentos listos")
+                print(f"   Texto promedio: {avg_length:.0f} caracteres")
                 
-                # Write to S3 with enhanced metadata
+                # Escribir en formato Bedrock
                 rows_written = write_bedrock_kb_format(
                     df=df,
                     file_type=file_type,
                     file_config=file_config,
                     s3_bucket=s3_bucket,
                     output_s3_key=output_s3_key,
-                    num_rows_per_file=num_rows_per_file
+                    num_rows_per_file=num_rows_per_file.get(file_type, 15)
                 )
                 
+                # Calcular chunks creados
+                chunks_created = ceil(len(df) / num_rows_per_file.get(file_type, 15))
+                
                 results[file_type] = rows_written
-                print(f"✓ {file_type}: {rows_written} documents written")
+                stats['total_documents'] += rows_written
+                stats['total_chunks'] += chunks_created
+                stats['by_type'][file_type] = {
+                    'documents': rows_written,
+                    'chunks': chunks_created,
+                    'avg_text_length': int(avg_length)
+                }
+                
+                print(f"✅ {rows_written} documentos escritos en {chunks_created} chunks")
                 
             except Exception as e:
-                print(f"✗ Error processing {file_type}: {str(e)}")
+                print(f"❌ Error procesando {file_type}: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 results[file_type] = f"Error: {str(e)}"
                 continue
+        
+        print("\n" + "="*80)
+        print("✅ TRANSFORMACIÓN COMPLETADA")
+        print("="*80)
+        print(f"📊 Estadísticas Globales:")
+        print(f"   Total documentos: {stats['total_documents']}")
+        print(f"   Total chunks: {stats['total_chunks']}")
+        print(f"\n📋 Por tipo:")
+        for tipo, data in stats['by_type'].items():
+            print(f"   • {tipo}: {data['documents']} docs, "
+                  f"{data['chunks']} chunks, "
+                  f"{data['avg_text_length']} chars avg")
+        print("="*80 + "\n")
         
         return {
             "statusCode": 200,
             "body": {
-                "message": "Data successfully processed for Bedrock Knowledge Base",
+                "message": "Transformación exitosa a base vectorial",
                 "output_path": base_output_path,
                 "results": results,
-                "timestamp": datetime.utcnow().isoformat()
+                "statistics": stats,
+                "timestamp": datetime.utcnow().isoformat(),
+                "version": "3.0",
+                "mode": "vectorial_preparado"
             }
         }
         
     except Exception as e:
-        print(f"Critical error: {str(e)}")
+        print(f"💥 Error crítico: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             "statusCode": 500,
             "body": {"error": str(e)}
         }
 
 
-def read_csv_robust(s3_path, encoding):
-    """Read CSV with multiple fallback strategies."""
+# ============================================================================
+# LECTURA DE CSV
+# ============================================================================
+
+def read_csv_robust(s3_path, encoding, file_type, separator=','):
+    """Lee CSV con manejo robusto y tipo específico para telefono."""
     try:
+        dtype_specs = {'telefono': str} if file_type == 'restaurantes' else None
+        
         df = wr.s3.read_csv(
             path=s3_path,
             header=0,
-            sep=',',
+            sep=separator,
             quotechar='"',
             encoding=encoding,
             escapechar='\\',
             on_bad_lines='skip',
-            engine='python'
+            engine='python',
+            dtype=dtype_specs
         )
+        
+        if file_type == 'restaurantes' and 'telefono' in df.columns:
+            df['telefono'] = df['telefono'].astype(str).str.replace('.0', '', regex=False)
+            df['telefono'] = df['telefono'].str.replace('nan', '', regex=False)
+        
         return df
+        
     except Exception as e1:
-        print(f"Strategy 1 failed: {str(e1)}")
+        print(f"⚠️  Método 1 falló: {str(e1)}")
         
         try:
             s3_client = boto3.client('s3')
@@ -141,210 +256,323 @@ def read_csv_robust(s3_path, encoding):
             obj = s3_client.get_object(Bucket=bucket, Key=key)
             content = obj['Body'].read().decode(encoding)
             
+            dtype_specs = {'telefono': str} if file_type == 'restaurantes' else None
+            
             df = pd.read_csv(
                 StringIO(content),
-                sep=',',
+                sep=separator,
                 quotechar='"',
                 encoding=encoding,
                 on_bad_lines='skip',
                 engine='python',
-                dtype=str
+                dtype=dtype_specs
             )
+            
+            if file_type == 'restaurantes' and 'telefono' in df.columns:
+                df['telefono'] = df['telefono'].astype(str).str.replace('.0', '', regex=False)
+                df['telefono'] = df['telefono'].str.replace('nan', '', regex=False)
+            
             return df
+            
         except Exception as e2:
-            print(f"All strategies failed: {str(e2)}")
+            print(f"❌ Todas las estrategias fallaron: {str(e2)}")
             return None
 
 
+# ============================================================================
+# TRANSFORMACIÓN PARA BEDROCK KB
+# ============================================================================
+
 def transform_for_bedrock_kb(df, file_type, file_config):
     """
-    Transform DataFrame optimized for Bedrock Knowledge Base embeddings.
-    Creates a rich text field combining relevant fields for better semantic search.
+    Transforma DataFrame a formato Bedrock KB.
+    Versión 3.0: Los archivos YA vienen con texto_embedding optimizado.
+    Solo se valida y estructura para Bedrock.
     """
     
-    # Clean all text fields
+    # Limpiar todos los campos de texto
     for col in df.columns:
         if df[col].dtype == 'object':
             df[col] = df[col].astype(str).str.strip()
             df[col] = df[col].replace(['nan', 'None', 'NaN', ''], '')
     
-    # Create optimized text content for embeddings based on file type
-    if file_type == 'eventos':
-        df['bedrock_text'] = df.apply(lambda row: create_evento_text(row), axis=1)
-        df['document_type'] = 'evento'
-        df['search_category'] = 'eventos_y_actividades'
-        
-    elif file_type == 'preguntas':
-        df['bedrock_text'] = df.apply(lambda row: create_pregunta_text(row), axis=1)
-        df['document_type'] = 'faq'
-        df['search_category'] = 'preguntas_frecuentes'
-        
-    elif file_type == 'stores':
-        df['bedrock_text'] = df.apply(lambda row: create_store_text(row), axis=1)
-        df['document_type'] = 'tienda'
-        df['search_category'] = 'comercios_y_tiendas'
-        
-    elif file_type == 'restaurantes':
-        df['bedrock_text'] = df.apply(lambda row: create_restaurant_text(row), axis=1)
-        df['document_type'] = 'restaurante'
-        df['search_category'] = 'gastronomia'
+    # Usar directamente el campo texto_embedding si existe
+    if 'texto_embedding' in df.columns:
+        df['bedrock_text'] = df['texto_embedding']
+        print(f"   ✅ Usando campo 'texto_embedding' directo del CSV")
+    else:
+        # Fallback: crear texto según tipo (compatibilidad)
+        print(f"   ⚠️  Campo 'texto_embedding' no encontrado, generando...")
+        if file_type == 'eventos':
+            df = create_eventos_bedrock_text(df)
+        elif file_type == 'preguntas':
+            df = create_preguntas_bedrock_text(df)
+        elif file_type == 'stores':
+            df = create_stores_bedrock_text(df)
+        elif file_type == 'restaurantes':
+            df = create_restaurantes_bedrock_text(df)
     
-    # Generate unique document IDs
+    # Asignar document_type y search_category si no existen
+    if 'document_type' not in df.columns:
+        df['document_type'] = file_type
+    
+    if 'search_category' not in df.columns:
+        category_map = {
+            'eventos': 'eventos_y_actividades',
+            'preguntas': 'preguntas_frecuentes',
+            'stores': 'comercios_y_tiendas',
+            'restaurantes': 'gastronomia'
+        }
+        df['search_category'] = category_map.get(file_type, file_type)
+    
+    # Generar IDs únicos
+    timestamp = int(datetime.utcnow().timestamp())
     df['document_id'] = df.apply(
-        lambda row: generate_document_id(file_type, row.name, row.get(file_config['id_field'], '')),
+        lambda row: f"{file_type}_{timestamp}_{row.name}_{sanitize_text(str(row.get(file_config['id_field'], ''))[:30])}",
         axis=1
     )
     
-    # Remove rows with empty bedrock_text
+    # Filtrar documentos vacíos
+    initial_count = len(df)
     df = df[df['bedrock_text'].str.len() > 20]
+    removed = initial_count - len(df)
     
-    # Fill remaining NaN
+    if removed > 0:
+        print(f"   ⚠️  Removidos {removed} documentos vacíos")
+    
     df = df.fillna('')
     
     return df
 
 
-def create_evento_text(row):
-    """Create optimized text for evento embeddings."""
-    parts = []
+# ============================================================================
+# CREACIÓN DE TEXTO PARA EMBEDDINGS - SOLO PREGUNTAS OPTIMIZADO
+# ============================================================================
+
+def create_preguntas_bedrock_text(df):
+    """
+    USA DIRECTAMENTE la columna 'texto_embedding' del CSV.
+    No reconstruye nada, solo toma el contenido ya optimizado.
     
-    if row.get('titulo'):
-        parts.append(f"Evento: {row['titulo']}")
+    CSV tiene (con separador ;):
+    - pregunta (minúscula)
+    - respuesta (minúscula)
+    - texto_embedding ← USAMOS ESTA
+    - categoria_nombre
+    - categoria_completa
+    """
     
-    if row.get('descripcion'):
-        parts.append(f"Descripción: {row['descripcion'][:500]}")
+    def build_text(row):
+        # Usar directamente la columna texto_embedding
+        if row.get('texto_embedding'):
+            return str(row['texto_embedding']).strip()
+        
+        # Fallback si no existe (no debería pasar)
+        return f"Pregunta: {row.get('pregunta', '')}\nRespuesta: {row.get('respuesta', '')}"
     
-    if row.get('contenido'):
-        parts.append(f"{row['contenido'][:500]}")
+    df['bedrock_text'] = df.apply(build_text, axis=1)
+    df['document_type'] = 'faq'
+    df['search_category'] = 'preguntas_frecuentes'
     
-    if row.get('fecha_texto'):
-        parts.append(f"Fecha: {row['fecha_texto']}")
-    
-    if row.get('hora_texto'):
-        parts.append(f"Horario: {row['hora_texto']}")
-    
-    if row.get('lugar'):
-        parts.append(f"Lugar: {row['lugar']}")
-    
-    if row.get('organizador'):
-        parts.append(f"Organiza: {row['organizador']}")
-    
-    return " | ".join(parts)
+    return df
 
 
-def create_pregunta_text(row):
-    """Create optimized text for FAQ embeddings."""
-    pregunta = row.get('Preguntas tipo', '')
-    respuesta = row.get('Respuesta', '')
-    categoria = row.get('Categoria', '')
+# ============================================================================
+# OTRAS FUNCIONES (SIN CAMBIOS)
+# ============================================================================
+
+def create_eventos_bedrock_text(df):
+    """Crea texto para embeddings de eventos."""
+    def build_text(row):
+        parts = []
+        if row.get('keywords') and row.get('keywords') != '':
+            parts.append(f"🔑 KEYWORDS: {row['keywords']}")
+        if row.get('tipo'):
+            parts.append(f"📌 TIPO: {row['tipo']}")
+        if row.get('titulo'):
+            parts.append(f"🎯 EVENTO: {row['titulo']}")
+        if row.get('descripcion'):
+            parts.append(f"📝 {row['descripcion']}")
+        if row.get('contenido'):
+            parts.append(row['contenido'])
+        
+        info_practica = []
+        if row.get('fecha_texto'):
+            info_practica.append(f"📅 {row['fecha_texto']}")
+        if row.get('hora_texto'):
+            info_practica.append(f"🕐 {row['hora_texto']}")
+        if row.get('lugar'):
+            info_practica.append(f"📍 {row['lugar']}")
+        if info_practica:
+            parts.append(" | ".join(info_practica))
+        
+        if row.get('publico_objetivo') and row.get('publico_objetivo') != '':
+            parts.append(f"👨‍👩‍👧 PÚBLICO: {row['publico_objetivo']}")
+        if row.get('entrada') and row.get('entrada') != '':
+            parts.append(f"🎟️ ENTRADA: {row['entrada']}")
+        if row.get('organizador'):
+            parts.append(f"👥 ORGANIZA: {row['organizador']}")
+        
+        return "\n\n".join(parts)
     
-    text = f"Pregunta: {pregunta}\n\nRespuesta: {respuesta}"
-    
-    if categoria:
-        text = f"[{categoria}] {text}"
-    
-    return text
+    df['bedrock_text'] = df.apply(build_text, axis=1)
+    df['document_type'] = 'evento'
+    df['search_category'] = 'eventos_y_actividades'
+    return df
 
 
-def create_store_text(row):
-    """Create optimized text for store embeddings."""
-    parts = []
+def create_stores_bedrock_text(df):
+    """Crea texto para embeddings de tiendas."""
+    def build_text(row):
+        parts = []
+        if row.get('titulo'):
+            parts.append(f"🏪 TIENDA: {row['titulo']}")
+        if row.get('tipo'):
+            parts.append(f"📌 CATEGORÍA: {row['tipo']}")
+        if row.get('content'):
+            content_text = row['content'][:600]
+            if content_text:
+                parts.append(content_text)
+        
+        ubicacion_parts = []
+        if row.get('lugar'):
+            ubicacion_parts.append(row['lugar'])
+        if row.get('nivel'):
+            ubicacion_parts.append(f"Nivel {row['nivel']}")
+        if row.get('local'):
+            ubicacion_parts.append(f"Local {row['local']}")
+        if ubicacion_parts:
+            parts.append(f"📍 UBICACIÓN: {' - '.join(ubicacion_parts)}")
+        
+        if row.get('horario'):
+            parts.append(f"🕐 HORARIO: {row['horario']}")
+        
+        contacto_parts = []
+        telefono = str(row.get('telefono', ''))
+        if telefono and telefono not in ['nan', '', 'None']:
+            contacto_parts.append(f"📞 {telefono}")
+        if row.get('mail'):
+            contacto_parts.append(f"📧 {row['mail']}")
+        if contacto_parts:
+            parts.append(f"CONTACTO: {' | '.join(contacto_parts)}")
+        
+        if row.get('web') and row.get('web') not in ['nan', '', 'None']:
+            parts.append(f"🌐 WEB: {row['web']}")
+        
+        return " | ".join(parts)
     
-    if row.get('titulo'):
-        parts.append(f"Tienda: {row['titulo']}")
-    
-    if row.get('content'):
-        parts.append(f"{row['content'][:400]}")
-    
-    if row.get('lugar'):
-        parts.append(f"Ubicación: {row['lugar']}")
-    
-    if row.get('local'):
-        parts.append(f"Local: {row['local']}")
-    
-    if row.get('horario'):
-        parts.append(f"Horario: {row['horario']}")
-    
-    if row.get('tipo'):
-        parts.append(f"Tipo: {row['tipo']}")
-    
-    return " | ".join(parts)
+    df['bedrock_text'] = df.apply(build_text, axis=1)
+    df['document_type'] = 'tienda'
+    df['search_category'] = 'comercios_y_tiendas'
+    return df
 
 
-def create_restaurant_text(row):
-    """Create optimized text for restaurant embeddings."""
-    parts = []
+def create_restaurantes_bedrock_text(df):
+    """Crea texto para embeddings de restaurantes."""
+    def build_text(row):
+        parts = []
+        if row.get('titulo'):
+            parts.append(f"🍽️ RESTAURANTE: {row['titulo']}")
+        if row.get('tipo'):
+            parts.append(f"👨‍🍳 COCINA: {row['tipo']}")
+        if row.get('content'):
+            content_text = row['content'][:600]
+            if content_text:
+                parts.append(content_text)
+        
+        ubicacion_parts = []
+        if row.get('lugar'):
+            ubicacion_parts.append(row['lugar'])
+        if row.get('nivel'):
+            ubicacion_parts.append(f"Nivel {row['nivel']}")
+        if row.get('local'):
+            ubicacion_parts.append(f"Local {row['local']}")
+        if ubicacion_parts:
+            parts.append(f"📍 UBICACIÓN: {' - '.join(ubicacion_parts)}")
+        
+        if row.get('horario'):
+            parts.append(f"🕐 HORARIO: {row['horario']}")
+        
+        contacto_parts = []
+        telefono = str(row.get('telefono', ''))
+        if telefono and telefono not in ['nan', '', 'None', '0']:
+            contacto_parts.append(f"📞 {telefono}")
+        if row.get('mail'):
+            contacto_parts.append(f"📧 {row['mail']}")
+        if contacto_parts:
+            parts.append(f"CONTACTO: {' | '.join(contacto_parts)}")
+        
+        if row.get('web') and row.get('web') not in ['nan', '', 'None']:
+            parts.append(f"🌐 WEB: {row['web']}")
+        
+        return " | ".join(parts)
     
-    if row.get('titulo'):
-        parts.append(f"Restaurante: {row['titulo']}")
-    
-    if row.get('content'):
-        parts.append(f"{row['content'][:400]}")
-    
-    if row.get('lugar'):
-        parts.append(f"Ubicación: {row['lugar']}")
-    
-    if row.get('local'):
-        parts.append(f"Local: {row['local']}")
-    
-    if row.get('horario'):
-        parts.append(f"Horario: {row['horario']}")
-    
-    if row.get('tipo'):
-        parts.append(f"Tipo de cocina: {row['tipo']}")
-    
-    return " | ".join(parts)
-
-
-def generate_document_id(file_type, index, identifier):
-    """Generate unique document ID."""
-    clean_id = re.sub(r'[^a-zA-Z0-9]', '_', str(identifier)[:50])
-    return f"{file_type}_{index}_{clean_id}"
+    df['bedrock_text'] = df.apply(build_text, axis=1)
+    df['document_type'] = 'restaurante'
+    df['search_category'] = 'gastronomia'
+    return df
 
 
 def write_bedrock_kb_format(df, file_type, file_config, s3_bucket, output_s3_key, num_rows_per_file):
-    """
-    Write data in optimized format for Bedrock Knowledge Base.
-    Creates CSV files with text content and separate metadata JSON files.
-    """
-    
+    """Escribe datos en formato optimizado para Bedrock KB."""
     s3_client = boto3.client('s3')
-    
     num_rows = len(df)
     num_files = ceil(num_rows / num_rows_per_file)
-    
     total_rows = 0
+    output_format = file_config.get('format', 'csv')
+    
+    print(f"   📝 Creando {num_files} chunks...")
     
     for i in range(num_files):
         start_row = i * num_rows_per_file
         end_row = min((i + 1) * num_rows_per_file, num_rows)
-        
         df_chunk = df.iloc[start_row:end_row].copy()
         
-        # File naming
-        file_name = f"{file_type}_part_{i+1:03d}.csv"
-        full_s3_path = f"s3://{s3_bucket}/{output_s3_key}/{file_name}"
+        if output_format == 'jsonl':
+            file_name = f"{file_type}_chunk_{i+1:03d}.jsonl"
+            full_s3_key = f"{output_s3_key}/{file_name}"
+            
+            jsonl_content = []
+            for _, row in df_chunk.iterrows():
+                metadata = {
+                    "document_type": row['document_type'],
+                    "search_category": row['search_category']
+                }
+                
+                for field in file_config['metadata_fields']:
+                    if field in row:
+                        value = str(row[field])
+                        if value and value not in ['nan', '', 'None']:
+                            metadata[field] = value
+                
+                doc = {
+                    "document_id": row['document_id'],
+                    "content": row['bedrock_text'],
+                    "metadata": metadata
+                }
+                jsonl_content.append(json.dumps(doc, ensure_ascii=False))
+            
+            s3_client.put_object(
+                Bucket=s3_bucket,
+                Key=full_s3_key,
+                Body='\n'.join(jsonl_content).encode('utf-8'),
+                ContentType='application/jsonlines'
+            )
+            
+        else:
+            file_name = f"{file_type}_chunk_{i+1:03d}.csv"
+            full_s3_path = f"s3://{s3_bucket}/{output_s3_key}/{file_name}"
+            
+            output_columns = ['document_id', 'bedrock_text', 'document_type', 'search_category']
+            for field in file_config['metadata_fields']:
+                if field in df_chunk.columns:
+                    output_columns.append(field)
+            output_columns = [col for col in output_columns if col in df_chunk.columns]
+            
+            df_output = df_chunk[output_columns].copy()
+            wr.s3.to_csv(df_output, full_s3_path, index=False, encoding='utf-8')
         
-        # Prepare data for CSV (text content + metadata columns)
-        output_columns = ['document_id', 'bedrock_text', 'document_type', 'search_category']
-        
-        # Add metadata fields
-        for field in file_config['metadata_fields']:
-            if field in df_chunk.columns:
-                output_columns.append(field)
-        
-        df_output = df_chunk[output_columns].copy()
-        
-        # Write CSV to S3
-        wr.s3.to_csv(
-            df_output,
-            full_s3_path,
-            index=False,
-            encoding='utf-8'
-        )
-        
-        # Create enhanced metadata for Bedrock KB
-        metadata = {
+        metadata_doc = {
             "metadataAttributes": {
                 "document_type": file_type,
                 "search_category": df_chunk['search_category'].iloc[0],
@@ -353,20 +581,28 @@ def write_bedrock_kb_format(df, file_type, file_config, s3_bucket, output_s3_key
                 "document_count": len(df_chunk),
                 "data_source": file_config['filename'],
                 "processing_date": datetime.utcnow().isoformat(),
-                "version": "v1"
+                "version": "v2_optimized",
+                "format": output_format
             }
         }
         
-        # Write metadata JSON
         metadata_key = f"{output_s3_key}/{file_name}.metadata.json"
         s3_client.put_object(
             Bucket=s3_bucket,
             Key=metadata_key,
-            Body=json.dumps(metadata, ensure_ascii=False, indent=2),
+            Body=json.dumps(metadata_doc, ensure_ascii=False, indent=2),
             ContentType='application/json'
         )
         
         total_rows += len(df_chunk)
-        print(f"  ✓ Written: {file_name} ({len(df_chunk)} documents)")
+        print(f"      ✓ {file_name} ({len(df_chunk)} docs)")
     
     return total_rows
+
+
+def sanitize_text(text):
+    """Limpia texto para usar en IDs."""
+    text = str(text)
+    text = re.sub(r'[^a-zA-Z0-9]', '_', text)
+    text = re.sub(r'_+', '_', text)
+    return text.strip('_')

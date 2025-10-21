@@ -29,7 +29,7 @@ cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 
 
 cdk deploy ChatLambdaNodeStack --require-approval never
-cdk destroy ChatLambdaNodeStack
+cdk destroy ChatLambdaNodeStack --require-approval never
 ```
 
 ## UPDATE
