@@ -297,18 +297,15 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         )
 
         # PII Protection - Anonymize sensitive information
-        guardrail.add_pii_filter(
-            type=bedrock.pii_type.General.ADDRESS,
-            action=bedrock.GuardrailAction.ANONYMIZE,
-        )
-        guardrail.add_pii_filter(
-            type=bedrock.pii_type.General.EMAIL,
-            action=bedrock.GuardrailAction.ANONYMIZE,
-        )
-        guardrail.add_pii_filter(
-            type=bedrock.pii_type.General.PHONE,
-            action=bedrock.GuardrailAction.ANONYMIZE,
-        )
+        # Note: ADDRESS filter removed to allow displaying store/restaurant addresses
+        #guardrail.add_pii_filter(
+            #type=bedrock.pii_type.General.EMAIL,
+            #action=bedrock.GuardrailAction.ANONYMIZE,
+        #)
+        #guardrail.add_pii_filter(
+           # type=bedrock.pii_type.General.PHONE,
+           # action=bedrock.GuardrailAction.ANONYMIZE,
+        #)
 
         # Contextual grounding - Ensure responses are grounded in knowledge base
         guardrail.add_contextual_grounding_filter(
