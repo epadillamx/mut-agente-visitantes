@@ -12,7 +12,7 @@ app = App()
 env_aws_settings = Environment(account=os.environ['CDK_DEFAULT_ACCOUNT'], region=os.environ['CDK_DEFAULT_REGION'])
 
 # Choose environment to deploy; see cdk.json file. CLI: cdk deploy --context <<env-production>> 
-env_name = "env-virtual-assistant-dev01"
+env_name = "env-virtual-assistant-prod"
 env_context_params = app.node.try_get_context(env_name)
 
 # S3 Stack
