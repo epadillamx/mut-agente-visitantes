@@ -27,7 +27,9 @@ streamlit run app-chat-with-agent.py
 cdk destroy GenAiVirtualAssistantBedrockStack -require-approval never
 cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 
+cdk deploy ChatLambdaNodeStack --require-approval never
 
+cdk deploy GenAiVirtualAssistantEtlLambdaStack --require-approval never
 cdk deploy ChatLambdaNodeStack --require-approval never
 cdk destroy ChatLambdaNodeStack --require-approval never
 ```

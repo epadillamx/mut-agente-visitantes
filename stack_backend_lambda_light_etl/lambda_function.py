@@ -38,7 +38,7 @@ def lambda_handler(event, context):
     Versión 3.0 - Lee archivos vectoriales preparados
     """
     try:
-        s3_bucket = "raw-virtual-assistant-data-948270077717-us-east-1"
+        s3_bucket = "raw-virtual-assistant-data-529928147458-us-east-1"
         
         # Configuración actualizada para archivos vectoriales preparados
         csv_files = {
@@ -94,8 +94,7 @@ def lambda_handler(event, context):
             'restaurantes': 15   # ~79 restaurantes → ~6 archivos
         }
         
-        base_output_path = os.environ.get('KB_S3_PATH', 
-            'datasets/demo_kb/knowledge-base-ecommerce-s3-001/v1')
+        base_output_path = os.environ.get('KB_S3_ECOMM_PATH')
         
         results = {}
         stats = {

@@ -19,8 +19,8 @@ class ChatLambdaNodeStack(Stack):
         """
         
         # Default values for configuration (can be overridden via environment)
-        DEFAULT_AGENT_ID = "NGZWQTR8ID"
-        DEFAULT_AGENT_ALIAS_ID = "V2YO99YQEX"
+        DEFAULT_AGENT_ID = "DZFZKCOUAL"
+        DEFAULT_AGENT_ALIAS_ID = "U6M0BTUHIG"
         DEFAULT_TOKEN_WHATS = "EAARiF0M4rZBwBPFb4inzWTd3izfO8koHUTHvZAea8xWLOhWec33COWTmosXyYyUHmLoprWBnZCR1Rf2kiFKF8F4LrFenzB0ryLzyzYx8PTCeOUpi1IVdgkVgVfHoGGzDnIJvMM6nYoALpm5Jh24AlnXPyNfL4tgdSlGDkIoGm2bnkySlqI6gqC59bXbnwZDZD"
         DEFAULT_IPHONE_ID = "671787702683016"
         DEFAULT_VERIFY_TOKEN = "gASgcVFirbcJ735%$32"
