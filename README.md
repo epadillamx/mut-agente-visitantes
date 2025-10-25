@@ -20,7 +20,7 @@ python -m pip install -r requirements.txt
 
 ## Instalacion
 ```
-cdk bootstrap aws://948270077717/us-east-1
+cdk bootstrap aws://529928147458/us-east-1
 cd stack_frontend_vpc_ecs_streamlit/streamlit_apps
 streamlit run app-chat-with-agent.py
 
