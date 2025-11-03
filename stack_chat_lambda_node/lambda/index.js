@@ -18,19 +18,15 @@ exports.handler = async (event) => {
     const path = event.path || event.requestContext?.http?.path || '/';
 
     try {
-        console.log("httpMethod*" + httpMethod);
-        console.log("path*" + path);
+
         // GET /webhook - Verificación de webhook de WhatsApp
         if (httpMethod === 'GET' && path.includes('/webhook')) {
             return handleWebhookVerification(event);
         }
-
         // POST /webhook - Recibir mensajes de WhatsApp
 
         if (httpMethod === 'POST' && path.includes('/webhook')) {
-            console.log("************** POST /webhook **************");
-            console.log(event);
-            console.log("==================================");
+          
             return await handleWhatsAppMessage(event);
         }
 
@@ -131,60 +127,53 @@ async function handleWhatsAppMessage(event) {
 
         // Verificar que es una notificación de WhatsApp
         if (body.object === 'whatsapp_business_account') {
-            let from = '';
+            let processedMessageId = ''; // Mover fuera para controlar duplicados
+            let messageProcessed = false; // Flag para salir de los loops
 
             // Procesar todos los mensajes
             for (const entry of body.entry || []) {
+                if (messageProcessed) break; // Salir si ya procesamos un mensaje
+                
                 for (const change of entry.changes || []) {
+                    if (messageProcessed) break; // Salir si ya procesamos un mensaje
+                    
                     if (change.value && change.value.messages) {
                         for (const message of change.value.messages) {
-                            from = message.from;
+                            const from = message.from;
                             const messageType = message.type;
+                            const messageId = message.id;
+
+                            console.log(`📥 xxxxxxxxx xxxxx Nuevo mensaje recibido: ID=${messageId}, From=${from}, Type=${messageType}`);
+
+                            // Verificar si ya procesamos este mensaje
+                            if (processedMessageId === messageId) {
+                                console.log(`⚠️ Mensaje duplicado detectado: ${messageId}`);
+                                messageProcessed = true;
+                                break;
+                            }
 
                             if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
-                                const messageId = message.id;
-                                console.log(`XXXXXXXXXXXXXXXXXXXXXXXXXXXXX`);
-                                console.log(`messageBody: ${messageBody}`);
-                                console.log(`messageId: ${messageId}`);
+                                console.log(`📩 Procesando mensaje ${messageId} de ${from}`);
 
                                 try {
-
-
+                                    // Marcar mensaje como procesado ANTES de procesarlo
+                                    processedMessageId = messageId;
+                                    
+                                    // Marcar como leído en WhatsApp
                                     await MarkStatusMessage(messageId);
-
-
-                                    //const messagePromise = accumulateMessage(from, messageBody);
-
+                                    
+                                    // Llamar al agente y enviar respuesta
+                                    console.log(`📥 xxxx AGENTE XXXXXXXXX ID=${messageId}, From=${from}, Type=${messageType}`);
 
                                     const agentResponse = await getAgente(from, messageBody, messageId);
                                     await sendMessage(from, agentResponse);
-                                    /*if (messagePromise) {
-                                        // Procesar mensajes acumulados (async, no esperar)
-                                        messagePromise
-                                            .then(async (message_full) => {
-                                                if (message_full != null && message_full.trim() !== '') {
-     
-                                                    console.log(`📝 Mensaje completo de ${from}:`, message_full);
-
-                                                    // Llamar al agente de Bedrock
-                                                    const agentResponse = await getAgente(from, message_full, messageId);
-
-                                                    console.log("******D1");
-                                                    console.log(agentResponse);
-
-                                                    console.log("*****D08");
-
-                                                    // Enviar respuesta si no es mensaje duplicado
-                                                    await sendMessage(from, agentResponse);
-                                                }
-                                            })
-                                            .catch(error => {
-                                                console.error('❌ Error en acumulación:', error);
-                                                // Enviar mensaje de error al usuario
-                                                sendMessage(from, 'Lo siento, hubo un error procesando tu mensaje. Por favor, intenta de nuevo.');
-                                            });
-                                    }*/
+                                    
+                                    console.log(`✅ Mensaje ${messageId} procesado correctamente`);
+                                    
+                                    // Marcar que procesamos un mensaje y salir
+                                    messageProcessed = true;
+                                    break;
 
                                 } catch (processError) {
                                     console.error('❌ Error procesando mensaje:', processError);
@@ -192,12 +181,16 @@ async function handleWhatsAppMessage(event) {
                                     if (from) {
                                         await sendMessage(from, '¿Puedes repetirme tu pregunta, por favor?');
                                     }
+                                    // Marcar como procesado incluso si falló
+                                    messageProcessed = true;
+                                    break;
                                 }
                             } else {
                                 console.log(`⚠️ Tipo de mensaje no soportado: ${messageType}`);
                                 if (from && messageType !== 'reaction') {
                                     await sendMessage(from, '¿Puedes repetirme tu pregunta?');
                                 }
+                                // No marcar como procesado, continuar con siguientes mensajes
                             }
                         }
                     }
@@ -205,9 +198,12 @@ async function handleWhatsAppMessage(event) {
             }
 
             // Responder inmediatamente a WhatsApp con 200 OK
+            console.log(`📤 Respondiendo a WhatsApp con 200 OK`);
             return createResponse(200, {
                 status: 'ok',
-                message: 'Mensaje recibido'
+                message: 'Mensaje recibido',
+                processed: messageProcessed,
+                messageId: processedMessageId || 'none'
             });
 
         } else {
@@ -291,10 +287,10 @@ async function handleConversationHistory(event) {
         console.log(`📚 Obteniendo historial para userId: ${userId}, días: ${days}, límite: ${limit}`);
 
         const conversationService = new ConversationService();
-        
+
         // Obtener conversaciones de múltiples días
         const conversations = await conversationService.getUserConversations(userId, days, limit);
-        
+
         // Organizar conversaciones por fecha
         const conversationsByDate = {};
         conversations.forEach(conv => {
@@ -355,10 +351,10 @@ async function handleUserStats(event) {
         console.log(`📊 Obteniendo estadísticas para userId: ${userId}`);
 
         const conversationService = new ConversationService();
-        
+
         // Obtener estadísticas del usuario
         const stats = await conversationService.getUserStats(userId);
-        
+
         // Obtener información de sesión activa
         const activeSession = await conversationService.getActiveSession(userId);
 

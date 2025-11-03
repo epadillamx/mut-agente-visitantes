@@ -23,7 +23,7 @@ class ChatLambdaNodeStack(Stack):
         
         # Default values for configuration (can be overridden via environment)
         DEFAULT_AGENT_ID = "UU1INWJQHC"
-        DEFAULT_AGENT_ALIAS_ID = "EKHKLPDDZ5"
+        DEFAULT_AGENT_ALIAS_ID = "Z0BIPPCMRF"
         DEFAULT_TOKEN_WHATS = "EAARiF0M4rZBwBPFb4inzWTd3izfO8koHUTHvZAea8xWLOhWec33COWTmosXyYyUHmLoprWBnZCR1Rf2kiFKF8F4LrFenzB0ryLzyzYx8PTCeOUpi1IVdgkVgVfHoGGzDnIJvMM6nYoALpm5Jh24AlnXPyNfL4tgdSlGDkIoGm2bnkySlqI6gqC59bXbnwZDZD"
         DEFAULT_IPHONE_ID = "671787702683016"
         DEFAULT_VERIFY_TOKEN = "gASgcVFirbcJ735%$32"
@@ -59,7 +59,7 @@ class ChatLambdaNodeStack(Stack):
         )
 
         # Add Bedrock permissions to Lambda
-        self._configure_lambda_permissions(agent_id, agent_alias_id)
+        self._configure_lambda_permissions(DEFAULT_AGENT_ID, DEFAULT_AGENT_ALIAS_ID)
 
         # Grant DynamoDB permissions if tables are provided
         if conversations_table:
@@ -164,8 +164,8 @@ class ChatLambdaNodeStack(Stack):
         """
 
         # HARDCODED ARNs for current agent
-        agent_arn = "arn:aws:bedrock:us-east-1:529928147458:agent/UU1INWJQHC"
-        agent_alias_arn = "arn:aws:bedrock:us-east-1:529928147458:agent-alias/UU1INWJQHC/EKHKLPDDZ5"
+        agent_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}"
+        agent_alias_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/{agent_alias_id}"
 
         # 1. Grant Bedrock Agent RUNTIME permissions (for actual invocation)
         # This is the CRITICAL permission for invoking the agent
