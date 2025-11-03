@@ -1,13 +1,17 @@
 const { BedrockAgentRuntimeClient, InvokeAgentCommand } = require("@aws-sdk/client-bedrock-agent-runtime");
+const { ConversationService } = require('./conversationService');
+const util = require('util');
 
 /**
- * Invoca al agente de Bedrock con la pregunta del usuario
+ * Invoca al agente de Bedrock con la pregunta del usuario y guarda la conversación
  * @param {string} userId - ID del usuario (número de teléfono)
  * @param {string} question - Pregunta del usuario
  * @param {string} messageId - ID del mensaje de WhatsApp
  * @returns {Promise<string>} - Respuesta del agente o '#REPLICA#' si es mensaje duplicado
  */
 async function getAgente(userId, question, messageId) {
+    const conversationService = new ConversationService();
+    
     try {
         // Get Agent IDs directly from environment variables
         const AGENT_ID = process.env.AGENT_ID || '';
@@ -105,19 +109,33 @@ async function getAgente(userId, question, messageId) {
         const finalResponse = agentResponse.trim();
         console.log(`🎯 Retornando respuesta final (${finalResponse.length} caracteres)`);
         
+        // 💾 NUEVO: Guardar la conversación
+        try {
+            await conversationService.saveMessage(userId, question, finalResponse, messageId);
+        } catch (saveError) {
+            console.error('⚠️ Error guardando conversación (no crítico):', saveError);
+            // No interrumpir el flujo si falla el guardado
+        }
+        
         return finalResponse;
 
     } catch (error) {
+        // Log detailed error including non-enumerable properties to help debug AccessDenied issues
         console.error('❌ Error invocando Bedrock Agent:', {
             name: error.name,
             message: error.message,
             stack: error.stack
         });
+        try {
+            console.error('❌ Full error (util.inspect):', util.inspect(error, { showHidden: true, depth: 6 }));
+        } catch (inspectErr) {
+            console.error('⚠️ Error inspecting thrown error:', inspectErr);
+        }
 
         // Handle specific error types
         if (error.name === 'AccessDeniedException') {
             console.error('🔒 Error de permisos: El Lambda no tiene acceso al agente de Bedrock');
-            return 'Lo siento, hay un problema de configuración. Por favor, contacta al soporte técnico.';
+            return 'Lo siento, hay un problema de configuración. Por favor, contacta al soporte técnico.' + error.message;
         } else if (error.name === 'ResourceNotFoundException') {
             console.error('🔍 Error: Agente o Alias no encontrado');
             return 'Lo siento, el servicio no está disponible en este momento. Por favor, intenta más tarde.';
@@ -137,7 +155,16 @@ async function getAgente(userId, question, messageId) {
 
         // Error genérico
         console.error('❓ Error no categorizado:', error.name || 'Unknown');
-        return 'Lo siento, hubo un error procesando tu pregunta. Por favor, intenta de nuevo.';
+        const errorResponse = 'Lo siento, hubo un error procesando tu pregunta. Por favor, intenta de nuevo.';
+        
+        // En caso de error, también intentar guardar para análisis
+        try {
+            await conversationService.saveMessage(userId, question, `ERROR: ${error.message}`, messageId);
+        } catch (saveError) {
+            console.error('⚠️ Error guardando conversación de error:', saveError);
+        }
+        
+        return errorResponse;
     }
 }
 

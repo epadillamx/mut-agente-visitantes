@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws bedrock-agent list-agent-aliases:*)",
+      "Bash(aws cloudformation describe-stacks:*)",
+      "Bash(aws lambda get-function-configuration:*)",
+      "Bash(aws lambda list-functions:*)",
+      "Bash(aws iam list-role-policies:*)",
+      "Bash(aws iam get-role-policy:*)",
+      "Bash(python:*)",
+      "Bash(cdk synth:*)",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(cdk deploy:*)",
+      "Bash(curl:*)",
+      "Bash(aws logs tail:*)",
+      "Bash(aws logs describe-log-streams:*)",
+      "Bash(aws bedrock-agent-runtime invoke-agent:*)",
+      "Bash(cat:*)",
+      "Bash(aws bedrock-agent get-agent:*)",
+      "Bash(aws iam get-role:*)",
+      "Bash(aws bedrock-agent get-agent-alias:*)",
+      "Bash(aws bedrock-agent list-agent-knowledge-bases:*)",
+      "Bash(aws bedrock-agent prepare-agent:*)",
+      "Bash(aws bedrock-agent list-agent-versions:*)",
+      "Bash(aws bedrock-agent:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

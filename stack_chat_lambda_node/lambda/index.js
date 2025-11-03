@@ -1,6 +1,7 @@
 const { getAgente } = require('./getAgente');
 const { sendMessage, MarkStatusMessage } = require('./send.message');
 const { accumulateMessage } = require('./acumulacion');
+const { ConversationService } = require('./conversationService');
 
 /**
  * Lambda Handler - Procesa peticiones de API Gateway
@@ -8,6 +9,7 @@ const { accumulateMessage } = require('./acumulacion');
  * - GET /webhook - Verificación de webhook de WhatsApp
  * - POST /webhook - Recibir mensajes de WhatsApp
  * - POST /chat - Endpoint directo para pruebas
+ * - GET /history - Obtener historial de conversaciones
  */
 exports.handler = async (event) => {
     //console.log('📥 Event received:', JSON.stringify(event, null, 2));
@@ -27,12 +29,24 @@ exports.handler = async (event) => {
 
         if (httpMethod === 'POST' && path.includes('/webhook')) {
             console.log("************** POST /webhook **************");
+            console.log(event);
+            console.log("==================================");
             return await handleWhatsAppMessage(event);
         }
 
         // POST /chat - Endpoint directo para pruebas
         if (httpMethod === 'POST' && path.includes('/chat')) {
             return await handleDirectChat(event);
+        }
+
+        // GET /history - Obtener historial de conversaciones
+        if (httpMethod === 'GET' && path.includes('/history')) {
+            return await handleConversationHistory(event);
+        }
+
+        // GET /stats - Obtener estadísticas de usuario
+        if (httpMethod === 'GET' && path.includes('/stats')) {
+            return await handleUserStats(event);
         }
 
         // GET / - Health check
@@ -44,7 +58,9 @@ exports.handler = async (event) => {
                 endpoints: {
                     'GET /webhook': 'WhatsApp webhook verification',
                     'POST /webhook': 'WhatsApp message receiver',
-                    'POST /chat': 'Direct chat endpoint for testing'
+                    'POST /chat': 'Direct chat endpoint for testing',
+                    'GET /history': 'Get conversation history (requires userId param)',
+                    'GET /stats': 'Get user conversation statistics (requires userId param)'
                 },
                 timestamp: new Date().toISOString()
             });
@@ -128,7 +144,7 @@ async function handleWhatsAppMessage(event) {
                             if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;
-
+                                console.log(`XXXXXXXXXXXXXXXXXXXXXXXXXXXXX`);
                                 console.log(`messageBody: ${messageBody}`);
                                 console.log(`messageId: ${messageId}`);
 
@@ -248,6 +264,117 @@ async function handleDirectChat(event) {
         console.error('❌ Error en /chat:', error);
         return createResponse(500, {
             error: 'Error interno del servidor',
+            details: error.message
+        });
+    }
+}
+
+/**
+ * Maneja solicitudes de historial de conversaciones
+ * GET /history?userId=1234567890&days=7&limit=100
+ */
+async function handleConversationHistory(event) {
+    try {
+        const queryParams = event.queryStringParameters || {};
+        const userId = queryParams.userId;
+        const days = parseInt(queryParams.days) || 7;
+        const limit = parseInt(queryParams.limit) || 100;
+
+        if (!userId) {
+            return createResponse(400, {
+                error: 'userId is required',
+                message: 'Debes proporcionar un userId en los query parameters',
+                example: '/history?userId=1234567890&days=7&limit=100'
+            });
+        }
+
+        console.log(`📚 Obteniendo historial para userId: ${userId}, días: ${days}, límite: ${limit}`);
+
+        const conversationService = new ConversationService();
+        
+        // Obtener conversaciones de múltiples días
+        const conversations = await conversationService.getUserConversations(userId, days, limit);
+        
+        // Organizar conversaciones por fecha
+        const conversationsByDate = {};
+        conversations.forEach(conv => {
+            const date = conv.conversation_id.split('#')[1]; // Extraer fecha del conversation_id
+            if (!conversationsByDate[date]) {
+                conversationsByDate[date] = [];
+            }
+            conversationsByDate[date].push({
+                timestamp: conv.timestamp,
+                created_at: conv.created_at,
+                user_message: conv.user_message,
+                agent_response: conv.agent_response,
+                message_id: conv.message_id
+            });
+        });
+
+        // Ordenar fechas de más reciente a más antigua
+        const sortedDates = Object.keys(conversationsByDate).sort().reverse();
+
+        return createResponse(200, {
+            success: true,
+            userId: userId,
+            totalMessages: conversations.length,
+            totalDays: sortedDates.length,
+            filters: { days, limit },
+            conversations: conversationsByDate,
+            dates: sortedDates,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo historial:', error);
+        return createResponse(500, {
+            error: 'Internal server error',
+            message: 'Error obteniendo el historial de conversaciones',
+            details: error.message
+        });
+    }
+}
+
+/**
+ * Maneja solicitudes de estadísticas de usuario
+ * GET /stats?userId=1234567890
+ */
+async function handleUserStats(event) {
+    try {
+        const queryParams = event.queryStringParameters || {};
+        const userId = queryParams.userId;
+
+        if (!userId) {
+            return createResponse(400, {
+                error: 'userId is required',
+                message: 'Debes proporcionar un userId en los query parameters',
+                example: '/stats?userId=1234567890'
+            });
+        }
+
+        console.log(`📊 Obteniendo estadísticas para userId: ${userId}`);
+
+        const conversationService = new ConversationService();
+        
+        // Obtener estadísticas del usuario
+        const stats = await conversationService.getUserStats(userId);
+        
+        // Obtener información de sesión activa
+        const activeSession = await conversationService.getActiveSession(userId);
+
+        return createResponse(200, {
+            success: true,
+            userId: userId,
+            statistics: stats,
+            activeSession: activeSession,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo estadísticas:', error);
+        return createResponse(500, {
+            error: 'Internal server error',
+            message: 'Error obteniendo las estadísticas del usuario',
             details: error.message
         });
     }

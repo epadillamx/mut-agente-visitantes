@@ -614,8 +614,6 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             user_input_enabled=True,
             code_interpreter_enabled=False,
             should_prepare_agent=True,
-            # NOTE: Cannot pass L1 CfnKnowledgeBase to L2 Agent constructor
-            # Knowledge base association will be created via custom resource below
             guardrail=guardrail
         )
 
@@ -674,8 +672,8 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             self,
             'VirtualAssistantAgentAlias',
             agent=agent,
-            alias_name='virtual-assistant-mut-v2',
-            description='Alias del agente para el asistente virtual de MUT - Mercado Urbano Tobalaba (versión 2)'
+            alias_name='virtual-assistant',
+            description='Alias del agente para el asistente virtual de MUT - Mercado Urbano Tobalaba'
         )
 
         return agent_alias
