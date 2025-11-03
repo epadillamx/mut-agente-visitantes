@@ -1,0 +1,1 @@
+# Stack para almacenamiento de conversaciones DynamoDB

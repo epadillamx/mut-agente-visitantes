@@ -278,7 +278,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                         "bedrock:ListFoundationModels"
                     ],
                     resources=[
-                        f"arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0",
+                        f"arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0",
                         f"arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0"
                     ]
                 )
