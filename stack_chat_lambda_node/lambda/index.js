@@ -143,7 +143,7 @@ async function handleWhatsAppMessage(event) {
                             const messageType = message.type;
                             const messageId = message.id;
 
-                            console.log(`📥 xxxxxxxxx xxxxx Nuevo mensaje recibido: ID=${messageId}, From=${from}, Type=${messageType}`);
+                            
 
                             // Verificar si ya procesamos este mensaje
                             if (processedMessageId === messageId) {
@@ -164,13 +164,15 @@ async function handleWhatsAppMessage(event) {
                                     await MarkStatusMessage(messageId);
                                     
                                     // Llamar al agente y enviar respuesta
-                                    console.log(`📥 xxxx AGENTE XXXXXXXXX ID=${messageId}, From=${from}, Type=${messageType}`);
+                                   
 
                                     const agentResponse = await getAgente(from, messageBody, messageId);
-                                    await sendMessage(from, agentResponse);
-                                    
-                                    console.log(`✅ Mensaje ${messageId} procesado correctamente`);
-                                    
+                                    if (agentResponse === '#REPLICA#') {
+                                        console.log(`⚠️ Respuesta duplicada del agente para el mensaje ${messageId}`);
+                                    } else {
+                                        await sendMessage(from, agentResponse);
+                                    }
+
                                     // Marcar que procesamos un mensaje y salir
                                     messageProcessed = true;
                                     break;

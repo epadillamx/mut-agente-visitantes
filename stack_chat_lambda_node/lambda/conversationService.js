@@ -226,6 +226,23 @@ class ConversationService {
             return { totalMessages: 0, days: 0, avgMessagesPerDay: 0 };
         }
     }
+    async isDuplicateMessage(messageId) {
+        try {
+            const result = await this.dynamoClient.send(new QueryCommand({
+                TableName: this.conversationsTable,
+                IndexName: 'message-id-index',
+                KeyConditionExpression: 'message_id = :messageId',
+                ExpressionAttributeValues: {
+                    ':messageId': messageId
+                },
+                Limit: 1
+            }));
+            return result.Count > 0;
+        } catch (error) {
+            console.error('❌ Error verificando mensaje duplicado:', error);
+            return false;
+        }
+    }
 }
 
 module.exports = { ConversationService };

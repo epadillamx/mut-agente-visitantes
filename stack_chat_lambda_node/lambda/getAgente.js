@@ -27,6 +27,12 @@ async function getAgente(userId, question, messageId) {
             console.log('⚠️ Pregunta vacía, ignorando...');
             return '#REPLICA#';
         }
+        // validar que idmensaje en dynamo no exista
+        const isDuplicate = await conversationService.isDuplicateMessage(messageId);
+        if (isDuplicate) {
+            console.log(`⚠️ Mensaje duplicado detectado en DynamoDB: ${messageId}`);
+            return '#REPLICA#';
+        }
 
         // Create Bedrock Agent Runtime client
         const client = new BedrockAgentRuntimeClient({ region: REGION });
@@ -135,7 +141,7 @@ async function getAgente(userId, question, messageId) {
         // Handle specific error types
         if (error.name === 'AccessDeniedException') {
             console.error('🔒 Error de permisos: El Lambda no tiene acceso al agente de Bedrock');
-            return 'Lo siento, hay un problema de configuración. Por favor, contacta al soporte técnico.' + error.message;
+            return 'Lo siento, hay un problema de configuración. Por favor, contacta al soporte técnico.';
         } else if (error.name === 'ResourceNotFoundException') {
             console.error('🔍 Error: Agente o Alias no encontrado');
             return 'Lo siento, el servicio no está disponible en este momento. Por favor, intenta más tarde.';
