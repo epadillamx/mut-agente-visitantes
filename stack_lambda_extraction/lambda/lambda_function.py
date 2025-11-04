@@ -35,6 +35,10 @@ def lambda_handler(event, context):
     }
     
     try:
+        # 0. Limpiar carpeta datasets (primera ejecución)
+        print("\n🗑️  Limpiando carpeta datasets...")
+        eliminar_carpeta_datasets()
+        
         # 1. Extraer Eventos
         print("\n📅 Extrayendo eventos...")
         eventos_df = extraer_eventos()
@@ -339,6 +343,59 @@ def limpiar_texto(texto):
     texto = re.sub(r'<[^>]+>', '', texto)
     
     return texto.strip()
+
+
+def eliminar_carpeta_datasets():
+    """
+    Elimina todos los objetos dentro de la carpeta 'datasets/' en S3
+    Esta función se ejecuta al inicio de cada extracción para limpiar datos antiguos
+    """
+    try:
+        prefijo_datasets = 'datasets/'
+        
+        print(f"   📁 Buscando objetos en s3://{S3_BUCKET_NAME}/{prefijo_datasets}")
+        
+        # Listar todos los objetos con el prefijo 'datasets/'
+        paginator = s3_client.get_paginator('list_objects_v2')
+        pages = paginator.paginate(Bucket=S3_BUCKET_NAME, Prefix=prefijo_datasets)
+        
+        objetos_eliminados = 0
+        total_size_bytes = 0
+        
+        for page in pages:
+            if 'Contents' not in page:
+                print(f"   ✓ No se encontraron objetos en {prefijo_datasets}")
+                return
+            
+            # Preparar lista de objetos a eliminar
+            objects_to_delete = []
+            for obj in page['Contents']:
+                objects_to_delete.append({'Key': obj['Key']})
+                total_size_bytes += obj['Size']
+                print(f"      - Marcado para eliminar: {obj['Key']} ({obj['Size']} bytes)")
+            
+            # Eliminar objetos en batch (máximo 1000 por llamada)
+            if objects_to_delete:
+                response = s3_client.delete_objects(
+                    Bucket=S3_BUCKET_NAME,
+                    Delete={'Objects': objects_to_delete}
+                )
+                
+                objetos_eliminados += len(objects_to_delete)
+                
+                if 'Errors' in response and response['Errors']:
+                    for error in response['Errors']:
+                        print(f"      ⚠️  Error eliminando {error['Key']}: {error['Message']}")
+        
+        size_mb = total_size_bytes / (1024 * 1024)
+        print(f"   ✓ Carpeta datasets/ limpiada exitosamente")
+        print(f"   📊 Objetos eliminados: {objetos_eliminados}")
+        print(f"   📊 Espacio liberado: {size_mb:.2f} MB")
+        
+    except Exception as e:
+        print(f"   ⚠️  Error al eliminar carpeta datasets/: {str(e)}")
+        print(f"   ℹ️  Continuando con el proceso...")
+        # No lanzamos excepción para que el proceso continúe aunque falle la limpieza
 
 
 def preparar_datos_vectoriales(eventos_df, tiendas_df, restaurantes_df):

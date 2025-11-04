@@ -255,27 +255,55 @@ def esperar_completacion_job(data_source_id, job_id, timeout=600, check_interval
 
 
 def listar_archivos_vectoriales():
-    """Lista archivos vectoriales en S3"""
+    """
+    Lista archivos vectoriales en S3 validando las tres carpetas:
+    - eventos/
+    - restaurantes/
+    - stores/
+    Cada carpeta debe contener archivos .jsonl
+    """
     archivos = []
+    carpetas_requeridas = ['eventos', 'restaurantes', 'stores']
     
     try:
-        response = s3_client.list_objects_v2(
-            Bucket=S3_BUCKET_NAME,
-            Prefix=S3_VECTORIAL_PREFIX
-        )
+        print(f"   📂 Validando carpetas requeridas: {', '.join(carpetas_requeridas)}")
         
-        if 'Contents' in response:
-            for obj in response['Contents']:
-                if obj['Key'].endswith('.csv'):
-                    archivos.append({
-                        'key': obj['Key'],
-                        'size': obj['Size'],
-                        'last_modified': obj['LastModified'].isoformat()
-                    })
-                    print(f"   - {obj['Key']} ({obj['Size']} bytes)")
+        for carpeta in carpetas_requeridas:
+            # Construir el prefijo completo para cada carpeta
+            carpeta_prefix = f"{S3_VECTORIAL_PREFIX.rstrip('/')}/{carpeta}/"
+            
+            print(f"\n   📁 Verificando carpeta: {carpeta}/")
+            
+            response = s3_client.list_objects_v2(
+                Bucket=S3_BUCKET_NAME,
+                Prefix=carpeta_prefix
+            )
+            
+            archivos_carpeta = 0
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    # Solo contar archivos .jsonl, no las carpetas mismas
+                    if obj['Key'].endswith('.jsonl'):
+                        archivos.append({
+                            'key': obj['Key'],
+                            'carpeta': carpeta,
+                            'size': obj['Size'],
+                            'last_modified': obj['LastModified'].isoformat()
+                        })
+                        archivos_carpeta += 1
+                        print(f"      ✓ {obj['Key']} ({obj['Size']} bytes)")
+            
+            if archivos_carpeta == 0:
+                print(f"      ⚠️  No se encontraron archivos .jsonl en {carpeta}/")
+            else:
+                print(f"      ✅ {archivos_carpeta} archivo(s) .jsonl encontrado(s)")
+        
+        print(f"\n   📊 Total de archivos vectoriales: {len(archivos)}")
         
     except Exception as e:
-        print(f"   Error al listar archivos: {str(e)}")
+        print(f"   ❌ Error al listar archivos: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     return archivos
 
