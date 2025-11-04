@@ -10,7 +10,7 @@ import pandas as pd
 import unicodedata
 import re
 from datetime import datetime
-from io import StringIO
+from io import StringIO, BytesIO
 
 s3_client = boto3.client('s3')
 
@@ -284,7 +284,7 @@ def extraer_restaurantes():
                 
                 todos_restaurantes.append({
                     'titulo': item.get('title', {}).get('rendered', ''),
-                    'content': contenido.replace('<p>&#8230;', '').replace('<p>Restaurante&#8230;', ''),
+                    'content': contenido.replace('<p>&#8230;', '').replace('<p>Restaurante&#8230;', '').replace('&#038;', '').replace('<p>0&#8230;.', '').replace('<p>', '').replace('#ffffff', '').replace('</p>', ''),
                     'link': item.get('link', ''),
                     'rss': rss,
                     'horario': info.get('schedule', '') if info else '',
@@ -341,6 +341,7 @@ def limpiar_texto(texto):
     texto = texto.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ')
     texto = re.sub(r'\s+', ' ', texto)
     texto = re.sub(r'<[^>]+>', '', texto)
+    texto = unicodedata.normalize('NFC', texto)
     
     return texto.strip()
 
@@ -399,46 +400,147 @@ def eliminar_carpeta_datasets():
 
 
 def preparar_datos_vectoriales(eventos_df, tiendas_df, restaurantes_df):
-    """Prepara datos vectoriales y sube a S3 - Nombres constantes"""
+    """
+    Prepara datos vectoriales y sube a S3 - Nombres constantes
+    También procesa preguntas frecuentes si existen en S3 (cargadas manualmente)
+    """
+    
+    # Procesar preguntas frecuentes (cargadas manualmente)
+    print("   📋 Procesando preguntas frecuentes...")
+    try:
+        preguntas_key = f"{S3_RAW_PREFIX}preguntas.csv"
+        response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=preguntas_key)
+        
+        body_bytes = response['Body'].read()
+        preguntas_df = None
+        detected_encoding = None
+        for encoding_candidate in ('utf-8-sig', 'utf-8', 'latin-1', 'cp1252'):
+            try:
+                preguntas_df = pd.read_csv(BytesIO(body_bytes), sep=';', encoding=encoding_candidate)
+                detected_encoding = encoding_candidate
+                break
+            except UnicodeDecodeError:
+                continue
+        if preguntas_df is None:
+            raise UnicodeDecodeError("preguntas.csv", '', 0, "No fue posible decodificar archivo de preguntas")
+        preguntas_df.columns = [col.replace('\ufeff', '').strip() for col in preguntas_df.columns]
+        print(f"   ℹ️  Archivo preguntas decodificado como {detected_encoding}")
+        
+        # Renombrar columnas si es necesario
+        if len(preguntas_df.columns) == 3:
+            preguntas_df.columns = ['pregunta', 'respuesta', 'categoria_completa']
+        
+        # Limpiar textos
+        for col in ['pregunta', 'respuesta', 'categoria_completa']:
+            if col in preguntas_df.columns:
+                preguntas_df[col] = preguntas_df[col].apply(limpiar_texto)
+        
+        # Extraer categoría
+        preguntas_df['categoria_nombre'] = preguntas_df['categoria_completa'].str.replace(r'^\d+\s+', '', regex=True)
+        
+        # Crear texto embedding
+        preguntas_df['texto_embedding'] = preguntas_df.apply(crear_texto_embedding_pregunta, axis=1)
+        preguntas_df['document_type'] = 'pregunta_frecuente'
+        preguntas_df['search_category'] = 'faqs_y_ayuda'
+        
+        # Filtrar registros válidos
+        preguntas_vectorial = preguntas_df[preguntas_df['texto_embedding'].str.len() > 20]
+        
+        if not preguntas_vectorial.empty:
+            csv_buffer = BytesIO()
+            preguntas_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
+            key = f"{S3_VECTORIAL_PREFIX}preguntas_vectorial.csv"
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME, 
+                Key=key, 
+                Body=csv_buffer.getvalue(),
+                ContentType='text/csv; charset=utf-8'
+            )
+            print(f"   ✓ Preguntas vectoriales: s3://{S3_BUCKET_NAME}/{key} ({len(preguntas_vectorial)} registros)")
+        else:
+            print(f"   ⚠️  No hay preguntas válidas para procesar")
+            
+    except s3_client.exceptions.NoSuchKey:
+        print(f"   ℹ️  No se encontró archivo de preguntas en {S3_RAW_PREFIX}preguntas.csv")
+        print(f"   ℹ️  Las preguntas deben cargarse manualmente a S3")
+    except Exception as e:
+        print(f"   ⚠️  Error procesando preguntas: {str(e)}")
     
     # Procesar eventos
     if not eventos_df.empty:
+        print(f"   📅 Procesando {len(eventos_df)} eventos...")
         eventos_df['texto_embedding'] = eventos_df.apply(crear_texto_embedding_evento, axis=1)
         eventos_df['document_type'] = 'evento'
         eventos_df['search_category'] = 'eventos_y_actividades'
         eventos_vectorial = eventos_df[eventos_df['texto_embedding'].str.len() > 30]
         
-        csv_buffer = StringIO()
-        eventos_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8')
+        csv_buffer = BytesIO()
+        eventos_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
         key = f"{S3_VECTORIAL_PREFIX}eventos_vectorial.csv"
-        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=csv_buffer.getvalue())
-        print(f"   ✓ Eventos vectoriales: s3://{S3_BUCKET_NAME}/{key} (reemplazado)")
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME, 
+            Key=key, 
+            Body=csv_buffer.getvalue(),
+            ContentType='text/csv; charset=utf-8'
+        )
+        print(f"   ✓ Eventos vectoriales: s3://{S3_BUCKET_NAME}/{key} ({len(eventos_vectorial)} registros)")
     
     # Procesar tiendas
     if not tiendas_df.empty:
+        print(f"   🏪 Procesando {len(tiendas_df)} tiendas...")
         tiendas_df['texto_embedding'] = tiendas_df.apply(crear_texto_embedding_tienda, axis=1)
         tiendas_df['document_type'] = 'tienda'
         tiendas_df['search_category'] = 'comercios_y_tiendas'
         tiendas_vectorial = tiendas_df[tiendas_df['texto_embedding'].str.len() > 30]
         
-        csv_buffer = StringIO()
-        tiendas_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8')
+        csv_buffer = BytesIO()
+        tiendas_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
         key = f"{S3_VECTORIAL_PREFIX}stores_vectorial.csv"
-        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=csv_buffer.getvalue())
-        print(f"   ✓ Tiendas vectoriales: s3://{S3_BUCKET_NAME}/{key} (reemplazado)")
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME, 
+            Key=key, 
+            Body=csv_buffer.getvalue(),
+            ContentType='text/csv; charset=utf-8'
+        )
+        print(f"   ✓ Tiendas vectoriales: s3://{S3_BUCKET_NAME}/{key} ({len(tiendas_vectorial)} registros)")
     
     # Procesar restaurantes
     if not restaurantes_df.empty:
+        print(f"   🍽️  Procesando {len(restaurantes_df)} restaurantes...")
         restaurantes_df['texto_embedding'] = restaurantes_df.apply(crear_texto_embedding_restaurante, axis=1)
         restaurantes_df['document_type'] = 'restaurante'
         restaurantes_df['search_category'] = 'gastronomia'
         restaurantes_vectorial = restaurantes_df[restaurantes_df['texto_embedding'].str.len() > 30]
         
-        csv_buffer = StringIO()
-        restaurantes_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8')
+        csv_buffer = BytesIO()
+        restaurantes_vectorial.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
         key = f"{S3_VECTORIAL_PREFIX}restaurantes_vectorial.csv"
-        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body=csv_buffer.getvalue())
-        print(f"   ✓ Restaurantes vectoriales: s3://{S3_BUCKET_NAME}/{key} (reemplazado)")
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME, 
+            Key=key, 
+            Body=csv_buffer.getvalue(),
+            ContentType='text/csv; charset=utf-8'
+        )
+        print(f"   ✓ Restaurantes vectoriales: s3://{S3_BUCKET_NAME}/{key} ({len(restaurantes_vectorial)} registros)")
+
+
+def crear_texto_embedding_pregunta(row):
+    """Crea texto optimizado para embedding de preguntas frecuentes"""
+    partes = []
+    
+    # Categoría para contexto
+    if row.get('categoria_nombre'):
+        partes.append(f"CATEGORIA: {limpiar_texto(row['categoria_nombre'])}")
+    
+    # Pregunta
+    if row.get('pregunta'):
+        partes.append(f"PREGUNTA: {limpiar_texto(row['pregunta'])}")
+    
+    # Respuesta completa
+    if row.get('respuesta'):
+        partes.append(f"RESPUESTA: {limpiar_texto(row['respuesta'])}")
+    
+    return " | ".join(partes)
 
 
 def crear_texto_embedding_evento(row):
