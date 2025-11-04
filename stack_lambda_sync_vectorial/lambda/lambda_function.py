@@ -11,12 +11,14 @@ from datetime import datetime
 
 s3_client = boto3.client('s3')
 bedrock_agent_client = boto3.client('bedrock-agent')
+lambda_client = boto3.client('lambda')
 
 # Variables de entorno
 S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 S3_VECTORIAL_PREFIX = os.environ.get('S3_VECTORIAL_PREFIX', 'vectorial/')
 KNOWLEDGE_BASE_ID = os.environ['KNOWLEDGE_BASE_ID']
 AGENT_ID = os.environ['AGENT_ID']
+CHAT_LAMBDA_FUNCTION_NAME = os.environ.get('CHAT_LAMBDA_FUNCTION_NAME', '')
 
 def lambda_handler(event, context):
     """
@@ -83,13 +85,36 @@ def lambda_handler(event, context):
             )
             
             agent_status = prepare_response.get('agentStatus', 'UNKNOWN')
+            prepared_at_time = prepare_response.get('preparedAt', datetime.now().isoformat())
             print(f"   ✓ Agente preparado")
             print(f"   Status: {agent_status}")
+            print(f"   Prepared At: {prepared_at_time}")
             
             results['steps']['agent_preparation'] = {
                 'status': agent_status,
-                'prepared_at': datetime.now().isoformat()
+                'prepared_at': str(prepared_at_time)
             }
+            
+            # 4. Crear nuevo alias del agente
+            print(f"\n🏷️  Creando nuevo alias del agente...")
+            new_alias_id = crear_nuevo_alias(agent_status, prepared_at_time)
+            
+            if new_alias_id:
+                results['steps']['new_alias'] = {
+                    'alias_id': new_alias_id,
+                    'created_at': datetime.now().isoformat()
+                }
+                
+                # 5. Actualizar variable de entorno del Lambda Chat con el nuevo alias
+                print(f"\n📝 Actualizando Lambda Chat: {CHAT_LAMBDA_FUNCTION_NAME}")
+                actualizar_lambda_chat(new_alias_id)
+                
+                results['steps']['lambda_update'] = {
+                    'lambda_function_name': CHAT_LAMBDA_FUNCTION_NAME,
+                    'new_alias_id': new_alias_id,
+                    'updated_at': datetime.now().isoformat()
+                }
+                print(f"   ✓ Lambda Chat actualizado con nuevo alias: {new_alias_id}")
             
         except Exception as e:
             print(f"   ⚠️  Error al preparar agente: {str(e)}")
@@ -283,3 +308,91 @@ def obtener_data_source_ids():
         import traceback
         traceback.print_exc()
         return []
+
+
+def crear_nuevo_alias(agent_status, prepared_at_time):
+    """
+    Crea un nuevo alias del agente con un nombre único basado en timestamp
+    
+    Args:
+        agent_status: Estado del agente preparado
+        prepared_at_time: Timestamp de cuando se preparó el agente
+    
+    Returns:
+        ID del nuevo alias creado o None si falla
+    """
+    try:
+        # Generar nombre único para el alias
+        timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+        alias_name = f"sync-{timestamp}"
+        
+        print(f"   🏷️  Creando alias: {alias_name}")
+        
+        # Crear el alias
+        response = bedrock_agent_client.create_agent_alias(
+            agentId=AGENT_ID,
+            agentAliasName=alias_name,
+            description=f"Auto-generated alias after sync - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        alias_id = response['agentAlias']['agentAliasId']
+        alias_arn = response['agentAlias']['agentAliasArn']
+        
+        print(f"   ✓ Alias creado exitosamente")
+        print(f"   Alias ID: {alias_id}")
+        print(f"   Alias ARN: {alias_arn}")
+        print(f"   Alias Name: {alias_name}")
+        
+        return alias_id
+        
+    except Exception as e:
+        print(f"   ❌ Error al crear alias: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def actualizar_lambda_chat(new_alias_id):
+    """
+    Actualiza la variable de entorno AGENT_ALIAS_ID del Lambda Chat
+    
+    Args:
+        new_alias_id: ID del nuevo alias a configurar
+    """
+    try:
+        if not CHAT_LAMBDA_FUNCTION_NAME:
+            print(f"   ⚠️  CHAT_LAMBDA_FUNCTION_NAME no configurado, saltando actualización")
+            return
+            
+        print(f"   📝 Actualizando Lambda: {CHAT_LAMBDA_FUNCTION_NAME}")
+        print(f"   Nuevo AGENT_ALIAS_ID: {new_alias_id}")
+        
+        # Obtener configuración actual del Lambda
+        response = lambda_client.get_function_configuration(
+            FunctionName=CHAT_LAMBDA_FUNCTION_NAME
+        )
+        
+        # Obtener variables de entorno actuales
+        current_env = response.get('Environment', {}).get('Variables', {})
+        
+        # Actualizar AGENT_ALIAS_ID
+        current_env['AGENT_ALIAS_ID'] = new_alias_id
+        
+        # Actualizar la configuración del Lambda
+        update_response = lambda_client.update_function_configuration(
+            FunctionName=CHAT_LAMBDA_FUNCTION_NAME,
+            Environment={
+                'Variables': current_env
+            }
+        )
+        
+        print(f"   ✓ Lambda actualizado exitosamente")
+        print(f"   Lambda ARN: {update_response.get('FunctionArn')}")
+        print(f"   Última modificación: {update_response.get('LastModified')}")
+        
+    except Exception as e:
+        print(f"   ❌ Error al actualizar Lambda: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+

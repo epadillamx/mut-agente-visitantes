@@ -28,12 +28,7 @@ class ChatLambdaNodeStack(Stack):
         if not secret_arn:
             raise ValueError("secret_complete_arn must be provided in cdk.json context")
         
-        # Import Parameter Store value for AGENT_ALIAS_ID
-        agent_alias_id_param = ssm.StringParameter.from_string_parameter_name(
-            self,
-            "AgentAliasIdParam",
-            string_parameter_name="AGENT_ALIAS_ID"
-        )
+       
         
         # Import Secrets Manager secret for WhatsApp credentials
         whatsapp_secret = secretsmanager.Secret.from_secret_complete_arn(
@@ -49,7 +44,7 @@ class ChatLambdaNodeStack(Stack):
         environment_vars = {
             # Bedrock Agent configuration
             "AGENT_ID": DEFAULT_AGENT_ID,
-            "AGENT_ALIAS_ID": agent_alias_id_param.string_value,
+            "AGENT_ALIAS_ID": 'change',
             # WhatsApp credentials from Secrets Manager
             "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
             "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
@@ -76,16 +71,13 @@ class ChatLambdaNodeStack(Stack):
         )
 
         # Add Bedrock permissions to Lambda
-        self._configure_lambda_permissions(DEFAULT_AGENT_ID, agent_alias_id_param.string_value)
+        self._configure_lambda_permissions(DEFAULT_AGENT_ID)
 
         # Grant DynamoDB permissions if tables are provided
         if conversations_table:
             conversations_table.grant_read_write_data(self.lambda_fn)
         if sessions_table:
             sessions_table.grant_read_write_data(self.lambda_fn)
-
-        # Grant permissions to read from Parameter Store
-        agent_alias_id_param.grant_read(self.lambda_fn)
         
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
@@ -176,19 +168,19 @@ class ChatLambdaNodeStack(Stack):
             description="Direct Chat Test URL"
         )
 
-    def _configure_lambda_permissions(self, agent_id=None, agent_alias_id=None) -> None:
+    def _configure_lambda_permissions(self, agent_id=None) -> None:
         """
         Configures IAM permissions for the Lambda function to invoke Bedrock Agent.
         CRITICAL: AWS Bedrock requires BOTH permissions:
         - bedrock:InvokeAgent (control plane - for agent metadata)
         - bedrock-agent-runtime:InvokeAgent (data plane - for actual invocation)
         
-        HARDCODED PERMISSIONS for agent R7C1BNS64U and alias I6BK3OAQWB
+        Note: AGENT_ALIAS_ID is dynamic and updated by the sync Lambda, so we use wildcard (*)
         """
 
-        # HARDCODED ARNs for current agent
+        # ARNs for agent and all its aliases
         agent_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}"
-        agent_alias_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/{agent_alias_id}"
+        agent_alias_arn_wildcard = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/*"
 
         # 1. Grant Bedrock Agent RUNTIME permissions (for actual invocation)
         # This is the CRITICAL permission for invoking the agent
@@ -201,7 +193,7 @@ class ChatLambdaNodeStack(Stack):
                 ],
                 resources=[
                     agent_arn,
-                    agent_alias_arn
+                    agent_alias_arn_wildcard
                 ]
             )
         )
@@ -217,7 +209,7 @@ class ChatLambdaNodeStack(Stack):
                 ],
                 resources=[
                     agent_arn,
-                    agent_alias_arn
+                    agent_alias_arn_wildcard
                 ]
             )
         )
@@ -233,7 +225,7 @@ class ChatLambdaNodeStack(Stack):
                 ],
                 resources=[
                     agent_arn,
-                    agent_alias_arn
+                    agent_alias_arn_wildcard
                 ]
             )
         )

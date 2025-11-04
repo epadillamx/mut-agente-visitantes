@@ -18,7 +18,7 @@ class VectorialSyncLambdaStack(Stack):
     - Prepara el agente Bedrock con datos actualizados
     """
 
-    def __init__(self, scope: Construct, construct_id: str, input_metadata, input_s3_bucket_arn, kb_id, agent_id, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, input_metadata, input_s3_bucket_arn, kb_id, agent_id, chat_lambda_fn=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         """
@@ -38,7 +38,8 @@ class VectorialSyncLambdaStack(Stack):
                 "S3_BUCKET_NAME": f"raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}",
                 "S3_VECTORIAL_PREFIX": input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/'),
                 "KNOWLEDGE_BASE_ID": kb_id,
-                "AGENT_ID": agent_id
+                "AGENT_ID": agent_id,
+                "CHAT_LAMBDA_FUNCTION_NAME": chat_lambda_fn.function_name if chat_lambda_fn else ""
             }
         )
 
@@ -66,14 +67,35 @@ class VectorialSyncLambdaStack(Stack):
                     "bedrock:ListDataSources",  # Necesario para obtener Data Source ID
                     "bedrock:AssociateThirdPartyKnowledgeBase",  # Necesario para iniciar ingestion jobs
                     "bedrock:PrepareAgent",
-                    "bedrock:GetAgent"
+                    "bedrock:GetAgent",
+                    "bedrock:CreateAgentAlias",  # Necesario para crear nuevos alias
+                    "bedrock:UpdateAgentAlias",  # Por si necesita actualizar
+                    "bedrock:ListAgentAliases"   # Para listar aliases existentes
                 ],
                 resources=[
                     f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:knowledge-base/{kb_id}",
-                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}"
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}",
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/*"
                 ]
             )
         )
+
+        """
+        @ Lambda Update Permissions
+        """
+        # Permisos para actualizar la configuración del Lambda Chat
+        if chat_lambda_fn:
+            self.lambda_fn.add_to_role_policy(
+                iam.PolicyStatement(
+                    actions=[
+                        "lambda:UpdateFunctionConfiguration",
+                        "lambda:GetFunctionConfiguration"
+                    ],
+                    resources=[
+                        chat_lambda_fn.function_arn
+                    ]
+                )
+            )
 
         """
         @ CloudWatch Logs Permissions
