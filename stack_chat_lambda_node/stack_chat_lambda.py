@@ -6,6 +6,8 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_iam as iam,
+    aws_ssm as ssm,
+    aws_secretsmanager as secretsmanager,
 )
 from constructs import Construct
 import os
@@ -14,29 +16,44 @@ class ChatLambdaNodeStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, 
                  conversations_table=None, sessions_table=None,
-                 agent_id=None, agent_alias_id=None, **kwargs) -> None:
+                 agent_id=None, input_metadata=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         """
         @ Lambda function
         """
         
+        # Get secret ARN from context
+        secret_arn = input_metadata.get("secret_complete_arn") if input_metadata else None
+        if not secret_arn:
+            raise ValueError("secret_complete_arn must be provided in cdk.json context")
+        
+        # Import Parameter Store value for AGENT_ALIAS_ID
+        agent_alias_id_param = ssm.StringParameter.from_string_parameter_name(
+            self,
+            "AgentAliasIdParam",
+            string_parameter_name="AGENT_ALIAS_ID"
+        )
+        
+        # Import Secrets Manager secret for WhatsApp credentials
+        whatsapp_secret = secretsmanager.Secret.from_secret_complete_arn(
+            self,
+            "WhatsAppSecret",
+            secret_complete_arn=secret_arn
+        )
+        
         # Default values for configuration (can be overridden via environment)
-        DEFAULT_AGENT_ID = "MEL0HVUHUD"
-        DEFAULT_AGENT_ALIAS_ID = "5Z5OLHQDGI"
-        DEFAULT_TOKEN_WHATS = "EAARiF0M4rZBwBPFb4inzWTd3izfO8koHUTHvZAea8xWLOhWec33COWTmosXyYyUHmLoprWBnZCR1Rf2kiFKF8F4LrFenzB0ryLzyzYx8PTCeOUpi1IVdgkVgVfHoGGzDnIJvMM6nYoALpm5Jh24AlnXPyNfL4tgdSlGDkIoGm2bnkySlqI6gqC59bXbnwZDZD"
-        DEFAULT_IPHONE_ID = "671787702683016"
-        DEFAULT_VERIFY_TOKEN = "gASgcVFirbcJ735%$32"
+        DEFAULT_AGENT_ID = agent_id
 
         # Build environment variables
         environment_vars = {
             # Bedrock Agent configuration
             "AGENT_ID": DEFAULT_AGENT_ID,
-            "AGENT_ALIAS_ID": DEFAULT_AGENT_ALIAS_ID,
-            # WhatsApp credentials
-            "TOKEN_WHATS": DEFAULT_TOKEN_WHATS,
-            "IPHONE_ID_WHATS": DEFAULT_IPHONE_ID,
-            "VERIFY_TOKEN": DEFAULT_VERIFY_TOKEN
+            "AGENT_ALIAS_ID": agent_alias_id_param.string_value,
+            # WhatsApp credentials from Secrets Manager
+            "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
+            "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
+            "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap()
         }
 
         # Add DynamoDB table names if provided
@@ -59,13 +76,19 @@ class ChatLambdaNodeStack(Stack):
         )
 
         # Add Bedrock permissions to Lambda
-        self._configure_lambda_permissions(DEFAULT_AGENT_ID, DEFAULT_AGENT_ALIAS_ID)
+        self._configure_lambda_permissions(DEFAULT_AGENT_ID, agent_alias_id_param.string_value)
 
         # Grant DynamoDB permissions if tables are provided
         if conversations_table:
             conversations_table.grant_read_write_data(self.lambda_fn)
         if sessions_table:
             sessions_table.grant_read_write_data(self.lambda_fn)
+
+        # Grant permissions to read from Parameter Store
+        agent_alias_id_param.grant_read(self.lambda_fn)
+        
+        # Grant permissions to read from Secrets Manager
+        whatsapp_secret.grant_read(self.lambda_fn)
 
 
         """

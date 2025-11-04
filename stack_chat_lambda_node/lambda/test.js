@@ -1,7 +1,7 @@
 const { getAgente } = require('./getAgente');
 
 async function handleWebhookVerification() {
-    const datos = await getAgente("56933982544", "cuando es el evento de Pan Comido", "A0298891983w");
+    const datos = await getAgente("56933982544", "Que eventos en octubre hay ?", "A02");
     console.log("RE::", datos);
     process.exit(0);
 }

@@ -47,6 +47,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Configuration constants
+        self.input_metadata = input_metadata
         self.kb_config = self._get_knowledge_base_config()
         self.data_source_configs = self._get_data_source_configs()
         self.s3_bucket_arn = input_s3_bucket_arn
@@ -92,10 +93,10 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         return KnowledgeBaseConfig(
             name="VirtualAssistantKnowledgeBase",
             description="Knowledge base de MUT (Mercado Urbano Tobalaba): eventos, FAQs, tiendas, restaurantes y espacios de colaboración",
-            embedding_model_arn=f"arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+            embedding_model_arn=f"arn:aws:bedrock:{Aws.REGION}::foundation-model/amazon.titan-embed-text-v2:0",
             embedding_dimensions=1024,
-            pinecone_connection_string="https://agente-3memz7m.svc.aped-4627-b74a.pinecone.io",
-            pinecone_secret_arn="arn:aws:secretsmanager:us-east-1:529928147458:secret:pinecone/mut-kb-api-key-G0Ksk9",  # TODO: Actualizar con ARN real
+            pinecone_connection_string=self.input_metadata['pinecone_connection_string'],
+            pinecone_secret_arn=f"arn:aws:secretsmanager:{Aws.REGION}:{Aws.ACCOUNT_ID}:secret:pinecone/{self.input_metadata['pinecone_secret_arn']}",
             pinecone_namespace="mut-kb-prod"
         )
 
@@ -107,7 +108,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         - stores (shops)
         - restaurantes (restaurants)
         """
-        base_path = "datasets/prod_kb/knowledge-base-mut-s3-001/v1/"
+        base_path = self.input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/')
 
         return [
             DataSourceConfig(

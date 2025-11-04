@@ -59,12 +59,13 @@ chat_stack = ChatLambdaNodeStack(app,
                                  conversations_table=conversation_stack.conversations_table,
                                  sessions_table=conversation_stack.sessions_table,
                                  agent_id=bedrock_stack.agent_id,
-                                 agent_alias_id=bedrock_stack.agent_alias_id)
+                                 input_metadata=env_context_params)
 
 # Lambda for Vectorial Synchronization
 sync_stack = VectorialSyncLambdaStack(app,
                                       "VectorialSyncLambdaStack",
                                       env=env_aws_settings,
+                                      input_metadata=env_context_params,
                                       input_s3_bucket_arn=s3_stack.bucket.bucket_arn,
                                       kb_id=bedrock_stack.kb.attr_knowledge_base_id,
                                       agent_id=bedrock_stack.agent_id)

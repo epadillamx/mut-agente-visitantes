@@ -18,9 +18,10 @@
     "env-virtual-assistant-prod": {
       "virtual_assistant_data_bucket_arn":"",
       "s3_knowledge_base_prefixes":["datasets/prod_kb/knowledge-base-mut-s3-001/v1/"],
-      "ssm_secret_name": "prod/agente/appServerProdCredentials",
-      "ssm_app_server_username": "mut_visitantes_user",
-      "ssm_app_server_password": "x2s0Ch4nge.Me-N0w"
+      "pinecone_connection_string": "https://agente-3memz7m.svc.aped-4627-b74a.pinecone.io",
+      "pinecone_secret_arn": "mut-kb-api-key-G0Ksk9",
+      "bedrock-alias": "bedrock-alias",
+      "secret_complete_arn": "arn:aws:secretsmanager:us-east-1:529928147458:secret:main-nwFFrI"
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
