@@ -93,7 +93,7 @@ def lambda_handler(event, context):
                 'filename': get_latest_vectorial_file('preguntas_vectorial.csv'),
                 's3_key': None,  # Se llenará dinámicamente
                 'encoding': 'utf-8',
-                'separator': ';',  # ← CSV usa punto y coma
+                'separator': ',',  # ← CSV usa punto y coma
                 'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
                 'metadata_fields': ['pregunta', 'respuesta', 'categoria_nombre', 'categoria_completa'],
                 'id_field': 'pregunta',
