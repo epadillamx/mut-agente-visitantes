@@ -41,9 +41,25 @@ class GenAiVirtualAssistantEtlLambdaStack(Stack):
             timeout=Duration.seconds(600),
         )
 
-        # Add OS variable with S3 KB output path, to Lambda function
-        # - Note: determine if element 0 from 's3_knowledge_base_prefixes' should be hard-coded or not!
-        self.lambda_fn.add_environment(key="KB_S3_ECOMM_PATH", value=input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/'))
+        # Add OS variables with S3 paths, to Lambda function
+        # S3 bucket name (dynamic from input)
+        s3_bucket_name = input_s3_bucket_arn.split(':::')[-1]
+        
+        self.lambda_fn.add_environment(
+            key="S3_BUCKET_NAME", 
+            value=s3_bucket_name
+        )
+        
+        self.lambda_fn.add_environment(
+            key="S3_VECTORIAL_PREFIX", 
+            value="vectorial/"
+        )
+        
+        # KB output path
+        self.lambda_fn.add_environment(
+            key="KB_S3_ECOMM_PATH", 
+            value=input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/')
+        )
 
         """
         @ S3 Permissions

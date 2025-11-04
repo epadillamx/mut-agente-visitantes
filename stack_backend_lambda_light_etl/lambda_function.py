@@ -35,15 +35,51 @@ from datetime import datetime
 def lambda_handler(event, context):
     """
     Transforma CSVs optimizados a formato Bedrock KB con chunks vectoriales.
-    Versión 3.0 - Lee archivos vectoriales preparados
+    Versión 4.0 - Lectura dinámica desde variables de entorno
     """
     try:
-        s3_bucket = "raw-virtual-assistant-data-529928147458-us-east-1"
+        # Obtener configuración desde variables de entorno
+        s3_bucket = os.environ.get('S3_BUCKET_NAME')
+        s3_vectorial_prefix = os.environ.get('S3_VECTORIAL_PREFIX', 'vectorial/')
+        base_output_path = os.environ.get('KB_S3_ECOMM_PATH')
+        
+        if not s3_bucket:
+            raise ValueError("Variable de entorno S3_BUCKET_NAME no está configurada")
+        if not base_output_path:
+            raise ValueError("Variable de entorno KB_S3_ECOMM_PATH no está configurada")
+        
+        # Remover 'arn:aws:s3:::' si está presente (por si acaso)
+        if s3_bucket.startswith('arn:aws:s3:::'):
+            s3_bucket = s3_bucket.replace('arn:aws:s3:::', '')
+        
+        print(f"📦 Bucket S3: {s3_bucket}")
+        print(f"📂 Prefix Vectorial: {s3_vectorial_prefix}")
+        print(f"📤 Output Path: {base_output_path}")
+        
+        # Buscar archivos vectoriales más recientes en S3
+        s3_client = boto3.client('s3')
+        
+        def get_latest_vectorial_file(filename):
+            """
+            Obtiene el archivo vectorial con nombre fijo
+            Los archivos ahora tienen nombres constantes para reemplazarse
+            """
+            full_key = f"{s3_vectorial_prefix}{filename}"
+            
+            try:
+                # Verificar si el archivo existe
+                s3_client.head_object(Bucket=s3_bucket, Key=full_key)
+                return full_key
+            except:
+                print(f"   ⚠️  Archivo no encontrado: {full_key}")
+                return None
         
         # Configuración actualizada para archivos vectoriales preparados
+        # Ahora con nombres fijos (sin timestamp)
         csv_files = {
             'eventos': {
-                'filename': 'eventos_vectorial.csv',
+                'filename': get_latest_vectorial_file('eventos_vectorial.csv'),
+                's3_key': None,  # Se llenará dinámicamente
                 'encoding': 'utf-8',
                 'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
                 'metadata_fields': [
@@ -54,7 +90,8 @@ def lambda_handler(event, context):
                 'format': 'jsonl'
             },
             'preguntas': {
-                'filename': 'preguntas_vectorial.csv',
+                'filename': get_latest_vectorial_file('preguntas_vectorial.csv'),
+                's3_key': None,  # Se llenará dinámicamente
                 'encoding': 'utf-8',
                 'separator': ';',  # ← CSV usa punto y coma
                 'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
@@ -63,7 +100,8 @@ def lambda_handler(event, context):
                 'format': 'jsonl'
             },
             'stores': {
-                'filename': 'stores_vectorial.csv',
+                'filename': get_latest_vectorial_file('stores_vectorial.csv'),
+                's3_key': None,  # Se llenará dinámicamente
                 'encoding': 'utf-8',
                 'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
                 'metadata_fields': [
@@ -74,7 +112,8 @@ def lambda_handler(event, context):
                 'format': 'jsonl'
             },
             'restaurantes': {
-                'filename': 'restaurantes_vectorial.csv',
+                'filename': get_latest_vectorial_file('restaurantes_vectorial.csv'),
+                's3_key': None,  # Se llenará dinámicamente
                 'encoding': 'utf-8',
                 'text_fields': ['texto_embedding'],  # ← Campo ya optimizado
                 'metadata_fields': [
@@ -86,6 +125,17 @@ def lambda_handler(event, context):
             }
         }
         
+        # Verificar que se encontraron todos los archivos
+        missing_files = [k for k, v in csv_files.items() if v['filename'] is None]
+        if missing_files:
+            print(f"⚠️  Archivos vectoriales no encontrados para: {', '.join(missing_files)}")
+            # Continuar solo con los archivos encontrados
+            csv_files = {k: v for k, v in csv_files.items() if v['filename'] is not None}
+        
+        # Actualizar s3_key con la ruta completa
+        for key in csv_files:
+            csv_files[key]['s3_key'] = csv_files[key]['filename']
+        
         # Chunks optimizados para base vectorial
         num_rows_per_file = {
             'preguntas': 10,     # ~75 FAQs → ~8 archivos
@@ -93,8 +143,6 @@ def lambda_handler(event, context):
             'stores': 20,        # ~127 tiendas → ~7 archivos
             'restaurantes': 15   # ~79 restaurantes → ~6 archivos
         }
-        
-        base_output_path = os.environ.get('KB_S3_ECOMM_PATH')
         
         results = {}
         stats = {
@@ -111,14 +159,14 @@ def lambda_handler(event, context):
         
         # Procesar cada dataset
         for file_type, file_config in csv_files.items():
-            filename = file_config['filename']
+            s3_key = file_config['s3_key']
             encoding = file_config['encoding']
-            s3_path = f"s3://{s3_bucket}/{filename}"
+            s3_path = f"s3://{s3_bucket}/{s3_key}"
             output_s3_key = f"{base_output_path}/{file_type}"
             
             print(f"\n{'='*80}")
             print(f"📂 {file_type.upper()}")
-            print(f"   Input:  {filename}")
+            print(f"   Input:  {s3_key}")
             print(f"   Output: {output_s3_key}")
             print(f"   Formato: {file_config['format'].upper()}")
             print(f"   Chunk: {num_rows_per_file.get(file_type)} docs/archivo")

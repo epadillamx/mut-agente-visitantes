@@ -74,9 +74,10 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         """
         agent_alias = self._create_agent_alias(agent)
 
-        # Expose agent and alias IDs as properties for other stacks
+        # Expose agent, alias and KB as properties for other stacks
         self.agent_id = agent.agent_id
         self.agent_alias_id = agent_alias.alias_id
+        self.kb = kb  # Expose Knowledge Base for sync lambda
 
         """
         @ Outputs

@@ -5,6 +5,9 @@ from stack_backend_lambda_light_etl.stack_backend_lambda_light_etl import GenAiV
 from stack_backend_bedrock.stack_backend_bedrock import GenAiVirtualAssistantBedrockStack
 from stack_conversation_dynamodb.stack_conversation_dynamodb import StackConversationDynamoDB
 from stack_chat_lambda_node.stack_chat_lambda import ChatLambdaNodeStack
+from stack_lambda_extraction.stack_lambda_extraction import DataExtractionLambdaStack
+from stack_lambda_sync_vectorial.stack_lambda_sync_vectorial import VectorialSyncLambdaStack
+from stack_stepfunctions_orchestrator.stack_stepfunctions_orchestrator import DataPipelineOrchestratorStack
 #from stack_frontend_vpc_ecs_streamlit.stack_frontend_vpc_ecs_streamlit import GenAiVirtualAssistantVpcEcsStreamlitStack
 
 # AWS Settings 
@@ -27,6 +30,12 @@ etl_stack = GenAiVirtualAssistantEtlLambdaStack(app,
                                                 env=env_aws_settings,
                                                 input_metadata=env_context_params,
                                                 input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
+
+# Lambda for Data Extraction
+extraction_stack = DataExtractionLambdaStack(app,
+                                             "DataExtractionLambdaStack",
+                                             env=env_aws_settings,
+                                             input_s3_bucket_arn=s3_stack.bucket.bucket_arn)
 
 
 
@@ -52,15 +61,37 @@ chat_stack = ChatLambdaNodeStack(app,
                                  agent_id=bedrock_stack.agent_id,
                                  agent_alias_id=bedrock_stack.agent_alias_id)
 
+# Lambda for Vectorial Synchronization
+sync_stack = VectorialSyncLambdaStack(app,
+                                      "VectorialSyncLambdaStack",
+                                      env=env_aws_settings,
+                                      input_s3_bucket_arn=s3_stack.bucket.bucket_arn,
+                                      kb_id=bedrock_stack.kb.attr_knowledge_base_id,
+                                      agent_id=bedrock_stack.agent_id)
+
+# Step Functions Orchestrator with EventBridge
+orchestrator_stack = DataPipelineOrchestratorStack(app,
+                                                   "DataPipelineOrchestratorStack",
+                                                   env=env_aws_settings,
+                                                   extraction_lambda=extraction_stack.lambda_fn,
+                                                   etl_lambda=etl_stack.lambda_fn,
+                                                   sync_lambda=sync_stack.lambda_fn)
+
 # Hard Dependencies
 bedrock_stack.add_dependency(s3_stack)
 etl_stack.add_dependency(s3_stack)
+extraction_stack.add_dependency(s3_stack)
+sync_stack.add_dependency(s3_stack)
+sync_stack.add_dependency(bedrock_stack)
+orchestrator_stack.add_dependency(extraction_stack)
+orchestrator_stack.add_dependency(etl_stack)
+orchestrator_stack.add_dependency(sync_stack)
 chat_stack.add_dependency(conversation_stack)
 chat_stack.add_dependency(bedrock_stack)
 #st_stack.add_dependency(ddb_stack)
 
 # Add Tags
-for stack in [s3_stack, etl_stack, bedrock_stack, conversation_stack, chat_stack]:
+for stack in [s3_stack, etl_stack, bedrock_stack, conversation_stack, chat_stack, extraction_stack, sync_stack, orchestrator_stack]:
     Tags.of(stack).add("environment", env_name)
 
 app.synth()
