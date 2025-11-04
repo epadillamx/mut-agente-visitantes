@@ -95,26 +95,34 @@ def lambda_handler(event, context):
                 'prepared_at': str(prepared_at_time)
             }
             
-            # 4. Crear nuevo alias del agente
-            print(f"\n🏷️  Creando nuevo alias del agente...")
-            new_alias_id = crear_nuevo_alias(agent_status, prepared_at_time)
+            # 3.5 Esperar a que el agente esté listo (PREPARED)
+            print(f"\n⏳ Esperando a que el agente esté completamente preparado...")
+            agent_ready = esperar_agente_preparado(timeout=300, check_interval=10)
             
-            if new_alias_id:
-                results['steps']['new_alias'] = {
-                    'alias_id': new_alias_id,
-                    'created_at': datetime.now().isoformat()
-                }
+            if not agent_ready:
+                print(f"   ⚠️  Agente no alcanzó estado PREPARED, saltando creación de alias")
+                results['steps']['agent_preparation']['warning'] = 'Agent did not reach PREPARED state'
+            else:
+                # 4. Crear nuevo alias del agente
+                print(f"\n🏷️  Creando nuevo alias del agente...")
+                new_alias_id = crear_nuevo_alias(agent_status, prepared_at_time)
                 
-                # 5. Actualizar variable de entorno del Lambda Chat con el nuevo alias
-                print(f"\n📝 Actualizando Lambda Chat: {CHAT_LAMBDA_FUNCTION_NAME}")
-                actualizar_lambda_chat(new_alias_id)
-                
-                results['steps']['lambda_update'] = {
-                    'lambda_function_name': CHAT_LAMBDA_FUNCTION_NAME,
-                    'new_alias_id': new_alias_id,
-                    'updated_at': datetime.now().isoformat()
-                }
-                print(f"   ✓ Lambda Chat actualizado con nuevo alias: {new_alias_id}")
+                if new_alias_id:
+                    results['steps']['new_alias'] = {
+                        'alias_id': new_alias_id,
+                        'created_at': datetime.now().isoformat()
+                    }
+                    
+                    # 5. Actualizar variable de entorno del Lambda Chat con el nuevo alias
+                    print(f"\n📝 Actualizando Lambda Chat: {CHAT_LAMBDA_FUNCTION_NAME}")
+                    actualizar_lambda_chat(new_alias_id)
+                    
+                    results['steps']['lambda_update'] = {
+                        'lambda_function_name': CHAT_LAMBDA_FUNCTION_NAME,
+                        'new_alias_id': new_alias_id,
+                        'updated_at': datetime.now().isoformat()
+                    }
+                    print(f"   ✓ Lambda Chat actualizado con nuevo alias: {new_alias_id}")
             
         except Exception as e:
             print(f"   ⚠️  Error al preparar agente: {str(e)}")
@@ -251,6 +259,59 @@ def esperar_completacion_job(data_source_id, job_id, timeout=600, check_interval
             
         except Exception as e:
             print(f"      ❌ Error al verificar status: {str(e)}")
+            time.sleep(check_interval)
+
+
+def esperar_agente_preparado(timeout=300, check_interval=10):
+    """
+    Espera a que el agente alcance el estado PREPARED
+    
+    Args:
+        timeout: Tiempo máximo de espera en segundos (default: 5 minutos)
+        check_interval: Intervalo entre checks en segundos (default: 10 segundos)
+    
+    Returns:
+        True si el agente está PREPARED, False si timeout o error
+    """
+    start_time = time.time()
+    
+    while True:
+        # Verificar timeout
+        elapsed = time.time() - start_time
+        if elapsed > timeout:
+            print(f"   ⚠️  Timeout alcanzado ({timeout}s), agente no alcanzó estado PREPARED")
+            return False
+        
+        try:
+            # Consultar estado del agente
+            response = bedrock_agent_client.get_agent(
+                agentId=AGENT_ID
+            )
+            
+            agent_status = response['agent']['agentStatus']
+            
+            print(f"   ⏳ Estado del agente: {agent_status} (esperando {int(elapsed)}s)")
+            
+            # Estados listos para crear alias
+            if agent_status in ['PREPARED', 'NOT_PREPARED', 'FAILED', 'VERSIONING']:
+                if agent_status == 'PREPARED':
+                    print(f"   ✅ Agente en estado PREPARED, listo para crear alias")
+                    return True
+                else:
+                    print(f"   ⚠️  Agente en estado {agent_status}, no se puede crear alias")
+                    return False
+            
+            # Estados en progreso
+            if agent_status in ['PREPARING', 'UPDATING', 'CREATING']:
+                time.sleep(check_interval)
+                continue
+            
+            # Estado desconocido
+            print(f"   ⚠️  Estado desconocido del agente: {agent_status}")
+            return False
+            
+        except Exception as e:
+            print(f"   ❌ Error al verificar estado del agente: {str(e)}")
             time.sleep(check_interval)
 
 
