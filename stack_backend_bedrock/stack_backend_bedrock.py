@@ -598,13 +598,11 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         """
 
     def _create_agent(self, kb: bedrock_l1.CfnKnowledgeBase, guardrail: bedrock.Guardrail) -> bedrock.Agent:
-        """Creates the Bedrock Agent with Knowledge Base and Guardrails
+        """Creates the Bedrock Agent with Knowledge Base and Guardrails with Citations enabled
 
         Note: We use L2 Agent construct but need to manually associate the L1 Knowledge Base.
         The L2 construct doesn't directly support L1 KB, so we create the agent without KB
-        and rely on the AgentKnowledgeBase association created separately if needed.
-        For now, we'll create the agent and the KB association will be handled by Bedrock
-        when properly configured.
+        and manually configure the association with retrieval configuration to enable citations.
         """
         agent = bedrock.Agent(
             self,
@@ -621,7 +619,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         self._configure_agent_permissions(agent, kb)
 
         # Manually associate Knowledge Base with Agent using Custom Resource
-        # since CfnAgentKnowledgeBase is not available in current CDK version
+        # WITH CITATIONS ENABLED via retrieval configuration
         kb_association = cr.AwsCustomResource(
             self,
             "AgentKnowledgeBaseAssociation",
@@ -632,8 +630,43 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                     "agentId": agent.agent_id,
                     "agentVersion": "DRAFT",
                     "knowledgeBaseId": kb.attr_knowledge_base_id,
-                    "description": "Knowledge base del centro comercial MUT",
-                    "knowledgeBaseState": "ENABLED"
+                    "description": "Knowledge base del centro comercial MUT con citations habilitadas",
+                    "knowledgeBaseState": "ENABLED",
+                    # ⭐ CRITICAL: Enable citations/attributions with retrieval configuration
+                    "knowledgeBaseConfiguration": {
+                        "type": "VECTOR",
+                        "vectorKnowledgeBaseConfiguration": {
+                            "retrievalConfiguration": {
+                                "vectorSearchConfiguration": {
+                                    "numberOfResults": 10,
+                                    "overrideSearchType": "HYBRID"  # HYBRID for better retrieval in Pinecone
+                                }
+                            }
+                        }
+                    }
+                },
+                physical_resource_id=cr.PhysicalResourceId.of(f"kb-assoc-{agent.agent_id}")
+            ),
+            on_update=cr.AwsSdkCall(
+                service="bedrock-agent",
+                action="associateAgentKnowledgeBase",
+                parameters={
+                    "agentId": agent.agent_id,
+                    "agentVersion": "DRAFT",
+                    "knowledgeBaseId": kb.attr_knowledge_base_id,
+                    "description": "Knowledge base del centro comercial MUT con citations habilitadas",
+                    "knowledgeBaseState": "ENABLED",
+                    "knowledgeBaseConfiguration": {
+                        "type": "VECTOR",
+                        "vectorKnowledgeBaseConfiguration": {
+                            "retrievalConfiguration": {
+                                "vectorSearchConfiguration": {
+                                    "numberOfResults": 10,
+                                    "overrideSearchType": "HYBRID"
+                                }
+                            }
+                        }
+                    }
                 },
                 physical_resource_id=cr.PhysicalResourceId.of(f"kb-assoc-{agent.agent_id}")
             ),
@@ -651,7 +684,9 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                     effect=iam.Effect.ALLOW,
                     actions=[
                         "bedrock:AssociateAgentKnowledgeBase",
-                        "bedrock:DisassociateAgentKnowledgeBase"
+                        "bedrock:DisassociateAgentKnowledgeBase",
+                        "bedrock:UpdateAgentKnowledgeBase",
+                        "bedrock:GetAgentKnowledgeBase"
                     ],
                     resources=["*"]
                 )

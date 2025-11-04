@@ -32,6 +32,10 @@ cdk deploy ChatLambdaNodeStack --require-approval never
 cdk deploy GenAiVirtualAssistantEtlLambdaStack --require-approval never
 cdk deploy ChatLambdaNodeStack --require-approval never
 cdk destroy ChatLambdaNodeStack --require-approval never
+
+cdk deploy MutConversationStack --require-approval never
+
+aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn506D116E-odHi5ezTx8dv --follow --format short
 ```
 
 ## UPDATE

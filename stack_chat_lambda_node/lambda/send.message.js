@@ -59,9 +59,9 @@ async function MarkStatusMessage(message_id_sent) {
 async function sendMessage(phone, userMessage) {
     try {
         const credentials = getCredentials();
+        console.log(`************************** 10 *********************************************`);
 
-        console.log(`===================RESPUESTA==================`);
-        console.log(`RESPUESTA ${phone}:`, userMessage);
+
 
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");

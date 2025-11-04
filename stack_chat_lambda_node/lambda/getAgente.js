@@ -11,33 +11,36 @@ const util = require('util');
  */
 async function getAgente(userId, question, messageId) {
     const conversationService = new ConversationService();
-    
+
     try {
         // Get Agent IDs directly from environment variables
-        const AGENT_ID = process.env.AGENT_ID || '';
-        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || '';
+
+        //console.log(`************************** 2 *********************************************`);
+        //console.log(`======================  mensajeId ${messageId}`);
+        const AGENT_ID = process.env.AGENT_ID || 'MEL0HVUHUD';
+        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || '5Z5OLHQDGI';
         const REGION = process.env.AWS_REGION || 'us-east-1';
 
-        console.log(`📞 Invocando Bedrock Agent para usuario: ${userId}`);
-        console.log(`🤖 Agent ID: ${AGENT_ID}, Alias: ${AGENT_ALIAS_ID}`);
-        console.log(`💬 Pregunta: ${question}`);
+
 
         // Validar que la pregunta no esté vacía
         if (!question || question.trim() === '') {
-            console.log('⚠️ Pregunta vacía, ignorando...');
+
             return '#REPLICA#';
         }
         // validar que idmensaje en dynamo no exista
-        const isDuplicate = await conversationService.isDuplicateMessage(messageId);
+        /*const isDuplicate = await conversationService.isDuplicateMessage(messageId);
         if (isDuplicate) {
-            console.log(`⚠️ Mensaje duplicado detectado en DynamoDB: ${messageId}`);
+
             return '#REPLICA#';
-        }
+        }*/
 
         // Create Bedrock Agent Runtime client
         const client = new BedrockAgentRuntimeClient({ region: REGION });
 
         // Prepare the command
+        //console.log(`************************** 3 *********************************************`);
+        //console.log(`======================  mensajeId ${messageId}`);
         const command = new InvokeAgentCommand({
             agentId: AGENT_ID,
             agentAliasId: AGENT_ALIAS_ID,
@@ -45,84 +48,123 @@ async function getAgente(userId, question, messageId) {
             inputText: question
         });
 
-        console.log(`🔄 Enviando solicitud a Bedrock Agent...`);
+
         const startTime = Date.now();
 
-        // Invoke the agent
+        // Invoke the agent and wait for complete response
         const response = await client.send(command);
 
-        console.log(`🔄 Respuesta inicial recibida, procesando stream...`);
 
-        // Process the streaming response - IMPORTANTE: Esperamos a que todo el stream se complete
-        let agentResponse = '';
-        let citations = [];
-        let chunkCount = 0;
+
+        // Process the complete response - NO streaming
+        let finalResponse = '';
+        const urlSet = new Set();
 
         if (response.completion) {
             try {
-                // Iteramos y esperamos TODOS los eventos del stream
+                const chunks = [];
+
                 for await (const event of response.completion) {
-                    console.log(`📦 Procesando evento ${++chunkCount}:`, JSON.stringify(Object.keys(event)));
-                    
-                    // Procesar chunks de texto
+                    console.log('++++++++++++++++++++|+++++++++++++++++++++++++++++');
+                    //console.log('event:', JSON.stringify(event.chunk?.attribution?.citations, null, 2));
+
+                    for (const citation of event.chunk?.attribution?.citations || []) {
+                        for (const meta of citation.retrievedReferences || []) {
+                            urlSet.add(meta.metadata['x-amz-bedrock-kb-source-uri']);
+                            urlSet.add(meta.metadata.data_source);
+                        }
+
+                    }
+
                     if (event.chunk && event.chunk.bytes) {
                         const decodedChunk = new TextDecoder('utf-8').decode(event.chunk.bytes);
-                        agentResponse += decodedChunk;
-                        
+                        chunks.push(decodedChunk);
+                        console.log('📝 Chunk agregado, longitud:', decodedChunk.length);
                     }
 
-                    // Extraer citations si están disponibles
-                    if (event.attribution && event.attribution.citations) {
-                        citations.push(...event.attribution.citations);
-                       
+                    // Romper el bucle cuando detectemos el final de la respuesta
+                    if (event.chunk && event.chunk.attribution) {
+                        console.log('🔚 Detectado evento de atribución - finalizando stream');
+                        break;
                     }
 
-                    // Log otros tipos de eventos para debugging
-                    if (event.trace) {
-                        console.log(`🔍 Trace event recibido`);
+                    // También romper si detectamos un evento de trace de finalización
+                    if (event.trace && event.trace.orchestrationTrace &&
+                        event.trace.orchestrationTrace.rationale) {
+                        console.log('🔚 Detectado evento de trace final - finalizando stream');
+                        break;
                     }
-                    if (event.returnControl) {
-                        console.log(`🎮 Return control event recibido`);
+
+                    // Romper si detectamos que el chunk no tiene más bytes (final del stream)
+                    if (event.chunk && !event.chunk.bytes && event.chunk.attribution) {
+                        console.log('🔚 Detectado final del stream - no más bytes');
+                        break;
+                    }
+
+                    // Romper si detectamos eventos de finalización específicos
+                    if (event.returnControl || event.files || event.codeInterpreterInvocationOutput) {
+                        console.log('🔚 Detectado evento de control/finalización - cortando stream');
+                        break;
                     }
                 }
 
-                console.log(`✅ Stream completado. Total de chunks procesados: ${chunkCount}`);
+                // Join all chunks into final response
+                finalResponse = chunks.join('').trim();
+                console.log('✅ Stream procesado completamente, chunks totales:', chunks.length);
+
             } catch (streamError) {
-                console.error('❌ Error procesando stream:', streamError);
+                console.error('❌ Error procesando respuesta:', streamError);
                 throw streamError;
             }
         } else {
-            console.warn('⚠️ No se recibió completion stream en la respuesta');
+            console.warn('⚠️ No se recibió completion en la respuesta');
+        }
+
+        //console.log(`************************** 5 *********************************************`);
+        const isDuplicate = await conversationService.isDuplicateMessage(messageId);
+        if (isDuplicate) {
+            //console.log(`************************** 5.1 #REPLICA# *********************************************`);
+            return '#REPLICA#';
         }
 
         const endTime = Date.now();
         const duration = endTime - startTime;
 
-        console.log(`✅ Respuesta completa recibida en ${duration}ms`);
-        console.log(`📏 Longitud total de la respuesta: ${agentResponse.length} caracteres`);
-        console.log(`📝 Respuesta del agente: ${agentResponse.substring(0, 200)}${agentResponse.length > 200 ? '...' : ''}`);
-        
-        if (citations.length > 0) {
-            console.log(`📚 Total de citations encontradas: ${citations.length}`);
-        }
+        //console.log(`************************** 6 *********************************************`);
+        //console.log(`======================  mensajeId ${messageId}`);
+        //console.log(`Respuesta completa recibida: ${finalResponse.length} caracteres`);
 
         // Validar que la respuesta no esté vacía
-        if (!agentResponse || agentResponse.trim() === '') {
-            console.log('⚠️ Respuesta vacía del agente después de procesar el stream');
+        if (!finalResponse || finalResponse === '') {
+            console.log('⚠️ Respuesta vacía del agente');
             return 'Lo siento, no pude procesar tu pregunta en este momento. ¿Puedes intentarlo de nuevo?';
         }
 
-        const finalResponse = agentResponse.trim();
-        console.log(`🎯 Retornando respuesta final (${finalResponse.length} caracteres)`);
-        
-        // 💾 NUEVO: Guardar la conversación
+
+        // 💾 Guardar la conversación con trazabilidad completa
         try {
-            await conversationService.saveMessage(userId, question, finalResponse, messageId);
+            const traceabilityData = {
+                urlSet: Array.from(urlSet),
+                agentMetadata: {
+                    agentId: AGENT_ID,
+                    agentAliasId: AGENT_ALIAS_ID,
+                    sessionId: userId,
+                    processingTimeMs: duration,
+                    region: REGION
+                }
+            };
+            //console.log(`************************** 7 ********************************************* `);
+            // console.log(`======================  mensajeId ${messageId}`);
+
+            await conversationService.saveMessage(userId, question, finalResponse, messageId, traceabilityData);
+
+            // console.log(`************************** 9 ********************************************* `);
+
         } catch (saveError) {
             console.error('⚠️ Error guardando conversación (no crítico):', saveError);
             // No interrumpir el flujo si falla el guardado
         }
-        
+
         return finalResponse;
 
     } catch (error) {
@@ -162,14 +204,22 @@ async function getAgente(userId, question, messageId) {
         // Error genérico
         console.error('❓ Error no categorizado:', error.name || 'Unknown');
         const errorResponse = 'Lo siento, hubo un error procesando tu pregunta. Por favor, intenta de nuevo.';
-        
+
         // En caso de error, también intentar guardar para análisis
         try {
-            await conversationService.saveMessage(userId, question, `ERROR: ${error.message}`, messageId);
+            const errorTraceability = {
+                citations: [],
+                traceEvents: [],
+                agentMetadata: {
+                    error: error.name,
+                    errorMessage: error.message
+                }
+            };
+            await conversationService.saveMessage(userId, question, `ERROR: ${error.message}`, messageId, errorTraceability);
         } catch (saveError) {
             console.error('⚠️ Error guardando conversación de error:', saveError);
         }
-        
+
         return errorResponse;
     }
 }

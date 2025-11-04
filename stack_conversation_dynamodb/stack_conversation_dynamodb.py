@@ -48,6 +48,18 @@ class StackConversationDynamoDB(Stack):
             )
         )
 
+        self.conversations_table.add_global_secondary_index(
+            index_name="message-id-index",
+            partition_key=dynamodb.Attribute(
+                name="message_id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="timestamp",
+                type=dynamodb.AttributeType.NUMBER
+            )
+        )
+
         # Tabla de sesiones activas
         self.sessions_table = dynamodb.Table(
             self, "SessionsTable",

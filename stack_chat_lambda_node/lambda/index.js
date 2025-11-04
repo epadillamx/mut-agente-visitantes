@@ -1,7 +1,7 @@
 const { getAgente } = require('./getAgente');
 const { sendMessage, MarkStatusMessage } = require('./send.message');
-const { accumulateMessage } = require('./acumulacion');
-const { ConversationService } = require('./conversationService');
+//const { ConversationService } = require('./conversationService');
+
 
 /**
  * Lambda Handler - Procesa peticiones de API Gateway
@@ -26,8 +26,8 @@ exports.handler = async (event) => {
         // POST /webhook - Recibir mensajes de WhatsApp
 
         if (httpMethod === 'POST' && path.includes('/webhook')) {
-          
-            return await handleWhatsAppMessage(event);
+
+            return handleWhatsAppMessage(event);
         }
 
         // POST /chat - Endpoint directo para pruebas
@@ -123,105 +123,86 @@ async function handleWebhookVerification(event) {
 async function handleWhatsAppMessage(event) {
     try {
         const body = JSON.parse(event.body || '{}');
+
         //console.log('📨 Webhook POST recibido:', JSON.stringify(body, null, 2));
 
         // Verificar que es una notificación de WhatsApp
         if (body.object === 'whatsapp_business_account') {
-            let processedMessageId = ''; // Mover fuera para controlar duplicados
-            let messageProcessed = false; // Flag para salir de los loops
+            let response = '';
+            let from = ''
+
+
+
 
             // Procesar todos los mensajes
             for (const entry of body.entry || []) {
-                if (messageProcessed) break; // Salir si ya procesamos un mensaje
-                
                 for (const change of entry.changes || []) {
-                    if (messageProcessed) break; // Salir si ya procesamos un mensaje
-                    
+
                     if (change.value && change.value.messages) {
                         for (const message of change.value.messages) {
-                            const from = message.from;
+                            from = message.from;
                             const messageType = message.type;
-                            const messageId = message.id;
-
-                            
-
-                            // Verificar si ya procesamos este mensaje
-                            if (processedMessageId === messageId) {
-                                console.log(`⚠️ Mensaje duplicado detectado: ${messageId}`);
-                                messageProcessed = true;
-                                break;
-                            }
-
                             if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
-                                console.log(`📩 Procesando mensaje ${messageId} de ${from}`);
-
+                                const messageId = message.id;
                                 try {
-                                    // Marcar mensaje como procesado ANTES de procesarlo
-                                    processedMessageId = messageId;
-                                    
-                                    // Marcar como leído en WhatsApp
-                                    await MarkStatusMessage(messageId);
-                                    
-                                    // Llamar al agente y enviar respuesta
-                                   
+                                    //const conversationService = new ConversationService();
+                                    //const isDuplicate = await conversationService.isDuplicateMessage(messageId);
+                                   // if (!isDuplicate) {
 
-                                    const agentResponse = await getAgente(from, messageBody, messageId);
-                                    if (agentResponse === '#REPLICA#') {
-                                        console.log(`⚠️ Respuesta duplicada del agente para el mensaje ${messageId}`);
-                                    } else {
-                                        await sendMessage(from, agentResponse);
-                                    }
 
-                                    // Marcar que procesamos un mensaje y salir
-                                    messageProcessed = true;
-                                    break;
 
+
+                                        await MarkStatusMessage(messageId);
+                                        //console.log(`===================MENSAJE==================`);
+                                        //console.log(`**** ${messageId}:`, messageBody);
+
+
+
+                                        //console.log(`✅ ${from}:`, message_full);
+                                        const agentResponse = await getAgente(from, messageBody, messageId);
+                                        if (agentResponse !== '#REPLICA#') {
+                                            await sendMessage(from, agentResponse);
+                                        }
+                                    //}
+
+
+                                    /*response = await processMessage(from, messageBody, messageId);
+                                    if (response !== '#REPLICA#') {
+                                      isSendMessage = true;
+                                    }*/
                                 } catch (processError) {
-                                    console.error('❌ Error procesando mensaje:', processError);
-                                    // Enviar mensaje de error al usuario
-                                    if (from) {
-                                        await sendMessage(from, '¿Puedes repetirme tu pregunta, por favor?');
-                                    }
-                                    // Marcar como procesado incluso si falló
-                                    messageProcessed = true;
-                                    break;
+                                    console.error('Error procesando mensaje:', processError);
+                                    response = 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.';
                                 }
-                            } else {
-                                console.log(`⚠️ Tipo de mensaje no soportado: ${messageType}`);
-                                if (from && messageType !== 'reaction') {
-                                    await sendMessage(from, '¿Puedes repetirme tu pregunta?');
-                                }
-                                // No marcar como procesado, continuar con siguientes mensajes
                             }
                         }
                     }
                 }
             }
 
-            // Responder inmediatamente a WhatsApp con 200 OK
-            console.log(`📤 Respondiendo a WhatsApp con 200 OK`);
-            return createResponse(200, {
-                status: 'ok',
-                message: 'Mensaje recibido',
-                processed: messageProcessed,
-                messageId: processedMessageId || 'none'
-            });
+            //if (isSendMessage) {
+            //  await sendMessage(from, response);
+            //}
+            console.log(`************************** 11 *********************************************`);
+            return {
+                statusCode: 200,
+                body: JSON.stringify({ status: 'ok' })
+            };
 
         } else {
-            console.log('⚠️ Objeto no es whatsapp_business_account:', body.object);
-            return createResponse(200, {
-                status: 'ignored',
-                message: 'No es un mensaje de WhatsApp'
-            });
+            return {
+                statusCode: 200,
+                body: JSON.stringify({ status: 'ignored' })
+            };
         }
 
     } catch (error) {
-        console.error('❌ Error en webhook POST:', error);
-        return createResponse(500, {
-            error: 'Error interno del servidor',
-            details: error.message
-        });
+        console.error('Error en webhookChat:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error interno del servidor' })
+        };
     }
 }
 
