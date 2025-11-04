@@ -108,7 +108,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         - stores (shops)
         - restaurantes (restaurants)
         """
-        base_path = self.input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/')
+        base_path = self.input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/')+"/"
 
         return [
             DataSourceConfig(
