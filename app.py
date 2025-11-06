@@ -58,7 +58,7 @@ chat_stack = ChatLambdaNodeStack(app,
                                  env=env_aws_settings,
                                  conversations_table=conversation_stack.conversations_table,
                                  sessions_table=conversation_stack.sessions_table,
-                                 agent_id=bedrock_stack.agent_id,
+                                 agent_id="CHANGE",
                                  input_metadata=env_context_params)
 
 # Lambda for Vectorial Synchronization
@@ -67,8 +67,8 @@ sync_stack = VectorialSyncLambdaStack(app,
                                       env=env_aws_settings,
                                       input_metadata=env_context_params,
                                       input_s3_bucket_arn=s3_stack.bucket.bucket_arn,
-                                      kb_id=bedrock_stack.kb.attr_knowledge_base_id,
-                                      agent_id=bedrock_stack.agent_id,
+                                      kb_id="CHANGE",
+                                      agent_id="CHANGE",
                                       chat_lambda_fn=chat_stack.lambda_fn)
 
 # Step Functions Orchestrator with EventBridge
@@ -84,13 +84,11 @@ bedrock_stack.add_dependency(s3_stack)
 etl_stack.add_dependency(s3_stack)
 extraction_stack.add_dependency(s3_stack)
 sync_stack.add_dependency(s3_stack)
-sync_stack.add_dependency(bedrock_stack)
 sync_stack.add_dependency(chat_stack)  # Agregado para que sync_stack tenga acceso al lambda de chat
 orchestrator_stack.add_dependency(extraction_stack)
 orchestrator_stack.add_dependency(etl_stack)
 orchestrator_stack.add_dependency(sync_stack)
 chat_stack.add_dependency(conversation_stack)
-chat_stack.add_dependency(bedrock_stack)
 #st_stack.add_dependency(ddb_stack)
 
 # Add Tags
