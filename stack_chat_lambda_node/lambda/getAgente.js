@@ -58,6 +58,7 @@ async function getAgente(userId, question, messageId) {
 
         // Process the complete response - NO streaming
         let finalResponse = '';
+        let finalResponseTrimmed = '';
         const urlSet = new Set();
 
         if (response.completion) {
@@ -155,9 +156,9 @@ async function getAgente(userId, question, messageId) {
             };
             //console.log(`************************** 7 ********************************************* `);
             // console.log(`======================  mensajeId ${messageId}`);
-            const finalimpo = finalResponse.replace(/\\n/g, '\n').trim();
+            finalResponseTrimmed = finalResponse.replace(/\\n/g, '\n').trim();
 
-            await conversationService.saveMessage(userId, question, finalimpo, messageId, traceabilityData);
+            await conversationService.saveMessage(userId, question, finalResponseTrimmed, messageId, traceabilityData);
 
             // console.log(`************************** 9 ********************************************* `);
 
@@ -166,7 +167,7 @@ async function getAgente(userId, question, messageId) {
             // No interrumpir el flujo si falla el guardado
         }
 
-        return finalimpo;
+        return finalResponseTrimmed;
 
     } catch (error) {
         // Log detailed error including non-enumerable properties to help debug AccessDenied issues
