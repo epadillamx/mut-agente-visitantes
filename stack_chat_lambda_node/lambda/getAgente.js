@@ -18,7 +18,7 @@ async function getAgente(userId, question, messageId) {
         //console.log(`************************** 2 *********************************************`);
         //console.log(`======================  mensajeId ${messageId}`);
         const AGENT_ID = process.env.AGENT_ID || '9VEMPEULVZ';
-        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || 'OWRUUMNTIL';
+        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || 'AEEB0GXHSK';
         const REGION = process.env.AWS_REGION || 'us-east-1';
 
 
@@ -155,8 +155,9 @@ async function getAgente(userId, question, messageId) {
             };
             //console.log(`************************** 7 ********************************************* `);
             // console.log(`======================  mensajeId ${messageId}`);
+            const finalimpo = finalResponse.replace(/\\n/g, '\n').trim();
 
-            await conversationService.saveMessage(userId, question, finalResponse, messageId, traceabilityData);
+            await conversationService.saveMessage(userId, question, finalimpo, messageId, traceabilityData);
 
             // console.log(`************************** 9 ********************************************* `);
 
@@ -165,7 +166,7 @@ async function getAgente(userId, question, messageId) {
             // No interrumpir el flujo si falla el guardado
         }
 
-        return finalResponse;
+        return finalimpo;
 
     } catch (error) {
         // Log detailed error including non-enumerable properties to help debug AccessDenied issues
