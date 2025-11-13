@@ -19,9 +19,9 @@
       "virtual_assistant_data_bucket_arn":"",
       "s3_knowledge_base_prefixes":["datasets/prod_kb/knowledge-base-mut-s3-001/v1/"],
       "pinecone_connection_string": "https://agente-3memz7m.svc.aped-4627-b74a.pinecone.io",
-      "pinecone_secret_arn": "mut-kb-api-key-G0Ksk9",
+      "pinecone_secret_arn": "agente-kb-api-key-6nm6MB",
       "bedrock-alias": "bedrock-alias",
-      "secret_complete_arn": "arn:aws:secretsmanager:us-east-1:529928147458:secret:main-nwFFrI"
+      "secret_complete_arn": "arn:aws:secretsmanager:us-east-1:948270077717:secret:main-nwFFrI"
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

@@ -97,7 +97,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             embedding_dimensions=1024,
             pinecone_connection_string=self.input_metadata['pinecone_connection_string'],
             pinecone_secret_arn=f"arn:aws:secretsmanager:{Aws.REGION}:{Aws.ACCOUNT_ID}:secret:pinecone/{self.input_metadata['pinecone_secret_arn']}",
-            pinecone_namespace="mut-kb-prod"
+            pinecone_namespace="agente_qa"
         )
 
     def _get_data_source_configs(self) -> List[DataSourceConfig]:
