@@ -58,7 +58,7 @@ chat_stack = ChatLambdaNodeStack(app,
                                  env=env_aws_settings,
                                  conversations_table=conversation_stack.conversations_table,
                                  sessions_table=conversation_stack.sessions_table,
-                                 agent_id="CHANGE",
+                                 agent_id="G7LSHMCB2H",
                                  input_metadata=env_context_params)
 
 # Lambda for Vectorial Synchronization
@@ -67,8 +67,8 @@ sync_stack = VectorialSyncLambdaStack(app,
                                       env=env_aws_settings,
                                       input_metadata=env_context_params,
                                       input_s3_bucket_arn=s3_stack.bucket.bucket_arn,
-                                      kb_id="CHANGE",
-                                      agent_id="CHANGE",
+                                      kb_id="LQAKZNJMP9",
+                                      agent_id="G7LSHMCB2H",
                                       chat_lambda_fn=chat_stack.lambda_fn)
 
 # Step Functions Orchestrator with EventBridge
