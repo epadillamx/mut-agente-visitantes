@@ -1,12 +1,12 @@
 {
   "GenAiVirtualAssistantS3Stack": {
-    "outputs3bucketarn": "arn:aws:s3:::raw-virtual-assistant-data-529928147458-us-east-1",
-    "ExportsOutputFnGetAttrawVirtualAssistantS3Bucket48C02BD0Arn2E3985E0": "arn:aws:s3:::raw-virtual-assistant-data-529928147458-us-east-1"
+    "outputs3bucketarn": "arn:aws:s3:::raw-virtual-assistant-data-948270077717-us-east-1",
+    "ExportsOutputFnGetAttrawVirtualAssistantS3Bucket48C02BD0Arn2E3985E0": "arn:aws:s3:::raw-virtual-assistant-data-948270077717-us-east-1"
   },
   "GenAiVirtualAssistantBedrockStack": {
-    "outputpineconenamespace": "mut-kb-prod",
+    "outputpineconenamespace": "agente_qa",
     "outputagentaliasid": "U6M0BTUHIG",
-    "outputpineconeindexurl": "https://agente-3memz7m.svc.aped-4627-b74a.pinecone.io",
+    "outputpineconeindexurl": "https://qa-3memz7m.svc.aped-4627-b74a.pinecone.io",
     "outputagentid": "DZFZKCOUAL",
     "outputknowledgebaseid": "VKOBTUBDZ5"
   }

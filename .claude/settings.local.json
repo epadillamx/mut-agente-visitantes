@@ -22,7 +22,10 @@
       "Bash(aws bedrock-agent list-agent-knowledge-bases:*)",
       "Bash(aws bedrock-agent prepare-agent:*)",
       "Bash(aws bedrock-agent list-agent-versions:*)",
-      "Bash(aws bedrock-agent:*)"
+      "Bash(aws bedrock-agent:*)",
+      "Bash(aws iam put-role-policy:*)",
+      "Bash(aws bedrock list-foundation-models:*)",
+      "Bash(aws bedrock get-foundation-model:*)"
     ],
     "deny": [],
     "ask": []

@@ -97,7 +97,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             embedding_dimensions=1024,
             pinecone_connection_string=self.input_metadata['pinecone_connection_string'],
             pinecone_secret_arn=f"arn:aws:secretsmanager:{Aws.REGION}:{Aws.ACCOUNT_ID}:secret:pinecone/{self.input_metadata['pinecone_secret_arn']}",
-            pinecone_namespace="agente_qa"
+            pinecone_namespace="mut-kb-prod"
         )
 
     def _get_data_source_configs(self) -> List[DataSourceConfig]:
@@ -279,7 +279,11 @@ class GenAiVirtualAssistantBedrockStack(Stack):
                         "bedrock:GetFoundationModel",
                         "bedrock:ListFoundationModels"
                     ],
-                     resources=["*"] # Allow all models for flexibility
+                    #resources=[
+                        #f"arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0",
+                       # f"arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0"
+                    #]
+                    resources=["*"]
                 )
             )
 
