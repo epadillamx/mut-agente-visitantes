@@ -33,6 +33,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/requerimientos', express.static(path.join(__dirname, 'requerimientos')));
 
 /**
  * Invoca al agente de Bedrock y procesa la respuesta

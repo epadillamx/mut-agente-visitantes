@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mounjaro - Asistente Virtual</title>
+    <title>Adium Chile - Asistente Virtual</title>
     <style>
         * {
             margin: 0;
@@ -13,12 +13,26 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff0032 0%, #c00028 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+        }
+
+        .page-logo {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .page-logo img {
+            height: 45px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
         }
 
         .chat-container {
@@ -35,29 +49,110 @@
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ff0032;
             color: white;
             padding: 20px;
             text-align: center;
-            border-radius: 20px 20px 0 0;
+            position: relative;
         }
 
         .chat-header h1 {
             font-size: 24px;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin: 0;
         }
 
         .chat-header p {
             font-size: 14px;
             opacity: 0.9;
+            margin: 0;
         }
 
+        .clear-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .clear-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Pestañas */
+        .tabs-container {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #ebebeb;
+        }
+
+        .tab.active {
+            color: #ff0032;
+            background: white;
+            border-bottom: 3px solid #ff0032;
+        }
+
+        /* Contenido de pestañas */
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Pestaña 1: Chat IA */
         .chat-messages {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
             background: #f5f7fb;
+        }
+
+        .welcome-message {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-message h2 {
+            color: #ff0032;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        .welcome-message p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 5px;
         }
 
         .message {
@@ -94,7 +189,7 @@
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ff0032;
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -106,37 +201,34 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .citations {
-            margin-top: 10px;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 8px;
-            font-size: 12px;
-        }
-
-        .citations strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #1976d2;
-        }
-
-        .citations a {
-            color: #1976d2;
-            text-decoration: none;
-            display: block;
-            margin: 3px 0;
-        }
-
-        .citations a:hover {
-            text-decoration: underline;
-        }
-
         .chat-input-container {
             padding: 20px;
             background: white;
             border-top: 1px solid #e0e0e0;
             display: flex;
             gap: 10px;
+            position: relative;
+        }
+
+        .clear-button-mobile {
+            display: none;
+            position: absolute;
+            top: -45px;
+            right: 20px;
+            padding: 8px 12px;
+            background: #ff0032;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 0, 50, 0.3);
+            transition: all 0.3s;
+        }
+
+        .clear-button-mobile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 0, 50, 0.4);
         }
 
         .chat-input {
@@ -150,12 +242,12 @@
         }
 
         .chat-input:focus {
-            border-color: #667eea;
+            border-color: #ff0032;
         }
 
         .send-button {
             padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ff0032;
             color: white;
             border: none;
             border-radius: 25px;
@@ -167,12 +259,35 @@
 
         .send-button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(255, 0, 50, 0.4);
         }
 
         .send-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        .clear-button-mobile {
+            display: none;
+            padding: 10px;
+            background: #ff0032;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .clear-button-mobile:hover {
+            transform: scale(1.1);
+        }
+
+        .clear-button-mobile:active {
+            transform: scale(0.95);
         }
 
         .typing-indicator {
@@ -193,7 +308,7 @@
         .typing-dot {
             width: 8px;
             height: 8px;
-            background: #667eea;
+            background: #ff0032;
             border-radius: 50%;
             animation: typing 1.4s infinite;
         }
@@ -209,143 +324,745 @@
         @keyframes typing {
             0%, 60%, 100% {
                 transform: translateY(0);
-                opacity: 0.7;
             }
             30% {
                 transform: translateY(-10px);
-                opacity: 1;
             }
         }
 
-        .clear-button {
-            padding: 8px 16px;
-            background: #f44336;
+        /* Pestaña 2: FAQ */
+        .faq-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: #f5f7fb;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .faq-welcome {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .faq-welcome h2 {
+            color: #ff0032;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+
+        .faq-welcome p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .faq-welcome .heart {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .medication-selector {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .medication-button {
+            padding: 15px 40px;
+            background: #ff0032;
             color: white;
             border: none;
-            border-radius: 20px;
-            font-size: 13px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 0, 50, 0.3);
         }
 
-        .clear-button:hover {
-            background: #d32f2f;
+        .medication-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 0, 50, 0.4);
         }
 
-        .welcome-message {
+        .faq-form {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .faq-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .faq-form h3 {
+            color: #ff0032;
             text-align: center;
-            padding: 40px 20px;
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+
+        .form-back-link {
+            display: block;
+            text-align: left;
             color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.3s;
         }
 
-        .welcome-message h2 {
+        .form-back-link:hover {
+            color: #ff0032;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #ff0032;
+        }
+
+        .form-submit-button {
+            width: 100%;
+            padding: 15px;
+            background: #ff0032;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .form-submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 50, 0.4);
+        }
+
+        .faq-questions {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .faq-questions.active {
+            display: flex;
+        }
+
+        .faq-questions h3 {
+            color: #ff0032;
+            text-align: center;
             margin-bottom: 10px;
-            color: #667eea;
         }
 
-        .welcome-message p {
-            line-height: 1.6;
+        .faq-question-button {
+            padding: 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
-        /* Scrollbar personalizado */
-        .chat-messages::-webkit-scrollbar {
-            width: 8px;
+        .faq-question-button:hover {
+            border-color: #ff0032;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(255, 0, 50, 0.2);
         }
 
-        .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .faq-answer {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 4px;
+        .faq-answer.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
         }
 
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
+        .faq-answer h3 {
+            color: #ff0032;
+            margin-bottom: 20px;
+        }
+
+        .faq-answer .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .faq-answer .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .faq-answer p {
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .faq-answer ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .faq-answer li {
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .back-button {
+            padding: 12px 30px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .back-button:hover {
+            background: #d0d0d0;
+        }
+
+        .external-link-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #ff0032;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 0, 50, 0.3);
+        }
+
+        .external-link-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 0, 50, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .page-logo {
+                top: 8px;
+                left: 8px;
+            }
+
+            .page-logo img {
+                height: 30px;
+            }
+
+            .chat-container {
+                max-height: 100vh;
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .chat-header {
+                padding: 15px;
+            }
+
+            .chat-header h1 {
+                font-size: 18px;
+            }
+
+            .chat-header p {
+                font-size: 12px;
+            }
+
+            .clear-button {
+                display: none;
+            }
+
+            .clear-button-mobile {
+                display: block;
+            }
+
+            .tab {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+
+            .message-content {
+                max-width: 85%;
+                font-size: 14px;
+            }
+
+            .chat-input {
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            .send-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .faq-content {
+                padding: 15px;
+                gap: 15px;
+            }
+
+            .faq-welcome {
+                padding: 20px;
+            }
+
+            .faq-welcome h2 {
+                font-size: 24px;
+            }
+
+            .faq-welcome p {
+                font-size: 14px;
+            }
+
+            .medication-button {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            .faq-questions h3 {
+                font-size: 18px;
+            }
+
+            .faq-question-button {
+                padding: 15px;
+                font-size: 15px;
+            }
+
+            .faq-answer {
+                padding: 20px;
+            }
+
+            .faq-answer h3 {
+                font-size: 18px;
+            }
+
+            .faq-answer p,
+            .faq-answer li {
+                font-size: 14px;
+            }
+
+            .external-link-button {
+                padding: 12px 25px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-logo {
+                top: 6px;
+                left: 6px;
+            }
+
+            .page-logo img {
+                height: 25px;
+            }
+
+            .chat-header {
+                padding: 10px 45px;
+            }
+
+            .chat-header h1 {
+                font-size: 16px;
+            }
+
+            .chat-header p {
+                font-size: 11px;
+            }
+
+            .clear-button {
+                top: 10px;
+                right: 6px;
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+
+            .tab {
+                padding: 10px 5px;
+                font-size: 13px;
+            }
+
+            .chat-messages {
+                padding: 15px;
+            }
+
+            .chat-input-container {
+                padding: 15px;
+                gap: 8px;
+            }
+
+            .message-content {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+
+            .faq-content {
+                padding: 10px;
+            }
+
+            .faq-welcome {
+                padding: 15px;
+            }
+
+            .faq-welcome h2 {
+                font-size: 20px;
+            }
+
+            .faq-welcome .heart {
+                font-size: 28px;
+            }
+
+            .medication-button {
+                padding: 10px 25px;
+                font-size: 15px;
+            }
+
+            .faq-questions h3 {
+                font-size: 16px;
+            }
+
+            .faq-questions p {
+                font-size: 13px;
+            }
+
+            .faq-question-button {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .faq-answer {
+                padding: 15px;
+            }
+
+            .faq-answer h3 {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+
+            .faq-answer p,
+            .faq-answer li {
+                font-size: 13px;
+            }
+
+            .back-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .external-link-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 425px) {
+            .page-logo img {
+                height: 20px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .page-logo img {
+                height: 18px;
+            }
+
+            .chat-header {
+                padding: 8px 40px;
+            }
+
+            .chat-header h1 {
+                font-size: 14px;
+            }
+
+            .chat-header p {
+                font-size: 10px;
+            }
+
+            .clear-button {
+                top: 8px;
+                right: 5px;
+                padding: 4px 6px;
+                font-size: 9px;
+            }
+
+            .tab {
+                font-size: 12px;
+                padding: 8px 4px;
+            }
+
+            .faq-welcome h2 {
+                font-size: 18px;
+            }
+
+            .medication-button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Logo en esquina superior izquierda -->
+    <div class="page-logo">
+        <img src="/requerimientos/logo-adium-chile-blanco.png" alt="Adium Chile">
+    </div>
+
     <div class="chat-container">
+        <!-- Header -->
         <div class="chat-header">
-            <h1>💊 Asistente Virtual Mounjaro</h1>
-            <p>Información sobre uso, dosificación y cuidados del medicamento</p>
+            <h1>Asistente Virtual</h1>
+            <p>Programa de apoyo a pacientes</p>
             <button class="clear-button" onclick="clearChat()">🗑️ Limpiar Chat</button>
         </div>
 
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                <h2>¡Bienvenido!</h2>
-                <p>Soy tu asistente virtual para responder preguntas sobre <strong>Mounjaro</strong>.</p>
-            
-                <p style="margin-top: 15px;"><em>Escribe tu pregunta para comenzar...</em></p>
+        <!-- Pestañas -->
+        <div class="tabs-container">
+            <div class="tab active" data-tab="ai">🤖 Asistente IA</div>
+            <div class="tab" data-tab="faq">❓ Preguntas Frecuentes</div>
+        </div>
+
+        <!-- Contenido Pestaña 1: Chat IA -->
+        <div class="tab-content active" id="tab-ai">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <h2>¡Bienvenido!</h2>
+                    <p>Soy tu asistente virtual para responder preguntas sobre <strong>Mounjaro</strong>.</p>
+                    <p><em>Escribe tu pregunta para comenzar...</em></p>
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
             </div>
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+
+            <div class="chat-input-container">
+                <button class="clear-button-mobile" onclick="clearChat()">🗑️</button>
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Escribe tu pregunta aquí..."
+                    autocomplete="off"
+                >
+                <button class="send-button" id="sendButton">Enviar</button>
             </div>
         </div>
 
-        <div class="chat-input-container">
-            <input 
-                type="text" 
-                class="chat-input" 
-                id="messageInput" 
-                placeholder="Escribe tu pregunta aquí..."
-                onkeypress="handleKeyPress(event)"
-            >
-            <button class="send-button" id="sendButton" onclick="sendMessage()">Enviar</button>
+        <!-- Contenido Pestaña 2: FAQ -->
+        <div class="tab-content" id="tab-faq">
+            <div class="faq-content">
+                <!-- Pantalla de bienvenida -->
+                <div class="faq-welcome" id="faqWelcome">
+                    <div class="heart">❤️</div>
+                    <h2>¡Bienvenido!</h2>
+                    <p>Gracias por contactarte con el programa de apoyo a pacientes de Adium Chile.</p>
+                    <p style="margin-top: 15px; font-weight: 600; color: #333;">Selecciona tu medicamento:</p>
+                    <div class="medication-selector">
+                        <button class="medication-button" onclick="selectMedication()">MOUNJARO</button>
+                    </div>
+                </div>
+
+                <!-- Formulario de datos del paciente -->
+                <div class="faq-form" id="faqForm">
+                    <a class="form-back-link" onclick="backToMedicationSelection()">← Volver a selección de medicamento</a>
+                    <h3>Datos del Paciente</h3>
+                    <form id="patientForm">
+                        <div class="form-group">
+                            <label for="rut">RUT *</label>
+                            <input type="text" id="rut" name="rut" placeholder="12.345.678-9" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Correo de contacto *</label>
+                            <input type="email" id="email" name="email" placeholder="ejemplo@correo.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Teléfono de contacto *</label>
+                            <input type="tel" id="phone" name="phone" placeholder="+56 9 1234 5678" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="birthdate">Fecha de nacimiento *</label>
+                            <input type="date" id="birthdate" name="birthdate" required>
+                        </div>
+                        <button type="submit" class="form-submit-button">Continuar</button>
+                    </form>
+                </div>
+
+                <!-- Pantalla de preguntas -->
+                <div class="faq-questions" id="faqQuestions">
+                    <h3>Has seleccionado: MOUNJARO</h3>
+                    <p style="text-align: center; color: #666; margin-bottom: 20px;">¿En qué puedo ayudarte?</p>
+                    <button class="faq-question-button" onclick="showAnswer('que-es')">
+                        ¿Qué es Mounjaro?
+                    </button>
+                    <button class="faq-question-button" onclick="showAnswer('como-aplicar')">
+                        ¿Cómo me aplico el producto?
+                    </button>
+                    <button class="faq-question-button" onclick="showAnswer('agujas')">
+                        ¿Dónde consigo agujas?
+                    </button>
+                    <button class="faq-question-button" onclick="showAnswer('farmacovigilancia')">
+                        Tuve un problema al utilizar el medicamento
+                    </button>
+                    <button class="back-button" onclick="backToWelcome()">← Volver al menú anterior</button>
+                    <p style="text-align: center; color: #666; margin-top: 30px;">
+                        Conoce más información sobre tu patología y/o tratamiento 
+                        <a href="https://mounjaro.lilly.com/es/que-es-mounjaro" target="_blank" style="color: #ff0032; font-weight: 600; text-decoration: none;">AQUÍ</a>.
+                    </p>
+                </div>
+
+                <!-- Respuestas -->
+                <div class="faq-answer" id="answer-que-es">
+                    <h3>¿Qué es Mounjaro?</h3>
+                    <div class="video-container">
+                        <iframe 
+                            src="https://www.youtube.com/embed/yMJ5YdEnS9w" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <p>Mounjaro es un medicamento innovador diseñado para ayudarte en tu tratamiento. Mira el video para conocer más detalles.</p>
+                    <button class="back-button" onclick="backToQuestions()">← Volver a preguntas</button>
+                </div>
+
+                <div class="faq-answer" id="answer-como-aplicar">
+                    <h3>¿Cómo me aplico el producto?</h3>
+                    <div class="video-container">
+                        <iframe 
+                            src="https://www.youtube.com/embed/iSWubSlzPbc" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <p>En este video aprenderás paso a paso cómo aplicar correctamente Mounjaro de forma segura y efectiva.</p>
+                    <button class="back-button" onclick="backToQuestions()">← Volver a preguntas</button>
+                </div>
+
+                <div class="faq-answer" id="answer-agujas">
+                    <h3>¿Dónde consigo agujas?</h3>
+                    <p>En Adium Chile contamos con <strong>programas de beneficios</strong> especiales para nuestros pacientes:</p>
+                    <ul>
+                        <li><strong>Programa de Entrega de Agujas:</strong> Puedes solicitar agujas compatibles directamente a través de nuestro programa de apoyo.</li>
+                        <li><strong>Descuentos Especiales:</strong> Accede a precios preferenciales en farmacias asociadas.</li>
+                        <li><strong>Entregas a Domicilio:</strong> Recibe tus insumos en la comodidad de tu hogar sin costo adicional.</li>
+                    </ul>
+                    <p>Para más información sobre estos beneficios, contacta a nuestro equipo de apoyo o consulta con tu médico tratante.</p>
+                    <button class="back-button" onclick="backToQuestions()">← Volver a preguntas</button>
+                </div>
+
+                <div class="faq-answer" id="answer-farmacovigilancia">
+                    <h3>Formulario de farmacovigilancia</h3>
+                    <p>La farmacovigilancia es fundamental para garantizar la seguridad de los medicamentos. Si has experimentado algún efecto adverso o evento inesperado, por favor repórtalo.</p>
+                    <p>Tu reporte es confidencial y nos ayuda a mejorar la seguridad de todos nuestros pacientes.</p>
+                    <p style="text-align: center; margin-top: 30px;">
+                        <a href="https://adium.creoscro.com/Safety/PublicGeneral" target="_blank" class="external-link-button">
+                            Ir al formulario de farmacovigilancia →
+                        </a>
+                    </p>
+                    <button class="back-button" onclick="backToQuestions()">← Volver a preguntas</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Generar userId único para la sesión
-        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
-        let isProcessing = false;
+        // ========== PESTAÑAS ==========
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
 
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                // Remover active de todas las pestañas
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                // Activar pestaña seleccionada
+                tab.classList.add('active');
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+            });
+        });
+
+        // ========== PESTAÑA 1: CHAT IA ==========
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const typingIndicator = document.getElementById('typingIndicator');
 
-        // Manejo de Enter para enviar mensaje
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !isProcessing) {
-                sendMessage();
-            }
-        }
+        const userId = 'user_' + Math.random().toString(36).substring(7);
+        let isProcessing = false;
 
-        // Agregar mensaje al chat
-        function addMessage(role, content, citations = []) {
+        // Agregar mensaje
+        function addMessage(role, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-
+            
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.textContent = content;
-
+            
             messageDiv.appendChild(contentDiv);
-
-            // Agregar citations si existen
-            if (citations && citations.length > 0) {
-                const citationsDiv = document.createElement('div');
-                citationsDiv.className = 'citations';
-                citationsDiv.innerHTML = '<strong>📚 Referencias:</strong>';
-                
-                citations.forEach(citation => {
-                    const link = document.createElement('a');
-                    link.href = citation;
-                    link.target = '_blank';
-                    link.textContent = citation.split('/').pop() || citation;
-                    citationsDiv.appendChild(link);
-                });
-
-                contentDiv.appendChild(citationsDiv);
-            }
-
-            // Insertar antes del indicador de escritura
+            
             chatMessages.insertBefore(messageDiv, typingIndicator);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -368,11 +1085,8 @@
             sendButton.disabled = true;
             messageInput.disabled = true;
 
-            // Agregar mensaje del usuario
             addMessage('user', message);
             messageInput.value = '';
-
-            // Mostrar indicador de escritura
             showTyping(true);
 
             try {
@@ -388,14 +1102,12 @@
                 });
 
                 const data = await response.json();
-
-                // Ocultar indicador de escritura
                 showTyping(false);
 
                 if (data.error) {
                     addMessage('assistant', `⚠️ Error: ${data.response || data.error}`);
                 } else {
-                    addMessage('assistant', data.response, data.citations);
+                    addMessage('assistant', data.response);
                 }
 
             } catch (error) {
@@ -410,45 +1122,89 @@
             }
         }
 
+        // Event listeners para chat IA
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
         // Limpiar chat
-        async function clearChat() {
-            if (!confirm('¿Estás seguro de que deseas limpiar el chat?')) {
-                return;
-            }
-
-            try {
-                await fetch(`/api/chat/${userId}`, {
-                    method: 'DELETE'
-                });
-
-                // Limpiar interfaz
-                chatMessages.innerHTML = `
-                    <div class="welcome-message">
-                        <h2>¡Bienvenido!</h2>
-                        <p>Soy tu asistente virtual para responder preguntas sobre <strong>Mounjaro</strong>.</p>
-                        <p>Puedo ayudarte con información sobre:</p>
-                    
-                    </div>
-                    <div class="typing-indicator" id="typingIndicator">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
-                `;
-
-                messageInput.value = '';
-                messageInput.focus();
-            } catch (error) {
-                console.error('Error limpiando chat:', error);
-                alert('Error al limpiar el chat');
-            }
+        function clearChat() {
+            const messages = chatMessages.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
         }
 
-        // Focus automático en el input al cargar
-        messageInput.focus();
+        // ========== PESTAÑA 2: FAQ ==========
+        function selectMedication() {
+            document.getElementById('faqWelcome').style.display = 'none';
+            document.getElementById('faqForm').classList.add('active');
+        }
 
-        // Log userId en consola para debugging
-        console.log('Session User ID:', userId);
+        // Manejar envío del formulario
+        document.getElementById('patientForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Aquí podrías guardar los datos si fuera necesario
+            const formData = {
+                rut: document.getElementById('rut').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                birthdate: document.getElementById('birthdate').value
+            };
+            
+            console.log('Datos del paciente:', formData);
+            
+            // Ocultar formulario y mostrar preguntas
+            document.getElementById('faqForm').classList.remove('active');
+            document.getElementById('faqQuestions').classList.add('active');
+        });
+
+        function showAnswer(answerId) {
+            // Ocultar preguntas
+            document.getElementById('faqQuestions').classList.remove('active');
+            
+            // Ocultar todas las respuestas
+            document.querySelectorAll('.faq-answer').forEach(answer => {
+                answer.classList.remove('active');
+            });
+            
+            // Mostrar respuesta seleccionada
+            document.getElementById(`answer-${answerId}`).classList.add('active');
+        }
+
+        function backToQuestions() {
+            // Ocultar todas las respuestas
+            document.querySelectorAll('.faq-answer').forEach(answer => {
+                answer.classList.remove('active');
+            });
+            
+            // Mostrar preguntas
+            document.getElementById('faqQuestions').classList.add('active');
+        }
+
+        function backToWelcome() {
+            // Ocultar preguntas
+            document.getElementById('faqQuestions').classList.remove('active');
+            
+            // Limpiar formulario
+            document.getElementById('patientForm').reset();
+            
+            // Mostrar bienvenida
+            document.getElementById('faqWelcome').style.display = 'block';
+        }
+
+        function backToMedicationSelection() {
+            // Ocultar formulario
+            document.getElementById('faqForm').classList.remove('active');
+            
+            // Limpiar formulario
+            document.getElementById('patientForm').reset();
+            
+            // Mostrar bienvenida
+            document.getElementById('faqWelcome').style.display = 'block';
+        }
     </script>
 </body>
 </html>
