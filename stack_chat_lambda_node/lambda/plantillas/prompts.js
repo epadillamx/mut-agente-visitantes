@@ -251,7 +251,32 @@ const csvContent = `pregunta;respuesta
                         -piso 4: Restaurante Toni Lautaro, que es de pizzas y comida italiana;
                         -piso 4: Restaurante Ambrosía Bistró, que es un restaurante de cocina de autor creativa;
                         -piso -2: Restaurante Embarcadero 41, que es de comida Peruana;
-                        -piso -3: Antigua Fuente, que es una sanguchería típica chilena"`;
+                        -piso -3: Antigua Fuente, que es una sanguchería típica chilena"
+                        Qué tiendas de vestuario o ropa de hombre (masculino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de hombres o masculino:
+                        - piso -1: Snog, La Plage, Museo Garment, Stance, Toke, Blundstone, More Amor, Joia, Lomvok
+                        -piso 1: Scalpers, Adidas, Fjall Raven, Black
+                        -piso 2: Nike, Lippi";1 preguntas sobre búsqueda de tiendas
+                        Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
+                        - piso -1: Dinámica, NS Leather, Silvestre, Vístete Local, Coom, Rita Lira, Cons, Sellos Vintage, Vestua, La María Dolores, Mundano, Blue Blood, Jacinta, Froens
+                        -piso 1: Scalpers, Adidas, Fjall Raven, Black, Karyn Coo
+                        -piso 2: Nike, Lippi, Drops";1 preguntas sobre búsqueda de tiendas
+                        Qué tiendas hay en las Industrias Creativas;Las Industrias Creativas son el sector del piso -1 de MUT, donde se concentran tiendas de diseño de autor, emprendedores y creadores nacionales. Están las siguientes tiendas: Joia, Atómica, Kahlu, Bumi Lifestyle, Blum Kids, Bom Beauty, Blue Blood, Cantarina Joyas, Cons, Comm, Cocó de la Vega, Karungen, Lycos Vounó, Museo Garment, NS Leather, Ojo por Ojo, Rita Lira, Snog, Silvestre, Sellos Vintange, Teraideas, Vístete Local, Vestuá y Zucca;1 preguntas sobre búsqueda de tiendas
+                        Hay tiendas de música o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música o disquerías:
+                        -piso -1: Plaza Música y Needle
+                        -piso 3: La Disquería";1 preguntas sobre búsqueda de tiendas
+                        Hay zapaterías en MUT;"Sí, en MUT hay varias tiendas de zapatos y zapatillas, entre ellas puedes encontrar:
+                        -piso -1: Blundstone, tienda de zapatos unisex;
+                        -piso -1: tienda de cueros De La Mafia;
+                        -piso -1: Tató, tienda de zapatos infantiles;
+                        -piso 1: tiendas deportivas Fjall Raven, Adidas y Skechers;
+                        -piso 2: está la tienda deportiva y de zapatillas Nike;
+                        -piso 2: está la tienda deportiva Lippi";1 preguntas sobre búsqueda de tiendas
+                        Donde puedo comprar accesorios de telefónia, accesorios de celular, una carcasa, un cargador de celular para mi teléfono;"Si necesitas productos de telefonía, puedes ir a:
+                        -piso 2: Maconline
+                        -Piso -3: Backonline y Vintage, venden carcasas y accesorios
+                        -Piso -3: Multiservice, venden tarjetas de prepago";1 preguntas sobre búsqueda de tiendas
+                        Venden tarjetas de pre pago de celulares;Sí, en la tienda Multiservice que está en el piso -3;1 preguntas sobre búsqueda de tiendas
+                        Dónde puedo hacer una copia de llave o copiado de control de portón;En la tienda Multiservice del piso -3, hacen copias de llaves, copias de controles de portón, venden accesorios de celulares y otras cosas;1 preguntas sobre búsqueda de tiendas`;
 
 const PROMPT_TEMPLATES = {
     extractInfo: {
