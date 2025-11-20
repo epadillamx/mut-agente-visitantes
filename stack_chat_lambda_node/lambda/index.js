@@ -276,6 +276,7 @@ async function handleWhatsAppMessage(event) {
                                         }
                                     };
                                     // Guardar mensaje de forma asíncrona sin esperar (fire and forget)
+                                    const conversationService = new ConversationService();
                                     conversationService.saveMessage(from, messageBody, agentResponse, messageId, traceabilityData).catch(err => {
                                         logger.error('Error guardando mensaje (background):', err);
                                     });
