@@ -2,7 +2,7 @@ import { getAgente } from './getAgente.js';
 import { sendMessage, MarkStatusMessage } from './send.message.js';
 import { inputLlm } from './llm-vector.js';
 import logger from './logger.js';
-//import { ConversationService } from './conversationService.js';
+import { ConversationService } from './conversationService.js';
 
 /**
  * Cache en memoria para deduplicación de mensajes
@@ -251,7 +251,7 @@ async function handleWhatsAppMessage(event) {
                                         continue; // Saltar este mensaje
                                     }
 
-                                    
+
                                     // Marcar mensaje como procesado ANTES de procesarlo
                                     markMessageAsProcessed(messageId);
 
@@ -261,11 +261,26 @@ async function handleWhatsAppMessage(event) {
                                     let startTime = Date.now();
                                     const agentResponse = await inputLlm(messageBody);
 
-                                  
+
                                     logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
                                     await sendMessage(from, agentResponse);
+
                                     let endTime = Date.now();
-                                    logger.warn("Tiempo de respuesta (s):", (endTime - startTime) / 1000);
+                                    const duration = endTime - startTime;
+                                    logger.warn("Tiempo de respuesta (s):", duration / 1000);
+
+                                    const traceabilityData = {
+                                        agentMetadata: {
+                                            sessionId: from,
+                                            processingTimeMs: duration,
+                                        }
+                                    };
+                                    // Guardar mensaje de forma asíncrona sin esperar (fire and forget)
+                                    conversationService.saveMessage(from, messageBody, agentResponse, messageId, traceabilityData).catch(err => {
+                                        logger.error('Error guardando mensaje (background):', err);
+                                    });
+
+                                    
 
                                 } catch (processError) {
                                     logger.error('Error procesando mensaje:', processError);
