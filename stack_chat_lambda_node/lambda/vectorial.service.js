@@ -1,6 +1,6 @@
-const { pipeline } = require('@xenova/transformers');
-const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getCache, setCache, isCacheActive } = require('./vectorial.service.cache');
+import { pipeline } from '@xenova/transformers';
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getCache, setCache, isCacheActive } from './vectorial.service.cache.js';
 
 const s3Client = new S3Client({ region: 'us-east-1' });
 
@@ -255,7 +255,7 @@ function formatSearchResults(results) {
     return formatted;
 }
 
-module.exports = {
+export {
     initAllVectorStores,
     searchVectorStore,
     formatSearchResults,

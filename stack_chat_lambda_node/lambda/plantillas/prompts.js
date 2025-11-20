@@ -253,7 +253,7 @@ const csvContent = `pregunta;respuesta
                         -piso -2: Restaurante Embarcadero 41, que es de comida Peruana;
                         -piso -3: Antigua Fuente, que es una sanguchería típica chilena"`;
 
-export const PROMPT_TEMPLATES = {
+const PROMPT_TEMPLATES = {
     extractInfo: {
         system: `Eres el asistente virtual de MUT. Tu ÚNICA función es analizar consultas y responder EXCLUSIVAMENTE en formato JSON válido.
             
@@ -407,4 +407,6 @@ export const PROMPT_TEMPLATES = {
                 Tu respuesta DEBE ser únicamente el objeto JSON. Sin texto adicional. Sin explicaciones. Solo JSON.
             `
     },
-}
+};
+
+export { PROMPT_TEMPLATES };

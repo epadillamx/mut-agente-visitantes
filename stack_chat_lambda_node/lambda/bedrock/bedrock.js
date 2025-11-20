@@ -1,5 +1,5 @@
-const { BedrockRuntimeClient } = require('@aws-sdk/client-bedrock-runtime');
-const { BedrockClient, ListFoundationModelsCommand } = require('@aws-sdk/client-bedrock');
+import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
+import { BedrockClient, ListFoundationModelsCommand } from '@aws-sdk/client-bedrock';
 
 
 // Cliente para operaciones generales de Bedrock
@@ -24,7 +24,7 @@ async function checkBedrockStatus() {
   }
 }
 
-module.exports = {
+export {
   bedrockClient,
   bedrockRuntimeClient,
   checkBedrockStatus

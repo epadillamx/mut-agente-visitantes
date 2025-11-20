@@ -1,6 +1,6 @@
-const { BedrockAgentRuntimeClient, InvokeAgentCommand } = require("@aws-sdk/client-bedrock-agent-runtime");
-const { ConversationService } = require('./conversationService');
-const util = require('util');
+import { BedrockAgentRuntimeClient, InvokeAgentCommand } from '@aws-sdk/client-bedrock-agent-runtime';
+import { ConversationService } from './conversationService.js';
+import util from 'util';
 
 /**
  * Invoca al agente de Bedrock con la pregunta del usuario y guarda la conversación
@@ -226,4 +226,4 @@ async function getAgente(userId, question, messageId) {
     }
 }
 
-module.exports = { getAgente };
+export { getAgente };

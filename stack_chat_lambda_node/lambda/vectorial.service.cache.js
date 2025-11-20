@@ -1,7 +1,7 @@
-const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
-const fs = require('fs').promises;
-const zlib = require('zlib');
-const { promisify } = require('util');
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { promises as fs } from 'fs';
+import zlib from 'zlib';
+import { promisify } from 'util';
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
@@ -12,8 +12,7 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' })
 const CACHE_CONFIG = {
     CACHE_BUCKET: process.env.CACHE_BUCKET || 'mut-vectorial-cache-529928147458-tmp',
     CACHE_KEY: 'vectorial-cache/embeddings-v1.json.gz',
-    //TMP_CACHE_FILE: '/tmp/vectorial-cache.json',
-    TMP_CACHE_FILE: 'C:\\app\\vectorial-cache.json',
+    TMP_CACHE_FILE: '/tmp/vectorial-cache.json',
     CACHE_TTL_MS: 24 * 60 * 60 * 1000 // 24 horas
 };
 
@@ -247,7 +246,7 @@ async function invalidateCache() {
     console.log('✅ Cache invalidado');
 }
 
-module.exports = {
+export {
     getCache,
     setCache,
     invalidateCache,

@@ -116,4 +116,4 @@ async function sendMessage(phone, userMessage) {
     }
 }
 
-module.exports = { sendMessage, MarkStatusMessage };
+export { sendMessage, MarkStatusMessage };

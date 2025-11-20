@@ -1,6 +1,7 @@
-const { getAgente } = require('./getAgente');
-const { sendMessage, MarkStatusMessage } = require('./send.message');
-//const { ConversationService } = require('./conversationService');
+import { getAgente } from './getAgente.js';
+import { sendMessage, MarkStatusMessage } from './send.message.js';
+import { inputLlm } from './llm-vector.js';
+//import { ConversationService } from './conversationService.js';
 
 
 /**
@@ -11,7 +12,7 @@ const { sendMessage, MarkStatusMessage } = require('./send.message');
  * - POST /chat - Endpoint directo para pruebas
  * - GET /history - Obtener historial de conversaciones
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
     //console.log('📥 Event received:', JSON.stringify(event, null, 2));
 
     const httpMethod = event.httpMethod || event.requestContext?.http?.method;
@@ -160,7 +161,7 @@ async function handleWhatsAppMessage(event) {
 
 
                                         //console.log(`✅ ${from}:`, message_full);
-                                        const agentResponse = await getAgente(from, messageBody, messageId);
+                                        const agentResponse = await inputLlm(messageBody);
                                         if (agentResponse !== '#REPLICA#') {
                                             await sendMessage(from, agentResponse);
                                         }

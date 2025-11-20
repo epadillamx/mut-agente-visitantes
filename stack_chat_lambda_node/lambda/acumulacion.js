@@ -123,4 +123,4 @@ function forceProcess(userId) {
     return null;
 }
 
-module.exports = { accumulateMessage, getQueueStatus, forceProcess };
+export { accumulateMessage, getQueueStatus, forceProcess };
