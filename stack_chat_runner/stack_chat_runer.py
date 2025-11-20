@@ -15,7 +15,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-class ChatLambdaNodeStack(Stack):
+class ChatRunnerNodeStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, 
                  conversations_table=None, sessions_table=None,
