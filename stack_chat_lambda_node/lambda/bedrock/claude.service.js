@@ -1,5 +1,6 @@
 import { InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { bedrockRuntimeClient } from './bedrock.js';
+import logger from '../logger.js';
 
 // Claude Haiku 4.5 - Soporta prompt caching (mínimo 4096 tokens)
 // Usando inference profile para us-east-1
@@ -38,7 +39,7 @@ async function invokeClaude(prompt, systemMessage = '') {
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     return responseBody.content[0].text;
   } catch (error) {
-    console.error('Error invocando Claude:', error);
+    logger.error('Error invocando Claude:', error);
     throw error;
   }
 }

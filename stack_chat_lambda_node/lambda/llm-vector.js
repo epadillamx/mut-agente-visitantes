@@ -1,6 +1,7 @@
 import { invokeClaude } from './bedrock/claude.service.js';
 import { PROMPT_TEMPLATES } from './plantillas/prompts.js';
 import { searchVectorStore, formatSearchResults, isCacheActive, initAllVectorStores } from './vectorial.service.js';
+import logger from './logger.js';
 
 // Detectar saludos simples sin llamar al LLM
 function isSimpleGreeting(text) {
@@ -10,20 +11,20 @@ function isSimpleGreeting(text) {
 
 // Mensaje de bienvenida
 function getWelcomeMessage() {
-    return `¡Bienvenid@ a MUT! Soy tu asistente virtual durante tu visita a MUT.
+    return `*Bienvenid@ a MUT! Soy tu asistente virtual durante tu visita*.
 A continuación, selecciona el tipo de ayuda que necesitas:
 
-1️⃣ Búsqueda de tiendas  
-2️⃣ Ubicación de baños
-3️⃣ Búsqueda de sectores para sentarse a comer
-4️⃣ Jardín de MUT
-5️⃣ Cómo llegar al metro desde MUT
-6️⃣ Salidas de MUT
-7️⃣ Ubicación de oficinas MUT
-8️⃣ Estacionamientos
-9️⃣ Bicihub MUT
-🔟 Emergencias
-1️⃣1️⃣ Otras preguntas`;
+1.- Búsqueda de tiendas  
+2.- Ubicación de baños
+3.- Búsqueda de sectores para sentarse a comer
+4.- Jardín de MUT
+5.- Cómo llegar al metro desde MUT
+6.- Salidas de MUT
+7.- Ubicación de oficinas MUT
+8.- Estacionamientos
+9.- Bicihub MUT
+10.- Emergencias
+11.- Otras preguntas`;
 }
 
 async function invokeQuestions(inputTextuser) {
@@ -57,14 +58,14 @@ async function inputLlm(inputTextuser) {
     // Validar si el cache está activo antes de procesar
     let cacheStatus = isCacheActive();
     if (cacheStatus.active) {
-        console.log(`📦 Cache activo (${cacheStatus.source}): ${cacheStatus.documents} documentos, edad: ${cacheStatus.age}s`);
+        logger.cache(`Cache activo (${cacheStatus.source}): ${cacheStatus.documents} documentos, edad: ${cacheStatus.age}s`);
     } else {
-        console.log('⚠️ Cache no activo - precargando...');
+        logger.warn('Cache no activo - precargando...');
         // Precargar el cache de forma proactiva
         await initAllVectorStores();
         cacheStatus = isCacheActive();
         if (cacheStatus.active) {
-            console.log(`✅ Cache precargado: ${cacheStatus.documents} documentos`);
+            logger.success(`Cache precargado: ${cacheStatus.documents} documentos`);
         }
     }
 
@@ -73,13 +74,10 @@ async function inputLlm(inputTextuser) {
     // OPTIMIZACIÓN: Detectar saludos simples SIN llamar al LLM
     if (isSimpleGreeting(inputTextuser)) {
         respuestaFinal = getWelcomeMessage();
-        console.log('\n=== RESPUESTA FINAL ===');
-        console.log(respuestaFinal);
-        console.log('\n=== MÉTRICAS ===');
+        logger.info('Respuesta de saludo automático enviada');
+        logger.debug('Contenido:', respuestaFinal);
         let wordCount = respuestaFinal.split(/\s+/).length;
-        console.log("Número de palabras en la respuesta:", wordCount);
-        let endTime = Date.now();
-        console.log("Tiempo de respuesta (s):", (endTime - startTime) / 1000);
+        logger.time(`Tiempo de respuesta: ${((Date.now() - startTime) / 1000)}s, Palabras: ${wordCount}`);
         return respuestaFinal;
     }
 
@@ -100,13 +98,11 @@ async function inputLlm(inputTextuser) {
         respuestaFinal = 'El equipo de *Servicio al Cliente* en *Piso -3* te puede ayudar mejor con eso. Están al fondo, al lado de *Pastelería Jo* 😊';
     }
 
-    console.log('\n=== RESPUESTA FINAL ===');
-    console.log(respuestaFinal);
-    console.log('\n=== MÉTRICAS ===');
+    logger.info('Respuesta final generada');
+    logger.debug('Contenido:', respuestaFinal);
     let wordCount = respuestaFinal.split(/\s+/).length;
-    console.log("Número de palabras en la respuesta:", wordCount);
     let endTime = Date.now();
-    console.log("Tiempo de respuesta (s):", (endTime - startTime) / 1000);
+    logger.time(`Tiempo de respuesta: ${((endTime - startTime) / 1000)}s, Palabras: ${wordCount}`);
     
     return respuestaFinal;
 }
@@ -120,7 +116,7 @@ async function main() {
     await inputLlm(inputTextuser);
 
     console.log('\n\n🧪 TEST 2: Segunda consulta (con cache activo)');
-    inputTextuser = `Quiero comer un rico helado`;
+    inputTextuser = `Hola donde puedeo comprar cafe`;
     await inputLlm(inputTextuser);
 
     console.log('\n\n🧪 TEST 3: Tercera consulta (validar cache persiste)');
@@ -134,4 +130,5 @@ async function main() {
     process.exit(0);
 }
 
+//main()
 export { inputLlm };

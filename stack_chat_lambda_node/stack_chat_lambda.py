@@ -73,7 +73,12 @@ class ChatLambdaNodeStack(Stack):
             "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
             "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap(),
             # S3 Cache bucket
-            "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name
+            "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name,
+            # Configure transformers to use /tmp for model cache (read-only filesystem issue)
+            "TRANSFORMERS_CACHE": "/tmp/.cache",
+            "HF_HOME": "/tmp/.cache",
+            # Logger configuration - production mode (solo ERROR logs)
+            "NODE_ENV": "production"
         }
 
         # Add DynamoDB table names if provided
@@ -112,6 +117,22 @@ class ChatLambdaNodeStack(Stack):
         
         # Grant S3 permissions for cache bucket
         self.cache_bucket.grant_read_write(self.lambda_fn)
+        
+        # Grant S3 permissions for data bucket (raw-virtual-assistant-data)
+        self.lambda_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "s3:ListBucket",
+                    "s3:GetObject",
+                    "s3:PutObject"
+                ],
+                resources=[
+                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}",
+                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}/*"
+                ]
+            )
+        )
 
 
         """
@@ -286,6 +307,7 @@ class ChatLambdaNodeStack(Stack):
         # 4. Grant Foundation Model permissions (for direct model invocation if needed)
         # Note: The agent already has permissions to invoke models, but this allows
         # the Lambda to directly invoke models for any custom processing if required
+        # Includes both foundation-model/* and inference-profile/* resources
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -294,7 +316,8 @@ class ChatLambdaNodeStack(Stack):
                     "bedrock:InvokeModelWithResponseStream"
                 ],
                 resources=[
-                    "arn:aws:bedrock:*::foundation-model/*"
+                    "arn:aws:bedrock:*::foundation-model/*",
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*"
                 ]
             )
         )

@@ -1,6 +1,7 @@
 import { pipeline } from '@xenova/transformers';
 import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getCache, setCache, isCacheActive } from './vectorial.service.cache.js';
+import logger from './logger.js';
 
 const s3Client = new S3Client({ region: 'us-east-1' });
 
@@ -12,10 +13,10 @@ let embeddingModel = null;
  */
 async function initEmbeddingModel() {
     if (!embeddingModel) {
-        console.log('Inicializando modelo de embeddings...');
+        logger.debug('Inicializando modelo de embeddings...');
         // Usando el modelo multilingual de sentence transformers
         embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-        console.log('✅ Modelo de embeddings inicializado');
+        logger.success('Modelo de embeddings inicializado');
     }
     return embeddingModel;
 }
@@ -50,7 +51,7 @@ async function downloadDataFromS3(category) {
         const listResponse = await s3Client.send(listCommand);
         const jsonlFiles = listResponse.Contents?.filter(item => item.Key.endsWith('.jsonl')) || [];
 
-        console.log(`📂 Encontrados ${jsonlFiles.length} archivos JSONL para ${category}`);
+        logger.info(`Encontrados ${jsonlFiles.length} archivos JSONL para ${category}`);
 
         const allDocuments = [];
 
@@ -71,16 +72,16 @@ async function downloadDataFromS3(category) {
                     const doc = JSON.parse(line);
                     allDocuments.push(doc);
                 } catch (e) {
-                    console.error('Error parseando línea:', e);
+                    logger.error('Error parseando línea:', e);
                 }
             }
         }
 
-        console.log(`✅ Total de documentos cargados de ${category}: ${allDocuments.length}`);
+        logger.success(`Total de documentos cargados de ${category}: ${allDocuments.length}`);
         return allDocuments;
 
     } catch (error) {
-        console.error(`Error descargando datos de ${category}:`, error);
+        logger.error(`Error descargando datos de ${category}:`, error);
         throw error;
     }
 }
@@ -109,7 +110,7 @@ function cosineSimilarity(vecA, vecB) {
  * @param {string} category - 'restaurantes' o 'stores'
  */
 async function initVectorStoreByCategory(category) {
-    console.log(`🔄 Inicializando base vectorial para ${category}...`);
+    logger.info(`Inicializando base vectorial para ${category}...`);
     const documents = await downloadDataFromS3(category);
     await initEmbeddingModel();
 
@@ -138,7 +139,7 @@ async function initVectorStoreByCategory(category) {
         }
     }
 
-    console.log(`✅ Base vectorial de ${category} inicializada con ${vectorStore.length} documentos`);
+    logger.success(`Base vectorial de ${category} inicializada con ${vectorStore.length} documentos`);
     return vectorStore;
 }
 
@@ -152,11 +153,11 @@ async function initAllVectorStores() {
     const cachedData = await getCache();
     if (cachedData && cachedData.documents) {
         const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(`⚡ Usando cache (${cachedData.documents.length} documentos en ${loadTime}s)`);
+        logger.info(`Usando cache (${cachedData.documents.length} documentos en ${loadTime}s)`);
         return cachedData.documents;
     }
 
-    console.log('🚀 Cargando datos frescos desde S3...');
+    logger.info('Cargando datos frescos desde S3...');
 
     // Inicializar el modelo primero (solo una vez)
     await initEmbeddingModel();
@@ -183,8 +184,8 @@ async function initAllVectorStores() {
     });
 
     const endTime = Date.now();
-    console.log(`✅ Bases vectoriales cargadas y cacheadas en ${((endTime - startTime) / 1000).toFixed(2)}s`);
-    console.log(`📊 Total: ${allDocuments.length} documentos (${restaurantes.length} restaurantes + ${tiendas.length} tiendas)`);
+    logger.success(`Bases vectoriales cargadas y cacheadas en ${((endTime - startTime) / 1000).toFixed(2)}s`);
+    logger.info(`Total: ${allDocuments.length} documentos (${restaurantes.length} restaurantes + ${tiendas.length} tiendas)`);
 
     return allDocuments;
 }

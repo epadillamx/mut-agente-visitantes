@@ -1,5 +1,6 @@
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
 import { BedrockClient, ListFoundationModelsCommand } from '@aws-sdk/client-bedrock';
+import logger from '../logger.js';
 
 
 // Cliente para operaciones generales de Bedrock
@@ -19,7 +20,7 @@ async function checkBedrockStatus() {
     await bedrockClient.send(command);
     return 'ok';
   } catch (error) {
-    console.error('Error de conexión a Bedrock:', error);
+    logger.error('Error de conexión a Bedrock:', error);
     return 'error';
   }
 }

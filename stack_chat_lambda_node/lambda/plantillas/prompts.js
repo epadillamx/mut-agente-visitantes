@@ -269,6 +269,7 @@ const PROMPT_TEMPLATES = {
             ## FORMATO WhatsApp
             - *Texto*: nombres, pisos, ubicaciones
             - _Texto_: horarios
+            - listas con guiones: para enumerar opciones
             - Emojis: 📍🕐🍴🚇🚲🌳🚻
 
             ## DATOS CSV
@@ -322,6 +323,7 @@ const PROMPT_TEMPLATES = {
             ## FORMATO WhatsApp
             - *Texto*: nombres, pisos, ubicaciones
             - _Texto_: horarios
+            - listas con guiones: para enumerar opciones
             - Emojis: 📍🕐🍴🚇🚲🌳🚻
 
             ## CLASIFICACIÓN DE PREGUNTAS
@@ -368,7 +370,7 @@ const PROMPT_TEMPLATES = {
             Multiidioma: ES/EN/PT.
 
             ## BIENVENIDA (Solo al saludar)
-            "¡Bienvenid@ a MUT! Soy tu asistente virtual durante tu visita a MUT.
+            "*Bienvenid@ a MUT! Soy tu asistente virtual durante tu visita*
             A continuación, selecciona el tipo de ayuda que necesitas:
 
             1️.- Búsqueda de tiendas  

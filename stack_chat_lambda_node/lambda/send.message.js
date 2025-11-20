@@ -1,3 +1,4 @@
+import logger from './logger.js';
 
 /**
  * Obtiene las credenciales de WhatsApp desde variables de entorno
@@ -32,7 +33,7 @@ async function MarkStatusMessage(message_id_sent) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Error response:', errorText);
+            logger.error('Error response:', errorText);
             throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
         }
 
@@ -45,7 +46,7 @@ async function MarkStatusMessage(message_id_sent) {
         };
 
     } catch (error) {
-        console.error('❌ Error marcando mensaje como leído:', error);
+        logger.error('Error marcando mensaje como leído:', error);
 
         return {
             success: false,
@@ -59,7 +60,7 @@ async function MarkStatusMessage(message_id_sent) {
 async function sendMessage(phone, userMessage) {
     try {
         const credentials = getCredentials();
-        console.log(`************************** 10 *********************************************`);
+        logger.debug('Enviando mensaje a WhatsApp');
 
 
 
@@ -105,7 +106,7 @@ async function sendMessage(phone, userMessage) {
         };
 
     } catch (error) {
-        console.error('❌ Error enviando mensaje:', error);
+        logger.error('Error enviando mensaje:', error);
 
         return {
             success: false,

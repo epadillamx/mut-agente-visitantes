@@ -1,8 +1,105 @@
 import { getAgente } from './getAgente.js';
 import { sendMessage, MarkStatusMessage } from './send.message.js';
 import { inputLlm } from './llm-vector.js';
+import logger from './logger.js';
 //import { ConversationService } from './conversationService.js';
 
+/**
+ * Cache en memoria para deduplicación de mensajes
+ * Usa Set para búsquedas O(1) con límite de tamaño
+ */
+const processedMessageIds = new Set();
+const MESSAGE_CACHE_MAX_SIZE = 1000; // Máximo de messageIds en memoria
+const MESSAGE_CACHE_TTL_MS = 3600000; // 1 hora de TTL
+const messageTimestamps = new Map(); // Guarda timestamp de cada messageId
+
+/**
+ * Cache en memoria para rastrear respuestas enviadas
+ * Evita enviar la misma respuesta múltiples veces al mismo usuario
+ * Formato: `${from}:${messageId}` -> true
+ */
+const sentResponses = new Set();
+const sentResponsesTimestamps = new Map();
+const RESPONSE_CACHE_MAX_SIZE = 1000;
+const RESPONSE_CACHE_TTL_MS = 3600000; // 1 hora de TTL
+
+/**
+ * Verifica si un mensaje ya fue procesado (deduplicación)
+ */
+function isDuplicateMessage(messageId) {
+    if (processedMessageIds.has(messageId)) {
+        logger.warn(`Mensaje duplicado detectado: ${messageId}`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Verifica si ya se envió una respuesta para este mensaje
+ */
+function isResponseAlreadySent(from, messageId) {
+    const key = `${from}:${messageId}`;
+    if (sentResponses.has(key)) {
+        logger.warn(`Respuesta ya enviada para: ${key}`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Marca una respuesta como enviada
+ */
+function markResponseAsSent(from, messageId) {
+    const now = Date.now();
+    const key = `${from}:${messageId}`;
+
+    // Limpiar respuestas expiradas
+    for (const [respKey, timestamp] of sentResponsesTimestamps.entries()) {
+        if (now - timestamp > RESPONSE_CACHE_TTL_MS) {
+            sentResponses.delete(respKey);
+            sentResponsesTimestamps.delete(respKey);
+        }
+    }
+
+    // Si el cache está lleno, eliminar la respuesta más antigua
+    if (sentResponses.size >= RESPONSE_CACHE_MAX_SIZE) {
+        const oldestKey = sentResponsesTimestamps.keys().next().value;
+        sentResponses.delete(oldestKey);
+        sentResponsesTimestamps.delete(oldestKey);
+    }
+
+    // Agregar la nueva respuesta
+    sentResponses.add(key);
+    sentResponsesTimestamps.set(key, now);
+    logger.cache(`Respuesta marcada como enviada: ${key} (Cache: ${sentResponses.size}/${RESPONSE_CACHE_MAX_SIZE})`);
+}
+
+/**
+ * Marca un mensaje como procesado y maneja la limpieza del cache
+ */
+function markMessageAsProcessed(messageId) {
+    const now = Date.now();
+
+    // Limpiar mensajes expirados antes de agregar uno nuevo
+    for (const [id, timestamp] of messageTimestamps.entries()) {
+        if (now - timestamp > MESSAGE_CACHE_TTL_MS) {
+            processedMessageIds.delete(id);
+            messageTimestamps.delete(id);
+        }
+    }
+
+    // Si el cache está lleno, eliminar el mensaje más antiguo
+    if (processedMessageIds.size >= MESSAGE_CACHE_MAX_SIZE) {
+        const oldestId = messageTimestamps.keys().next().value;
+        processedMessageIds.delete(oldestId);
+        messageTimestamps.delete(oldestId);
+    }
+
+    // Agregar el nuevo mensaje
+    processedMessageIds.add(messageId);
+    messageTimestamps.set(messageId, now);
+    logger.cache(`Mensaje marcado como procesado: ${messageId} (Cache: ${processedMessageIds.size}/${MESSAGE_CACHE_MAX_SIZE})`);
+}
 
 /**
  * Lambda Handler - Procesa peticiones de API Gateway
@@ -71,7 +168,7 @@ export const handler = async (event) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en handler principal:', error);
+        logger.error('Error en handler principal:', error);
         return createResponse(500, {
             error: 'Error interno del servidor',
             details: error.message
@@ -92,11 +189,11 @@ async function handleWebhookVerification(event) {
         // Obtener VERIFY_TOKEN desde variable de entorno
         const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'mi_token_secreto_123';
 
-        console.log('🔍 Verificación webhook:', { mode, token, challenge });
+        logger.debug('Verificación webhook:', { mode, token, challenge });
 
         if (mode && token) {
             if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-                console.log('✅ WEBHOOK_VERIFIED');
+                logger.success('WEBHOOK_VERIFIED');
                 return {
                     statusCode: 200,
                     body: challenge,
@@ -105,15 +202,15 @@ async function handleWebhookVerification(event) {
                     }
                 };
             } else {
-                console.log('❌ Verificación fallida. Tokens no coinciden.');
+                logger.warn('Verificación fallida. Tokens no coinciden.');
                 return createResponse(403, 'Forbidden');
             }
         } else {
-            console.log('❌ Faltan parámetros mode o token');
+            logger.warn('Faltan parámetros mode o token');
             return createResponse(400, 'Bad Request');
         }
     } catch (error) {
-        console.error('❌ Error en verificación webhook:', error);
+        logger.error('Error en verificación webhook:', error);
         return createResponse(500, { error: 'Error en verificación' });
     }
 }
@@ -146,34 +243,32 @@ async function handleWhatsAppMessage(event) {
                             if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;
+
                                 try {
-                                    //const conversationService = new ConversationService();
-                                    //const isDuplicate = await conversationService.isDuplicateMessage(messageId);
-                                   // if (!isDuplicate) {
+                                    // Verificar si el mensaje ya fue procesado (deduplicación)
+                                    if (isDuplicateMessage(messageId)) {
+                                        logger.debug(`Mensaje duplicado ignorado: ${messageId}`);
+                                        continue; // Saltar este mensaje
+                                    }
 
+                                    
+                                    // Marcar mensaje como procesado ANTES de procesarlo
+                                    markMessageAsProcessed(messageId);
 
+                                    await MarkStatusMessage(messageId);
+                                    logger.warn(`===============MSS ${from}: ${messageBody} || ${messageId}`);
 
+                                    let startTime = Date.now();
+                                    const agentResponse = await inputLlm(messageBody);
 
-                                        await MarkStatusMessage(messageId);
-                                        //console.log(`===================MENSAJE==================`);
-                                        //console.log(`**** ${messageId}:`, messageBody);
+                                  
+                                    logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
+                                    await sendMessage(from, agentResponse);
+                                    let endTime = Date.now();
+                                    logger.warn("Tiempo de respuesta (s):", (endTime - startTime) / 1000);
 
-
-
-                                        //console.log(`✅ ${from}:`, message_full);
-                                        const agentResponse = await inputLlm(messageBody);
-                                        if (agentResponse !== '#REPLICA#') {
-                                            await sendMessage(from, agentResponse);
-                                        }
-                                    //}
-
-
-                                    /*response = await processMessage(from, messageBody, messageId);
-                                    if (response !== '#REPLICA#') {
-                                      isSendMessage = true;
-                                    }*/
                                 } catch (processError) {
-                                    console.error('Error procesando mensaje:', processError);
+                                    logger.error('Error procesando mensaje:', processError);
                                     response = 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.';
                                 }
                             }
@@ -185,7 +280,7 @@ async function handleWhatsAppMessage(event) {
             //if (isSendMessage) {
             //  await sendMessage(from, response);
             //}
-            console.log(`************************** 11 *********************************************`);
+            logger.debug('Procesamiento de webhook completado');
             return {
                 statusCode: 200,
                 body: JSON.stringify({ status: 'ok' })
@@ -199,7 +294,7 @@ async function handleWhatsAppMessage(event) {
         }
 
     } catch (error) {
-        console.error('Error en webhookChat:', error);
+        logger.error('Error en webhookChat:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Error interno del servidor' })
@@ -228,7 +323,7 @@ async function handleDirectChat(event) {
         }
 
         const userId = sessionId || `test-${Date.now()}`;
-        console.log(`🧪 Prueba directa - SessionId: ${userId}, Question: ${userQuestion}`);
+        logger.info(`Prueba directa - SessionId: ${userId}, Question: ${userQuestion}`);
 
         // Llamar directamente al agente
         const agentResponse = await getAgente(userId, userQuestion, 'test-message-id');
@@ -241,7 +336,7 @@ async function handleDirectChat(event) {
         });
 
     } catch (error) {
-        console.error('❌ Error en /chat:', error);
+        logger.error('Error en /chat:', error);
         return createResponse(500, {
             error: 'Error interno del servidor',
             details: error.message
@@ -268,7 +363,7 @@ async function handleConversationHistory(event) {
             });
         }
 
-        console.log(`📚 Obteniendo historial para userId: ${userId}, días: ${days}, límite: ${limit}`);
+        logger.info(`Obteniendo historial para userId: ${userId}, días: ${days}, límite: ${limit}`);
 
         const conversationService = new ConversationService();
 
@@ -306,7 +401,7 @@ async function handleConversationHistory(event) {
         });
 
     } catch (error) {
-        console.error('❌ Error obteniendo historial:', error);
+        logger.error('Error obteniendo historial:', error);
         return createResponse(500, {
             error: 'Internal server error',
             message: 'Error obteniendo el historial de conversaciones',
@@ -332,7 +427,7 @@ async function handleUserStats(event) {
             });
         }
 
-        console.log(`📊 Obteniendo estadísticas para userId: ${userId}`);
+        logger.info(`Obteniendo estadísticas para userId: ${userId}`);
 
         const conversationService = new ConversationService();
 
@@ -351,7 +446,7 @@ async function handleUserStats(event) {
         });
 
     } catch (error) {
-        console.error('❌ Error obteniendo estadísticas:', error);
+        logger.error('Error obteniendo estadísticas:', error);
         return createResponse(500, {
             error: 'Internal server error',
             message: 'Error obteniendo las estadísticas del usuario',
