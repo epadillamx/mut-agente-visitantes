@@ -25,10 +25,7 @@ def lambda_handler(event, context):
     Main handler - Sincroniza base de datos vectorial y actualiza Knowledge Base
     Los ingestion jobs se ejecutan SECUENCIALMENTE para evitar el límite de concurrencia
     """
-    print("=" * 80)
-    print("🔄 Iniciando sincronización SECUENCIAL de base de datos vectorial")
-    print("=" * 80)
-    print(f"📥 Event recibido: {json.dumps(event, indent=2)}")
+   
     
     results = {
         'timestamp': datetime.now().isoformat(),
@@ -36,13 +33,15 @@ def lambda_handler(event, context):
         'agent_id': AGENT_ID,
         'steps': {}
     }
+
+    return {
+            'statusCode': 200,
+            'body': json.dumps(results)
+        }
     
     try:
-        # 1. Verificar archivos vectoriales en S3
-        print(f"\n📦 Verificando archivos en s3://{S3_BUCKET_NAME}/{S3_VECTORIAL_PREFIX}")
         archivos = listar_archivos_vectoriales()
         results['steps']['archivos_encontrados'] = len(archivos)
-        print(f"   ✓ Encontrados {len(archivos)} archivos vectoriales")
         
         if len(archivos) == 0:
             print("   ⚠️  No hay archivos para sincronizar")
@@ -53,20 +52,12 @@ def lambda_handler(event, context):
                 'body': json.dumps(results)
             }
         
-        # 2. Iniciar ingestion jobs SECUENCIALMENTE
-        print(f"\n🚀 Iniciando ingestion jobs SECUENCIALES en Knowledge Base: {KNOWLEDGE_BASE_ID}")
-        print("   ⏱️  Límite AWS: 1 job concurrente por Knowledge Base")
-        
-        # Obtener TODOS los Data Source IDs del Knowledge Base
-        print("\n   📋 Consultando data sources del Knowledge Base...")
         data_source_ids = obtener_data_source_ids()
         
         if not data_source_ids or len(data_source_ids) == 0:
             raise Exception("No se encontraron Data Sources en el Knowledge Base")
         
-        print(f"   ✅ Se sincronizarán {len(data_source_ids)} data sources SECUENCIALMENTE")
         
-        # Ejecutar ingestion jobs UNO POR UNO
         ingestion_jobs = sincronizar_data_sources_secuencialmente(data_source_ids)
         
         results['steps']['ingestion_jobs'] = {
@@ -76,9 +67,6 @@ def lambda_handler(event, context):
             'jobs': ingestion_jobs
         }
         
-        # 3. Preparar el agente para usar los datos actualizados
-        print(f"\n🤖 Preparando agente: {AGENT_ID}")
-        
         try:
             prepare_response = bedrock_agent_client.prepare_agent(
                 agentId=AGENT_ID
@@ -86,25 +74,17 @@ def lambda_handler(event, context):
             
             agent_status = prepare_response.get('agentStatus', 'UNKNOWN')
             prepared_at_time = prepare_response.get('preparedAt', datetime.now().isoformat())
-            print(f"   ✓ Agente preparado")
-            print(f"   Status: {agent_status}")
-            print(f"   Prepared At: {prepared_at_time}")
             
             results['steps']['agent_preparation'] = {
                 'status': agent_status,
                 'prepared_at': str(prepared_at_time)
             }
-            
-            # 3.5 Esperar a que el agente esté listo (PREPARED)
-            print(f"\n⏳ Esperando a que el agente esté completamente preparado...")
             agent_ready = esperar_agente_preparado(timeout=300, check_interval=10)
             
             if not agent_ready:
-                print(f"   ⚠️  Agente no alcanzó estado PREPARED, saltando creación de alias")
                 results['steps']['agent_preparation']['warning'] = 'Agent did not reach PREPARED state'
             else:
-                # 4. Crear nuevo alias del agente
-                print(f"\n🏷️  Creando nuevo alias del agente...")
+
                 new_alias_id = crear_nuevo_alias(agent_status, prepared_at_time)
                 
                 if new_alias_id:
@@ -113,8 +93,7 @@ def lambda_handler(event, context):
                         'created_at': datetime.now().isoformat()
                     }
                     
-                    # 5. Actualizar variable de entorno del Lambda Chat con el nuevo alias
-                    print(f"\n📝 Actualizando Lambda Chat: {CHAT_LAMBDA_FUNCTION_NAME}")
+
                     actualizar_lambda_chat(new_alias_id)
                     
                     results['steps']['lambda_update'] = {
@@ -122,7 +101,7 @@ def lambda_handler(event, context):
                         'new_alias_id': new_alias_id,
                         'updated_at': datetime.now().isoformat()
                     }
-                    print(f"   ✓ Lambda Chat actualizado con nuevo alias: {new_alias_id}")
+
             
         except Exception as e:
             print(f"   ⚠️  Error al preparar agente: {str(e)}")
@@ -134,11 +113,6 @@ def lambda_handler(event, context):
         results['status'] = 'success'
         results['message'] = f'Sincronización completada: {results["steps"]["ingestion_jobs"]["completed"]} exitosos, {results["steps"]["ingestion_jobs"]["failed"]} fallidos'
         
-        print("\n" + "=" * 80)
-        print("✅ Sincronización completada")
-        print("=" * 80)
-        print(f"   ✓ Jobs completados: {results['steps']['ingestion_jobs']['completed']}/{len(ingestion_jobs)}")
-        print(f"   ✗ Jobs fallidos: {results['steps']['ingestion_jobs']['failed']}/{len(ingestion_jobs)}")
         
         return {
             'statusCode': 200,

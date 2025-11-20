@@ -111,20 +111,20 @@ class GenAiVirtualAssistantBedrockStack(Stack):
         base_path = self.input_metadata['s3_knowledge_base_prefixes'][0].rstrip('/')+"/"
 
         return [
-            DataSourceConfig(
-                name="eventos-datasource",
-                inclusion_prefixes=[f"{base_path}eventos/"],
-                max_tokens=300,
-                overlap_percentage=20,
-                description="Fuente de datos para eventos y actividades del centro comercial"
-            ),
-            DataSourceConfig(
-                name="preguntas-datasource",
-                inclusion_prefixes=[f"{base_path}preguntas/"],
-                max_tokens=400,
-                overlap_percentage=10,
-                description="Fuente de datos para preguntas frecuentes (FAQs)"
-            ),
+            # DataSourceConfig(
+            #     name="eventos-datasource",
+            #     inclusion_prefixes=[f"{base_path}eventos/"],
+            #     max_tokens=300,
+            #     overlap_percentage=20,
+            #     description="Fuente de datos para eventos y actividades del centro comercial"
+            # ),
+            # DataSourceConfig(
+            #     name="preguntas-datasource",
+            #     inclusion_prefixes=[f"{base_path}preguntas/"],
+            #     max_tokens=400,
+            #     overlap_percentage=10,
+            #     description="Fuente de datos para preguntas frecuentes (FAQs)"
+            # ),
             DataSourceConfig(
                 name="stores-datasource",
                 inclusion_prefixes=[f"{base_path}stores/"],
@@ -413,7 +413,7 @@ class GenAiVirtualAssistantBedrockStack(Stack):
     def _get_agent_instruction(self) -> str:
 
         return """
-            Eres el asistente virtual de *MUT (Mercado Urbano Tobalaba)*. Responde en máximo *80 palabras*, directo al punto.
+            Eres el asistente virtual de *MUT (Mercado Urbano Tobalaba)*. Responde en máximo *50 palabras* NO MÁS, directo al punto.
 
             ## FORMATO WhatsApp
             - *Texto*: nombres, pisos, ubicaciones
@@ -448,11 +448,11 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             ## BASE DE CONOCIMIENTO
             **Fuentes:** eventos-datasource, preguntas-datasource, stores-datasource, restaurantes-datasource
 
-            **Tipos:** evento, faq, tienda, restaurante, navegacion, servicios
+            **Tipos:** evento, faq, tienda, restaurante
 
             ## RESPUESTAS
             Estructura: *Ubicación* + datos clave + emoji
-            Máximo 80 palabras. Sin frases de cierre. Sin ofrecer ayuda adicional.
+            Máximo 50 palabras NO MÁS. Sin frases de cierre. Sin ofrecer ayuda adicional.
 
             ## EJEMPLOS
 
@@ -490,7 +490,6 @@ class GenAiVirtualAssistantBedrockStack(Stack):
             2. *Navegación*: baños, jardín, metro, salidas, oficinas
             3. *Gastronomía*: El Mercado (-3,-2), restaurantes (3,4,5)
             4. *Estacionamiento*: accesos, tarifas
-            5. *Eventos*: fecha, hora, ubicación exacta
             6. *Bicihub*: 2000 estacionamientos
             7. *SAC*: piso -3 para consultas generales
 

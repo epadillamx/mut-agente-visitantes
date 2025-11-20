@@ -17,8 +17,8 @@ async function getAgente(userId, question, messageId) {
 
         //console.log(`************************** 2 *********************************************`);
         //console.log(`======================  mensajeId ${messageId}`);
-        const AGENT_ID = process.env.AGENT_ID || '9VEMPEULVZ';
-        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || 'AEEB0GXHSK';
+        const AGENT_ID = process.env.AGENT_ID || 'G7LSHMCB2H';
+        const AGENT_ALIAS_ID = process.env.AGENT_ALIAS_ID || '2XAY2JTZNH';
         const REGION = process.env.AWS_REGION || 'us-east-1';
 
 
