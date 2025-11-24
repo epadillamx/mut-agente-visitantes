@@ -1,5 +1,5 @@
 import { getAgente } from './getAgente.js';
-import { sendMessage, MarkStatusMessage } from './send.message.js';
+import { sendMessage, MarkStatusMessage,sendMessageList } from './send.message.js';
 import { inputLlm } from './llm-vector.js';
 import logger from './logger.js';
 import { ConversationService } from './conversationService.js';
@@ -240,9 +240,29 @@ async function handleWhatsAppMessage(event) {
                         for (const message of change.value.messages) {
                             from = message.from;
                             const messageType = message.type;
+                            let messageBody = '';
+                            let messageId = message.id;
+                            let isChat = false;
                             if (messageType === 'text' && message.text) {
-                                const messageBody = message.text.body;
-                                const messageId = message.id;
+                                messageBody = message.text.body;
+                                isChat = true;
+                            } else if (messageType === 'interactive' && message.interactive) {
+                                const messageTypeInteractive = message.interactive.list_reply;
+                                messageBody = messageTypeInteractive.title;
+                                if (messageBody === 'Otras preguntas') {
+                                    if (isDuplicateMessage(messageId)) {
+                                        logger.debug(`Mensaje duplicado ignorado: ${messageId}`);
+                                        continue; // Saltar este mensaje
+                                    }
+                                    markMessageAsProcessed(messageId);
+                                    await MarkStatusMessage(messageId);
+                                    const agentResponseotras = "Por favor, escribe tu pregunta y con gusto te ayudaré.";
+                                    await sendMessage(from, agentResponseotras);
+                                    continue;
+                                }
+                                isChat = true;
+                            }
+                            if (isChat) {
 
                                 try {
                                     // Verificar si el mensaje ya fue procesado (deduplicación)
@@ -263,7 +283,11 @@ async function handleWhatsAppMessage(event) {
 
 
                                     logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
-                                    await sendMessage(from, agentResponse);
+                                    if (agentResponse == 'MENU_BIENVENIDA') {
+                                        await sendMessageList(from);
+                                    } else {
+                                        await sendMessage(from, agentResponse);
+                                    }
 
                                     let endTime = Date.now();
                                     const duration = endTime - startTime;
@@ -281,13 +305,14 @@ async function handleWhatsAppMessage(event) {
                                         logger.error('Error guardando mensaje (background):', err);
                                     });
 
-                                    
+
 
                                 } catch (processError) {
                                     logger.error('Error procesando mensaje:', processError);
                                     response = 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.';
                                 }
                             }
+
                         }
                     }
                 }

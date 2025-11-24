@@ -116,5 +116,123 @@ async function sendMessage(phone, userMessage) {
         };
     }
 }
+async function sendMessageList(phone) {
+    try {
 
-export { sendMessage, MarkStatusMessage };
+        
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Authorization", `Bearer ${process.env.TOKEN_WHATS}`);
+
+        const raw = JSON.stringify({
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": phone,
+            "type": "interactive",
+            "interactive": {
+                "type": "list",
+                "header": {
+                    "type": "text",
+                    "text": "¡Bienvenid@ a MUT!"
+                },
+                "body": {
+                    "text": "Soy tu asistente virtual durante tu visita.\n\nA continuación, selecciona el tipo de ayuda que necesitas:"
+                },
+                "action": {
+                    "button": "Ver opciones",
+                    "sections": [
+                        {
+                            "rows": [
+                                {
+                                    "id": "opcion_1",
+                                    "title": "Búsqueda de tiendas",
+                                    "description": "Encuentra las tiendas que buscas"
+                                },
+                                {
+                                    "id": "opcion_2",
+                                    "title": "Ubicación de baños",
+                                    "description": "Encuentra los baños más cercanos"
+                                },
+                                {
+                                    "id": "opcion_3",
+                                    "title": "Sectores para comer",
+                                    "description": "Zonas de comida y descanso"
+                                },
+                                {
+                                    "id": "opcion_4",
+                                    "title": "Jardín de MUT",
+                                    "description": "Información sobre el jardín"
+                                },
+                                {
+                                    "id": "opcion_5",
+                                    "title": "Cómo llegar al metro",
+                                    "description": "Ruta desde MUT al metro"
+                                },
+                                {
+                                    "id": "opcion_6",
+                                    "title": "Salidas de MUT",
+                                    "description": "Ubicación de las salidas"
+                                },
+                                {
+                                    "id": "opcion_7",
+                                    "title": "Oficinas MUT",
+                                    "description": "Ubicación de oficinas"
+                                },
+                                {
+                                    "id": "opcion_8",
+                                    "title": "Estacionamientos",
+                                    "description": "Información de estacionamientos"
+                                },
+                                {
+                                    "id": "opcion_9",
+                                    "title": "Bicihub MUT",
+                                    "description": "Estacionamiento de bicicletas"
+                                },
+                                {
+                                    "id": "opcion_10",
+                                    "title": "Otras preguntas",
+                                    "description": "Asistencia de emergencia"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        });
+
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: raw,
+            redirect: "follow"
+        };
+
+        // Usar await para esperar la respuesta
+        const response = await fetch(`https://graph.facebook.com/v22.0/${process.env.IPHONE_ID_WHATS}/messages`, requestOptions);
+
+        // Verificar si la respuesta fue exitosa
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Parsear la respuesta como JSON
+        const result = await response.json();
+
+        return {
+            success: true,
+            data: result,
+            messageId: result.messages?.[0]?.id,
+            phone: phone
+        };
+
+    } catch (error) {
+        console.error('❌ Error enviando mensaje:', error);
+
+        return {
+            success: false,
+            error: error.message,
+            phone: phone
+        };
+    }
+}
+export { sendMessage, MarkStatusMessage,sendMessageList };

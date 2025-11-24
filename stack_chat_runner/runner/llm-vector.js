@@ -11,20 +11,7 @@ function isSimpleGreeting(text) {
 
 // Mensaje de bienvenida
 function getWelcomeMessage() {
-    return `*Bienvenid@ a MUT! Soy tu asistente virtual durante tu visita*.
-A continuación, selecciona el tipo de ayuda que necesitas:
-
-1.- Búsqueda de tiendas  
-2.- Ubicación de baños
-3.- Búsqueda de sectores para sentarse a comer
-4.- Jardín de MUT
-5.- Cómo llegar al metro desde MUT
-6.- Salidas de MUT
-7.- Ubicación de oficinas MUT
-8.- Estacionamientos
-9.- Bicihub MUT
-10.- Emergencias
-11.- Otras preguntas`;
+    return `MENU_BIENVENIDA`;
 }
 
 async function invokeQuestions(inputTextuser) {
