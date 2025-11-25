@@ -22,7 +22,10 @@
       "Bash(aws bedrock-agent list-agent-knowledge-bases:*)",
       "Bash(aws bedrock-agent prepare-agent:*)",
       "Bash(aws bedrock-agent list-agent-versions:*)",
-      "Bash(aws bedrock-agent:*)"
+      "Bash(aws bedrock-agent:*)",
+      "Bash(nul)",
+      "Bash(dir:*)",
+      "Bash(timeout 300 cdk synth:*)"
     ],
     "deny": [],
     "ask": []

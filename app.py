@@ -3,6 +3,7 @@ from aws_cdk import Environment, App, Tags
 from stack_backend_s3.stack_backend_s3 import GenAiVirtualAssistantS3Stack
 from stack_backend_lambda_light_etl.stack_backend_lambda_light_etl import GenAiVirtualAssistantEtlLambdaStack
 from stack_backend_bedrock.stack_backend_bedrock import GenAiVirtualAssistantBedrockStack
+from stack_chat_runner.stack_chat_apprunner import ChatRunnerNodeStack
 from stack_conversation_dynamodb.stack_conversation_dynamodb import StackConversationDynamoDB
 from stack_chat_lambda_node.stack_chat_lambda import ChatLambdaNodeStack
 from stack_lambda_extraction.stack_lambda_extraction import DataExtractionLambdaStack
@@ -61,6 +62,14 @@ chat_stack = ChatLambdaNodeStack(app,
                                  agent_id="G7LSHMCB2H",
                                  input_metadata=env_context_params)
 
+chat_stack_runner = ChatRunnerNodeStack(app,
+                                 "ChatRunnerNodeStack",
+                                 env=env_aws_settings,
+                                 conversations_table=conversation_stack.conversations_table,
+                                 sessions_table=conversation_stack.sessions_table,
+                                 agent_id="G7LSHMCB2H",
+                                 input_metadata=env_context_params)
+
 # Lambda for Vectorial Synchronization
 sync_stack = VectorialSyncLambdaStack(app,
                                       "VectorialSyncLambdaStack",
@@ -91,8 +100,11 @@ orchestrator_stack.add_dependency(sync_stack)
 chat_stack.add_dependency(conversation_stack)
 #st_stack.add_dependency(ddb_stack)
 
+# Add dependency for chat_stack_runner
+chat_stack_runner.add_dependency(conversation_stack)
+
 # Add Tags
-for stack in [s3_stack, etl_stack, bedrock_stack, conversation_stack, chat_stack, extraction_stack, sync_stack, orchestrator_stack]:
+for stack in [s3_stack, etl_stack, bedrock_stack, conversation_stack, chat_stack, chat_stack_runner, extraction_stack, sync_stack, orchestrator_stack]:
     Tags.of(stack).add("environment", env_name)
 
 app.synth()

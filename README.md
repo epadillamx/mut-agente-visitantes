@@ -3,7 +3,7 @@
 2. Cree un entorno virtual:
 ```
 python -m venv venv
-source venv/Scripts/activate
+source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never
 
 3. Instale las dependencias:
 ```
@@ -30,7 +30,7 @@ cdk deploy GenAiVirtualAssistantBedrockStack --require-approval never
 cdk deploy ChatLambdaNodeStack --require-approval never
 
 cdk deploy GenAiVirtualAssistantEtlLambdaStack --require-approval never
-cdk deploy ChatLambdaNodeStack --require-approval never
+cdk deploy ChatRunnerNodeStack --require-approval never
 cdk destroy ChatLambdaNodeStack --require-approval never
 
 cdk deploy MutConversationStack --require-approval never
@@ -53,3 +53,8 @@ aws ssm put-parameter \
   --overwrite
 
   ```
+
+  lambda
+  https://idzi04z9sh.execute-api.us-east-1.amazonaws.com/prod/webhook
+
+  source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never --profile mut-prod-territoria

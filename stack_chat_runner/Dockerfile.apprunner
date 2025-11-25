@@ -1,0 +1,25 @@
+# Use Node.js 22 as base image
+FROM public.ecr.aws/docker/library/node:22-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json first for better caching
+COPY runner/package.json ./
+
+# Install dependencies (including @xenova/transformers)
+RUN npm install --production
+
+# Copy the source code
+COPY runner/*.js ./
+COPY runner/bedrock/ ./bedrock/
+COPY runner/plantillas/ ./plantillas/
+
+# Expose port 8080 (App Runner default)
+EXPOSE 8080
+
+# Set environment variable for port
+ENV PORT=8080
+
+# Start the Express server
+CMD ["node", "server.js"]
