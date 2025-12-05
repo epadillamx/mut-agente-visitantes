@@ -51,7 +51,6 @@ const csvContent = `pregunta;Respuesta
                     Soy proveedor y vengo a dejar un pedido de una oficina o local, dónde me estaciono;"Si vienes en auto, te puedes estacionar en el piso -4. Tienes 1 hora liberada de pago para alcanzar a entregar
                     Si vienes en camión, debes estacionarte en el andén de carga, piso -2, previo registro. Cualquier duda adicional, debes comunicarte con tu solicitante"
                     Cuál es la dirección de MUT;La dirección de MUT es: Apoquindo 2730
-                    Cuál es la dirección de las oficinas MUT Roger de Flor;La dirección de MUT Roger de Flor es: Roger de Flor 2775
                     Cuál es la dirección de las oficinas MUT Apoquindo;La dirección de MUT Apoquindo es: Apoquindo 2730
                     Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX
                     Dónde queda la oficina de Territoria en MUT;La oficina de Territoria queda en Roger de Flor 2736, piso 7, Las Condes.
@@ -283,7 +282,7 @@ const PROMPT_TEMPLATES = {
             - Emojis: 📍🕐🍴🚇🚲🌳🚻
 
             ## DATOS CSV
-                ${trim(csvContent)}
+                ${csvContent.trim()}
 
             ## CLASIFICACIÓN DE PREGUNTAS
             - "restaurantes": consultas sobre comida, menús, locales gastronómicos
