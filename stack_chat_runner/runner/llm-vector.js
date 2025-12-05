@@ -94,24 +94,16 @@ async function inputLlm(inputTextuser) {
     return respuestaFinal;
 }
 async function main() {
-    console.log('\n\n🧪 TEST 3: Tercera consulta (validar cache persiste)');
+    console.log('\n\n\n\n🧪)');
     let inputTextuser = `Hola`;
     await inputLlm(inputTextuser);
 
-    console.log('\n🧪 TEST 1: Primera consulta (sin cache)');
-    inputTextuser = `Dónde está The Greek?`;
+    console.log('\n\n\n\n🧪');
+    inputTextuser = `¿Por que calle entro al estacionamiento de MUT?`;
     await inputLlm(inputTextuser);
 
-    console.log('\n\n🧪 TEST 2: Segunda consulta (con cache activo)');
-    inputTextuser = `Hola donde puedeo comprar cafe`;
-    await inputLlm(inputTextuser);
-
-    console.log('\n\n🧪 TEST 3: Tercera consulta (validar cache persiste)');
-    inputTextuser = `cual es la salida mas cercana`;
-    await inputLlm(inputTextuser);
-
-    console.log('\n\n🧪 TEST 3: Tercera consulta (validar cache persiste)');
-    inputTextuser = `Quiero comprar un vuelo de avion para mexico`;
+     console.log('\n\n\n\n🧪');
+    inputTextuser = `Como llego al estacionamiento de autos MUT caminando?`;
     await inputLlm(inputTextuser);
 
     process.exit(0);
