@@ -1,11 +1,22 @@
 import { promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import logger from './logger.js';
 
+const CACHE_CONFIG_DEV = {
+    TMP_CACHE_FILE: join(tmpdir(), 'vectorial-cache.json'),
+    CACHE_TTL_MS: 365 * 24 * 60 * 60 * 1000 // 365 días (1 año)
+};
+
 // Configuración de cache
-const CACHE_CONFIG = {
+const CACHE_CONFIG_PROD = {
     TMP_CACHE_FILE: '/tmp/vectorial-cache.json',
     CACHE_TTL_MS: 365 * 24 * 60 * 60 * 1000 // 365 días (1 año)
 };
+
+// Seleccionar configuración según ambiente
+const isProduction = process.env.NODE_ENV === 'production' || process.env.AWS_EXECUTION_ENV !== undefined;
+const CACHE_CONFIG = isProduction ? CACHE_CONFIG_PROD : CACHE_CONFIG_DEV;
 
 // Variables globales (persisten en Lambda "warm")
 let GLOBAL_CACHE = {

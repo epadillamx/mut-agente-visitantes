@@ -27,9 +27,6 @@ const csvContent = `pregunta;Respuesta
                     Para ir al edificio de oficinas MUT Apoquindo, debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven. Ahí te econtrarás con una puerta roja que es la entrada al edificio"
                     Cómo llego a las oficinas de MUT Roger de Flor;Para ir al edificio de oficinas MUT Roger de Flor, debes ir al piso 1 y salir hacia la izquierda, donde está la tienda de chocolates La Fete. Ahí te econtrarás con una puerta roja que es la entrada al edificio
                     Cómo llego a las oficinas de MUT Apoquindo;Para ir al edificio de oficinas MUT Apoquindo, debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven. Ahí te econtrarás con una puerta roja que es la entrada al edificio
-                    Por qué calles están las entradas de estacionamientos de autos de MUT;Si vienes en auto, puedes entrar al estacionamiento de MUT por las calles El Bosque Norte y Encomenderos
-                    Dónde están los estacionamientos de autos de MUT;Los estacionamientos de autos para uso público de MUT están en los pisos -7, -8 y -9
-                    Cómo llego al estacionamiento de autos MUT;Para ir al estacionamiento de autos de MUT, debes bajar por las escaleras mecánicas centrales de MUT o tomar los ascensores. Los estacionamientos de uso público están en los pisos -7, -8  y -9 de MUT. También hay valet parking los fines de semana.
                     Cómo llego al estacionamiento de bicicletas MUT (Bicihub);"Para ir al estacionamiento de bicicletas o ""bici hub""  MUT, debes: 
                     - ir caminando al piso -1 y lo encontrarás al fondo (donde está la tienda de bicicletas)
                     - entrar caminando o en bicicleta por la calle Roger de Flor ó
@@ -259,7 +256,8 @@ const csvContent = `pregunta;Respuesta
                     Hay locales, restaurantes o cocinerías que vendan completos o hot dogs?;"Sí, en Antigua Fuente del piso -3; en Schwencke,Perritos Chao  y en La Fiambrería del piso -2"
                     ¿Cuándo Mut esta cerrado?;Feriados irrenunciables  1 enero, 1 mayo, 18 y 19 de sept y 25 dic.En los demás feriados, mut siempre está abierto, solo cierra en los irrenunciables.
                     ¿Cuál es valor de estacionamiento de autos?;tarifa de estacionamiento de autos es $36 el minuto y tope diario de $15.000.
-                    ¿Donde quedan los estacionamientos de MUT?;encomenderos  65 y el bosque norte 50.
+                    Por qué calles están las entradas de estacionamientos de autos de MUT;Si vienes en auto, puedes entrar al estacionamiento de MUT por las calles El Bosque Norte 50 y Encomenderos 65, para uso público de MUT están en los pisos -7, -8 y -9
+                    Cómo llego al estacionamiento de autos MUT caminado;Para ir al estacionamiento de autos de MUT, debes bajar por las escaleras mecánicas centrales de MUT o tomar los ascensores. Los estacionamientos de uso público están en los pisos -7, -8  y -9 de MUT. También hay valet parking los fines de semana.
                     ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT`;
 
 const PROMPT_TEMPLATES = {
