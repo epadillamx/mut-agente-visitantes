@@ -59,7 +59,6 @@ chat_stack = ChatLambdaNodeStack(app,
                                  env=env_aws_settings,
                                  conversations_table=conversation_stack.conversations_table,
                                  sessions_table=conversation_stack.sessions_table,
-                                 agent_id="G7LSHMCB2H",
                                  input_metadata=env_context_params)
 
 chat_stack_runner = ChatRunnerNodeStack(app,

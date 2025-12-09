@@ -15,7 +15,7 @@ class ChatLambdaNodeStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, 
                  conversations_table=None, sessions_table=None,
-                 agent_id=None, input_metadata=None, **kwargs) -> None:
+                 input_metadata=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         """
@@ -34,18 +34,12 @@ class ChatLambdaNodeStack(Stack):
             secret_complete_arn=secret_arn
         )
         
-        # Default values for configuration (can be overridden via environment)
-        DEFAULT_AGENT_ID = agent_id
+       
 
         # Build environment variables
         environment_vars = {
-            # Bedrock Agent configuration
-            "AGENT_ID": DEFAULT_AGENT_ID,
-            "AGENT_ALIAS_ID": 'change',
-            # WhatsApp credentials from Secrets Manager
-            "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
-            "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
-            "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap(),
+            # Reference to Secrets Manager secret (resolved at runtime by Lambda)
+            "WHATSAPP_SECRET_ARN": secret_arn,
             # Logger configuration - production mode (solo ERROR logs)
             "NODE_ENV": "development",
         }
@@ -56,11 +50,11 @@ class ChatLambdaNodeStack(Stack):
         if sessions_table:
             environment_vars["SESSIONS_TABLE"] = sessions_table.table_name
 
-        # Create Node.js 24.x Lambda function
+        # Create Node.js 20.x Lambda function
         self.lambda_fn = _lambda.Function(
             self,
             "chat-lambda-fn",
-            runtime=_lambda.Runtime.NODEJS_24_X,
+            runtime=_lambda.Runtime.NODEJS_22_X,
             handler="index.handler",
             code=_lambda.Code.from_asset(
                 os.path.join(os.path.dirname(__file__), "lambda")
@@ -71,9 +65,7 @@ class ChatLambdaNodeStack(Stack):
             environment=environment_vars
         )
 
-        # Add Bedrock permissions to Lambda
-        self._configure_lambda_permissions(DEFAULT_AGENT_ID)
-
+       
         # Grant DynamoDB permissions if tables are provided
         if conversations_table:
             conversations_table.grant_read_write_data(self.lambda_fn)
@@ -83,6 +75,19 @@ class ChatLambdaNodeStack(Stack):
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
 
+        # Grant permissions to invoke Bedrock models
+        self.lambda_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
+                ],
+                resources=[
+                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*"
+                ]
+            )
+        )
 
         """
         @ API Gateway
@@ -167,78 +172,4 @@ class ChatLambdaNodeStack(Stack):
             "output-chat-test-url",
             value=f"{api.url}chat",
             description="Direct Chat Test URL"
-        )
-
-    def _configure_lambda_permissions(self, agent_id=None) -> None:
-        """
-        Configures IAM permissions for the Lambda function to invoke Bedrock Agent.
-        CRITICAL: AWS Bedrock requires BOTH permissions:
-        - bedrock:InvokeAgent (control plane - for agent metadata)
-        - bedrock-agent-runtime:InvokeAgent (data plane - for actual invocation)
-
-        Note: AGENT_ALIAS_ID is dynamic and updated by the sync Lambda, so we use wildcard (*)
-        """
-
-        # ARNs for agent and all its aliases
-        agent_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}"
-        agent_alias_arn_wildcard = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/*"
-
-        # 1. Grant Bedrock Agent RUNTIME permissions (for actual invocation)
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agent-runtime:InvokeAgent",
-                    "bedrock-agent-runtime:Retrieve"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
-        )
-
-        # 2. Grant Bedrock Agent CONTROL PLANE permissions
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeAgent"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
-        )
-
-        # 3. Additional control plane permissions for metadata
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:GetAgent",
-                    "bedrock:GetAgentAlias",
-                    "bedrock:ListAgentAliases"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
-        )
-
-        # 4. Grant Foundation Model permissions
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel",
-                    "bedrock:InvokeModelWithResponseStream"
-                ],
-                resources=[
-                    "arn:aws:bedrock:*::foundation-model/*",
-                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*"
-                ]
-            )
         )

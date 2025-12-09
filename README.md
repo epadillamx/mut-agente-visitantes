@@ -3,7 +3,8 @@
 2. Cree un entorno virtual:
 ```
 python -m venv venv
-source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never
+source venv/Scripts/activate && cdk deploy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
+source venv/Scripts/activate && cdk destroy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
 
 3. Instale las dependencias:
 ```

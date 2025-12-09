@@ -1,8 +1,8 @@
-import { getAgente } from './getAgente.js';
 import { sendMessage, MarkStatusMessage } from './send.message.js';
 import { inputLlm } from './llm-vector.js';
 import logger from './logger.js';
 import { ConversationService } from './conversationService.js';
+import { getWhatsAppCredentials } from './secrets.js';
 
 /**
  * Cache en memoria para deduplicación de mensajes
@@ -139,8 +139,9 @@ async function handleWebhookVerification(event) {
         const token = queryParams['hub.verify_token'];
         const challenge = queryParams['hub.challenge'];
 
-        // Obtener VERIFY_TOKEN desde variable de entorno
-        const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'mi_token_secreto_123';
+        // Obtener VERIFY_TOKEN desde Secrets Manager
+        const secrets = await getWhatsAppCredentials();
+        const VERIFY_TOKEN = secrets.VERIFY_TOKEN;
 
         logger.debug('Verificación webhook:', { mode, token, challenge });
 
@@ -191,9 +192,14 @@ async function handleWhatsAppMessage(event) {
 
                     if (change.value && change.value.messages) {
                         for (const message of change.value.messages) {
+                            logger.warn('************************************************');
+                            logger.warn('************************************************');
+                            logger.warn(`${JSON.stringify(message, null, 2)}`);
+                            logger.warn('************************************************');
+                            logger.warn('************************************************');
                             from = message.from;
                             const messageType = message.type;
-                            if (messageType === 'text' && message.text) {
+                            /*if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;
 
@@ -240,7 +246,7 @@ async function handleWhatsAppMessage(event) {
                                     logger.error('Error procesando mensaje:', processError);
                                     response = 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.';
                                 }
-                            }
+                            }*/
                         }
                     }
                 }

@@ -1,19 +1,21 @@
 import logger from './logger.js';
+import { getWhatsAppCredentials } from './secrets.js';
 
 /**
- * Obtiene las credenciales de WhatsApp desde variables de entorno
+ * Obtiene las credenciales de WhatsApp desde Secrets Manager
  */
-function getCredentials() {
+async function getCredentials() {
+    const secrets = await getWhatsAppCredentials();
     return {
-        token: process.env.TOKEN_WHATS || 'PLACEHOLDER_UPDATE_WITH_REAL_TOKEN',
-        phoneId: process.env.IPHONE_ID_WHATS || 'PLACEHOLDER_UPDATE_WITH_PHONE_ID'
+        token: secrets.TOKEN_WHATS,
+        phoneId: secrets.IPHONE_ID_WHATS
     };
 }
 
 async function MarkStatusMessage(message_id_sent) {
     try {
 
-        const credentials = getCredentials();
+        const credentials = await getCredentials();
 
         const response = await fetch(
             `https://graph.facebook.com/v22.0/${credentials.phoneId}/messages`,
@@ -59,7 +61,7 @@ async function MarkStatusMessage(message_id_sent) {
 
 async function sendMessage(phone, userMessage) {
     try {
-        const credentials = getCredentials();
+        const credentials = await getCredentials();
         logger.debug('Enviando mensaje a WhatsApp');
 
 
