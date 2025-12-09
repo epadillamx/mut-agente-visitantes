@@ -13,15 +13,6 @@ const MESSAGE_CACHE_MAX_SIZE = 1000; // Máximo de messageIds en memoria
 const MESSAGE_CACHE_TTL_MS = 3600000; // 1 hora de TTL
 const messageTimestamps = new Map(); // Guarda timestamp de cada messageId
 
-/**
- * Cache en memoria para rastrear respuestas enviadas
- * Evita enviar la misma respuesta múltiples veces al mismo usuario
- * Formato: `${from}:${messageId}` -> true
- */
-const sentResponses = new Set();
-const sentResponsesTimestamps = new Map();
-const RESPONSE_CACHE_MAX_SIZE = 1000;
-const RESPONSE_CACHE_TTL_MS = 3600000; // 1 hora de TTL
 
 /**
  * Verifica si un mensaje ya fue procesado (deduplicación)
@@ -34,45 +25,7 @@ function isDuplicateMessage(messageId) {
     return false;
 }
 
-/**
- * Verifica si ya se envió una respuesta para este mensaje
- */
-function isResponseAlreadySent(from, messageId) {
-    const key = `${from}:${messageId}`;
-    if (sentResponses.has(key)) {
-        logger.warn(`Respuesta ya enviada para: ${key}`);
-        return true;
-    }
-    return false;
-}
 
-/**
- * Marca una respuesta como enviada
- */
-function markResponseAsSent(from, messageId) {
-    const now = Date.now();
-    const key = `${from}:${messageId}`;
-
-    // Limpiar respuestas expiradas
-    for (const [respKey, timestamp] of sentResponsesTimestamps.entries()) {
-        if (now - timestamp > RESPONSE_CACHE_TTL_MS) {
-            sentResponses.delete(respKey);
-            sentResponsesTimestamps.delete(respKey);
-        }
-    }
-
-    // Si el cache está lleno, eliminar la respuesta más antigua
-    if (sentResponses.size >= RESPONSE_CACHE_MAX_SIZE) {
-        const oldestKey = sentResponsesTimestamps.keys().next().value;
-        sentResponses.delete(oldestKey);
-        sentResponsesTimestamps.delete(oldestKey);
-    }
-
-    // Agregar la nueva respuesta
-    sentResponses.add(key);
-    sentResponsesTimestamps.set(key, now);
-    logger.cache(`Respuesta marcada como enviada: ${key} (Cache: ${sentResponses.size}/${RESPONSE_CACHE_MAX_SIZE})`);
-}
 
 /**
  * Marca un mensaje como procesado y maneja la limpieza del cache

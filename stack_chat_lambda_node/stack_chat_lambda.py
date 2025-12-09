@@ -2,15 +2,11 @@ from aws_cdk import (
     Stack,
     CfnOutput,
     Duration,
-    Size,
     Aws,
-    RemovalPolicy,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_iam as iam,
-    aws_ssm as ssm,
     aws_secretsmanager as secretsmanager,
-    aws_s3 as s3,
 )
 from constructs import Construct
 import os
@@ -25,39 +21,17 @@ class ChatLambdaNodeStack(Stack):
         """
         @ Lambda function
         """
-        
+
         # Get secret ARN from context
         secret_arn = input_metadata.get("secret_complete_arn") if input_metadata else None
         if not secret_arn:
             raise ValueError("secret_complete_arn must be provided in cdk.json context")
-        
-       
-        
+
         # Import Secrets Manager secret for WhatsApp credentials
         whatsapp_secret = secretsmanager.Secret.from_secret_complete_arn(
             self,
             "WhatsAppSecret",
             secret_complete_arn=secret_arn
-        )
-        
-        # Create S3 bucket for temporal cache (embeddings model cache)
-        self.cache_bucket = s3.Bucket(
-            self,
-            "ChatLambdaCacheBucket",
-            bucket_name=f"chat-lambda-cache-{Aws.ACCOUNT_ID}-{Aws.REGION}",
-            encryption=s3.BucketEncryption.S3_MANAGED,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            versioned=False,
-            lifecycle_rules=[
-                s3.LifecycleRule(
-                    id="DeleteOldCacheFiles",
-                    enabled=True,
-                    expiration=Duration.days(7),  # Eliminar archivos después de 7 días
-                    abort_incomplete_multipart_upload_after=Duration.days(1)
-                )
-            ],
-            removal_policy=RemovalPolicy.DESTROY,  # Eliminar bucket al destruir el stack
-            auto_delete_objects=True  # Eliminar objetos automáticamente
         )
         
         # Default values for configuration (can be overridden via environment)
@@ -72,11 +46,6 @@ class ChatLambdaNodeStack(Stack):
             "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
             "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
             "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap(),
-            # S3 Cache bucket
-            "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name,
-            # Configure transformers to use /tmp for model cache (read-only filesystem issue)
-            "TRANSFORMERS_CACHE": "/tmp/.cache",
-            "HF_HOME": "/tmp/.cache",
             # Logger configuration - production mode (solo ERROR logs)
             "NODE_ENV": "development",
         }
@@ -87,19 +56,18 @@ class ChatLambdaNodeStack(Stack):
         if sessions_table:
             environment_vars["SESSIONS_TABLE"] = sessions_table.table_name
 
-        # Create Node.js 22 Lambda function using Docker Container Image
-        # This allows us to package @xenova/transformers which exceeds layer size limits
-        self.lambda_fn = _lambda.DockerImageFunction(
+        # Create Node.js 24.x Lambda function
+        self.lambda_fn = _lambda.Function(
             self,
             "chat-lambda-fn",
-            code=_lambda.DockerImageCode.from_image_asset(
-                directory=os.path.join(os.path.dirname(__file__)),
-                file="Dockerfile"
+            runtime=_lambda.Runtime.NODEJS_24_X,
+            handler="index.handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "lambda")
             ),
             description="Lambda function that invokes Bedrock Agent for WhatsApp chat interactions",
-            timeout=Duration.seconds(120),  # Increased timeout for Bedrock calls
-            memory_size=2048,  # 2GB para soportar modelos de embeddings
-            ephemeral_storage_size=Size.mebibytes(1024),  # 1GB almacenamiento temporal para cache de modelos
+            timeout=Duration.seconds(120),
+            memory_size=512,
             environment=environment_vars
         )
 
@@ -111,28 +79,9 @@ class ChatLambdaNodeStack(Stack):
             conversations_table.grant_read_write_data(self.lambda_fn)
         if sessions_table:
             sessions_table.grant_read_write_data(self.lambda_fn)
-        
+
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
-        
-        # Grant S3 permissions for cache bucket
-        self.cache_bucket.grant_read_write(self.lambda_fn)
-        
-        # Grant S3 permissions for data bucket (raw-virtual-assistant-data)
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "s3:ListBucket",
-                    "s3:GetObject",
-                    "s3:PutObject"
-                ],
-                resources=[
-                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}",
-                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}/*"
-                ]
-            )
-        )
 
 
         """
@@ -219,14 +168,6 @@ class ChatLambdaNodeStack(Stack):
             value=f"{api.url}chat",
             description="Direct Chat Test URL"
         )
-        
-        # Return Cache Bucket Name
-        CfnOutput(
-            self,
-            "output-cache-bucket-name",
-            value=self.cache_bucket.bucket_name,
-            description="S3 Cache Bucket for Lambda temporary storage"
-        )
 
     def _configure_lambda_permissions(self, agent_id=None) -> None:
         """
@@ -234,7 +175,7 @@ class ChatLambdaNodeStack(Stack):
         CRITICAL: AWS Bedrock requires BOTH permissions:
         - bedrock:InvokeAgent (control plane - for agent metadata)
         - bedrock-agent-runtime:InvokeAgent (data plane - for actual invocation)
-        
+
         Note: AGENT_ALIAS_ID is dynamic and updated by the sync Lambda, so we use wildcard (*)
         """
 
@@ -243,7 +184,6 @@ class ChatLambdaNodeStack(Stack):
         agent_alias_arn_wildcard = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/*"
 
         # 1. Grant Bedrock Agent RUNTIME permissions (for actual invocation)
-        # This is the CRITICAL permission for invoking the agent
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -259,8 +199,6 @@ class ChatLambdaNodeStack(Stack):
         )
 
         # 2. Grant Bedrock Agent CONTROL PLANE permissions
-        # These are needed for agent metadata and invocation validation
-        # CRITICAL: bedrock:InvokeAgent is REQUIRED for agent invocation
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -273,8 +211,8 @@ class ChatLambdaNodeStack(Stack):
                 ]
             )
         )
-        
-        # 2b. Additional control plane permissions for metadata
+
+        # 3. Additional control plane permissions for metadata
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -290,24 +228,7 @@ class ChatLambdaNodeStack(Stack):
             )
         )
 
-        # 3. Grant Knowledge Base runtime permissions
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agent-runtime:Retrieve",
-                    "bedrock-agent-runtime:RetrieveAndGenerate"
-                ],
-                resources=[
-                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:knowledge-base/*"
-                ]
-            )
-        )
-
-        # 4. Grant Foundation Model permissions (for direct model invocation if needed)
-        # Note: The agent already has permissions to invoke models, but this allows
-        # the Lambda to directly invoke models for any custom processing if required
-        # Includes both foundation-model/* and inference-profile/* resources
+        # 4. Grant Foundation Model permissions
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
