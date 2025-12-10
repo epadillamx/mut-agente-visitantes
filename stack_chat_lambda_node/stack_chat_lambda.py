@@ -107,7 +107,7 @@ class ChatLambdaNodeStack(Stack):
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
 
-        # Grant permissions to invoke Bedrock models
+        # Grant permissions to invoke Bedrock models (all regions for cross-region inference)
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -116,9 +116,19 @@ class ChatLambdaNodeStack(Stack):
                     "bedrock:InvokeModelWithResponseStream"
                 ],
                 resources=[
+                    # Foundation models in current region
                     f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*",
+                    # Foundation models in other regions (for cross-region inference)
+                    "arn:aws:bedrock:us-east-1::foundation-model/*",
+                    "arn:aws:bedrock:us-east-2::foundation-model/*",
+                    "arn:aws:bedrock:us-west-2::foundation-model/*",
+                    # Inference profiles
                     f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
-                    f"arn:aws:bedrock:us::{Aws.ACCOUNT_ID}:inference-profile/*"
+                    f"arn:aws:bedrock:us-east-1:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-east-2:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-west-2:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    # Cross-region inference profiles (us.anthropic.*)
+                    "arn:aws:bedrock:us:*:inference-profile/*"
                 ]
             )
         )

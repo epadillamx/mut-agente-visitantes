@@ -1,0 +1,104 @@
+{
+    "version": "7.2",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "INCIDENT_DETAILS": [
+            "CONFIRMATION"
+        ],
+        "CONFIRMATION": []
+    },
+    "screens": [
+        {
+            "id": "INCIDENT_DETAILS",
+            "title": "Reportar Incidencia",
+            "data": {},
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "incident_details_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "⚠️ Incidencia"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "Por favor describa detalladamente el problema encontrado."
+                            },
+                            {
+                                "type": "TextArea",
+                                "label": "Descripción",
+                                "name": "incidencia",
+                                "required": true,
+                                "helper-text": "Incluya todos los detalles relevantes"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "incidencia": "${form.incidencia}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "CONFIRMATION",
+            "title": "Confirmación",
+            "terminal": true,
+            "data": {
+                "incidencia": {
+                    "type": "string",
+                    "__example__": "Problema con el aire acondicionado"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "confirmation_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "📋 Resumen"
+                            },
+                            {
+                                "type": "TextSubheading",
+                                "text": "Descripción de la incidencia"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.incidencia}"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "confirmacion",
+                                "label": "Confirmo que la información es correcta",
+                                "required": true
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Enviar Reporte",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "incidencia": "${data.incidencia}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

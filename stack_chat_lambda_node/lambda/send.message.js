@@ -127,7 +127,7 @@ async function sendMessage(phone, userMessage) {
  * @param {object} flowData - Datos opcionales para pre-llenar el flow
  * @returns {Promise<object>} Resultado del envío
  */
-async function sendFlow(phone, flowId , flowCta, flowData = {}) {
+async function sendFlow(phone, flowId , flowCta,screen) {
     try {
         const credentials = await getCredentials();
         logger.debug(`Enviando WhatsApp Flow ${flowId} a ${phone}`);
@@ -145,10 +145,10 @@ async function sendFlow(phone, flowId , flowCta, flowData = {}) {
                 "type": "flow",
                 "header": {
                     "type": "text",
-                    "text": "Formulario Incidencias"
+                    "text": "Reportar Incidencia"
                 },
                 "body": {
-                    "text": "Por favor completa el siguiente formulario para reportar tu incidencia."
+                    "text": "Describe el problema que has encontrado y lo atenderemos a la brevedad."
                 },
                 "footer": {
                     "text": "By Apilynk"
@@ -162,17 +162,14 @@ async function sendFlow(phone, flowId , flowCta, flowData = {}) {
                         "flow_cta": flowCta,
                         "flow_action": "navigate",
                         "flow_action_payload": {
-                            "screen": "INCIDENT_FORM"
+                            "screen": screen
                         }
                     }
                 }
             }
         };
 
-        // Solo agregar data si hay datos para enviar
-        if (flowData && Object.keys(flowData).length > 0) {
-            flowMessage.interactive.action.parameters.flow_action_payload.data = flowData;
-        }
+        
 
         const requestOptions = {
             method: "POST",

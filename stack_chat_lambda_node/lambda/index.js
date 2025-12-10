@@ -175,7 +175,8 @@ async function handleWebhookVerification(event) {
  * Maneja mensajes entrantes de WhatsApp (POST)
  */
 async function handleWhatsAppMessage(event) {
-    let idFlow = "660310043715044"; // ID del flujo en WhatsApp Flow
+    let idFlowFulla = "660310043715044"; // todo el flujo desde la captura de local hasta el resumen
+    let idFlowincidencia = "1906191903584411"; // solo la captura de incidencia
     try {
         const body = JSON.parse(event.body || '{}');
         
@@ -196,16 +197,8 @@ async function handleWhatsAppMessage(event) {
 
                     if (change.value && change.value.messages) {
                         for (const message of change.value.messages) {
-                            logger.warn('************************************************');
-                            logger.warn('************************************************');
-                            logger.warn(`${JSON.stringify(message, null, 2)}`);
-                            logger.warn('************************************************');
-                            logger.warn('************************************************');
                             from = message.from;
                             const messageType = message.type;
-
-
-                            //await sendFlow(from, "660310043715044", "Hola, aqui puede capturar su incidencia");
 
                             if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
@@ -226,18 +219,16 @@ async function handleWhatsAppMessage(event) {
                                     logger.warn(`===============MSS ${from}: ${messageBody} || ${messageId}`);
 
                                     let startTime = Date.now();
-                                    const agentResponse = await inputLlm(messageBody);
-                                    logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
+                                    //const agentResponse = await inputLlm(messageBody);
+                                    //logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
 
                                     /*logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
                                     await sendMessage(from, agentResponse);*/
 
-                                    await sendFlow(from, idFlow, "Hola, con este formulario puedes capturar tu incidencia", {
-                                        nombre: "Juan Pérez",
-                                        email: "juan@example.com"
-                                    });
-
-                                    //await sendFlow(from, idFlow, "Hola, con este formulario puedes capturar tu incidencia");
+                                    //await sendFlow(from, idFlowFulla, "Hola, con este formulario puedes capturar tu incidencia",'INCIDENT_FORM');
+                                    const agentResponse = "Hola Eduardo Padilla 👋\n\nPara reportar una incidencia, completa el formulario a continuación ⬇️";
+                                    await sendMessage(from, agentResponse);
+                                    await sendFlow(from, idFlowincidencia, "Abrir formulario",'INCIDENT_DETAILS');
 
 
                                     let endTime = Date.now();
@@ -268,7 +259,11 @@ async function handleWhatsAppMessage(event) {
                                 if (interactive && interactive.type === 'nfm_reply' && interactive.nfm_reply && interactive.nfm_reply.response_json) {
                                     try {
                                         const responseData = JSON.parse(interactive.nfm_reply.response_json);
-                                        const { nombre, local, flow_token, incidencia, email } = responseData;
+                                        let { nombre, local, flow_token, incidencia, email } = responseData;
+                                        // Asignar valores por defecto si están vacíos o undefined
+                                        nombre = nombre?.trim() ? nombre : 'usuario';
+                                        local = local?.trim() ? local : 'un local no especificado';
+                                        email = email?.trim() ? email : 'sin email proporcionado';
                                         const agentResponse = `Gracias ${nombre} por reportar la incidencia en ${local}. Hemos registrado tu reporte: "${incidencia}". Nos pondremos en contacto contigo a través del email: ${email}.`;
                                         logger.info(`Datos extraídos: nombre=${nombre}, local=${local}, flow_token=${flow_token}, incidencia=${incidencia}, email=${email}`);
 
