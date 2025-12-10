@@ -209,7 +209,7 @@
                         "children": [
                             {
                                 "type": "TextHeading",
-                                "text": "📋 Resumen del Reporte"
+                                "text": "📋 Resumen"
                             },
                             {
                                 "type": "TextSubheading",

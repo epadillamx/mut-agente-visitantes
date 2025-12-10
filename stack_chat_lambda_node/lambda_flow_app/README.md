@@ -1,52 +1,149 @@
 # WhatsApp Flow - Sistema de Reporte de Incidencias
 
-Backend en Node.js con Express para gestionar un WhatsApp Flow de reporte de incidencias. El sistema permite a los usuarios buscar locales, reportar incidencias y guardarlas en AWS DynamoDB.
+AWS Lambda function en Node.js para gestionar un WhatsApp Flow de reporte de incidencias. El sistema permite a los usuarios buscar locales, reportar incidencias y guardarlas en AWS DynamoDB.
 
 ## Características
 
-- Búsqueda inteligente de locales (200+ locales incluidos)
-- Validación de datos en tiempo real
-- Cifrado/descifrado de mensajes WhatsApp
-- Almacenamiento en DynamoDB
-- Dockerizado para fácil despliegue
-- Health checks y endpoints de monitoreo
+- 🔍 Búsqueda inteligente de locales (200+ locales incluidos)
+- ✅ Validación de datos en tiempo real
+- 🔐 Cifrado/descifrado de mensajes WhatsApp con claves RSA
+- 💾 Almacenamiento seguro en DynamoDB
+- 🔑 Credenciales gestionadas con AWS Secrets Manager
+- 🚀 Despliegue serverless con AWS Lambda + API Gateway
+- 📊 Health checks y endpoints de monitoreo
+- ⚡ Runtime Node.js 22.x
+
+## Arquitectura
+
+```
+WhatsApp Flow Request
+        ↓
+  API Gateway (/flow)
+        ↓
+  Lambda Handler (lambda-handler.js)
+        ↓
+  ┌─────┴─────┐
+  ↓           ↓
+Secrets    Flow Controller
+Manager         ↓
+  ↓       ┌────┴────┐
+  ↓       ↓         ↓
+  ↓    Local    DynamoDB
+  ↓   Service   Service
+  ↓       ↓         ↓
+  └───→ Decrypt → Process → Save
+              ↓
+         Encrypt Response
+              ↓
+         API Gateway
+              ↓
+        WhatsApp Flow
+```
 
 ## Estructura del Proyecto
 
 ```
-whatsapp-flow-incidencias/
+lambda_flow_app/
+├── lambda-handler.js              # AWS Lambda handler principal
 ├── src/
-│   ├── index.js                    # Entry point de la aplicación
-│   ├── routes/
-│   │   └── webhook.js              # Rutas del webhook
 │   ├── controllers/
-│   │   └── flowController.js       # Lógica del WhatsApp Flow
+│   │   └── flowController.js      # Lógica del WhatsApp Flow
 │   ├── services/
-│   │   ├── localService.js         # Servicio de búsqueda de locales
-│   │   └── dynamoService.js        # Servicio de DynamoDB
+│   │   ├── localService.js        # Servicio de búsqueda de locales
+│   │   └── dynamoService.js       # Servicio de DynamoDB
 │   ├── data/
-│   │   └── locales.json            # Lista de 210 locales
+│   │   └── locales.json           # Lista de 210 locales del centro comercial
 │   └── utils/
-│       └── crypto.js               # Utilidades de cifrado
-├── scripts/
-│   └── create-dynamodb-table.js    # Script de creación de tabla
-├── Dockerfile
-├── docker-compose.yml
+│       ├── crypto.js              # Cifrado/descifrado RSA + AES
+│       └── secrets.js             # Cliente de AWS Secrets Manager
 ├── package.json
-├── .env.example
-└── README.md
+├── ARCHITECTURE.md                 # Arquitectura detallada
+├── DEPLOYMENT.md                   # Guía de despliegue
+├── LAMBDA_DEPLOYMENT.md            # Configuración Lambda específica
+└── README.md                       # Esta documentación
 ```
 
 ## Requisitos Previos
 
-- Node.js 18 o superior
-- Docker y Docker Compose (opcional)
-- Cuenta de AWS con acceso a DynamoDB
-- Credenciales de WhatsApp Business API
+- AWS CLI configurado
+- AWS CDK instalado (`npm install -g aws-cdk`)
+- Node.js 20+ (para desarrollo local)
+- Cuenta de AWS con permisos para:
+  - Lambda
+  - API Gateway
+  - DynamoDB
+  - Secrets Manager
+  - IAM
+- WhatsApp Business Account configurado
 
-## Configuración
+## Despliegue con AWS CDK
 
-### 1. Clonar el repositorio
+### 1. Configurar Secrets Manager
+
+Primero, cree un secreto en AWS Secrets Manager con las credenciales de WhatsApp:
+
+```bash
+aws secretsmanager create-secret \
+  --name whatsapp-credentials \
+  --description "WhatsApp API credentials" \
+  --secret-string '{
+    "TOKEN_WHATSAPP": "your-whatsapp-token",
+    "ID_PHONE_WHATSAPP": "your-phone-id",
+    "VERIFY_TOKEN_WHATSAPP": "your-verify-token",
+    "WHATSAPP_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+    "WHATSAPP_PRIVATE_KEY_PASSPHRASE": "your-passphrase"
+  }'
+```
+
+### 2. Configurar cdk.json
+
+Actualice el archivo `cdk.json` en la raíz del proyecto:
+
+```json
+{
+  "context": {
+    "secret_complete_arn": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:whatsapp-credentials-XXXXXX"
+  }
+}
+```
+
+### 3. Desplegar el Stack
+
+```bash
+# Desde la raíz del proyecto
+cd mut-agente-visitantes
+
+# Activar entorno virtual de Python
+source venv/Scripts/activate  # Windows Git Bash
+# o
+source venv/bin/activate       # Linux/Mac
+
+# Desplegar el stack
+cdk deploy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
+```
+
+### 4. Obtener URLs del Deploy
+
+Después del despliegue, CDK mostrará los outputs:
+
+```
+Outputs:
+ChatLambdaNodeStack.output-whatsapp-flow-url = https://xxxxx.execute-api.us-east-1.amazonaws.com/prod/flow
+ChatLambdaNodeStack.output-health-url = https://xxxxx.execute-api.us-east-1.amazonaws.com/prod/health
+```
+
+## Variables de Entorno (AWS Lambda)
+
+Estas variables se configuran automáticamente por el CDK stack:
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `NODE_ENV` | Ambiente de ejecución | CDK Stack |
+| `WHATSAPP_SECRET_ARN` | ARN del secreto en Secrets Manager | CDK Stack |
+| `DYNAMODB_TABLE_INCIDENCIAS` | Nombre de la tabla DynamoDB | CDK Stack |
+| `AWS_REGION` | Región de AWS | Lambda Runtime |
+
+**Nota:** Las credenciales de WhatsApp se obtienen en runtime desde Secrets Manager, no como variables de entorno directas por seguridad.
 
 ```bash
 git clone <repository-url>
