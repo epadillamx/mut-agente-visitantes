@@ -1,7 +1,7 @@
 const flowController = require('./src/controllers/flowController');
 const { decryptRequest, encryptResponse } = require('./src/utils/crypto');
 const localService = require('./src/services/localService');
-import { getWhatsAppCredentials } from './src/utils/secrets';
+const { getWhatsAppCredentials } = require('./src/utils/secrets');
 const fs = require('fs');
 const path = require('path');
 

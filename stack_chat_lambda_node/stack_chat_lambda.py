@@ -212,6 +212,15 @@ class ChatLambdaNodeStack(Stack):
             allow_test_invoke=True
         )
         flow.add_method("POST", flow_lambda_integration)
+        
+        # Create /health resource for WhatsApp Flow health check
+        health = api.root.add_resource("health")
+        health.add_method("GET", flow_lambda_integration)
+        
+        # Create /locales/count resource for WhatsApp Flow
+        locales = api.root.add_resource("locales")
+        locales_count = locales.add_resource("count")
+        locales_count.add_method("GET", flow_lambda_integration)
 
         """
         @ Outputs

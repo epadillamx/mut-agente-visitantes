@@ -199,6 +199,7 @@ async function handleWhatsAppMessage(event) {
                             logger.warn('************************************************');
                             from = message.from;
                             const messageType = message.type;
+                            await sendMessage(from, "Mensaje recibido. Estoy procesando tu solicitud...");
                             /*if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;

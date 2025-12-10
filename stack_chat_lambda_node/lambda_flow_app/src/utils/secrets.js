@@ -1,5 +1,4 @@
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import logger from './logger.js';
+const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 
 const client = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
 
@@ -12,24 +11,24 @@ const CACHE_TTL_MS = 300000; // 5 minutes
  * Fetches WhatsApp credentials from AWS Secrets Manager
  * Uses in-memory cache to minimize API calls
  */
-export async function getWhatsAppCredentials() {
+async function getWhatsAppCredentials() {
     const now = Date.now();
     
     // Return cached secrets if still valid
     if (cachedSecrets && cacheTimestamp && (now - cacheTimestamp < CACHE_TTL_MS)) {
-        logger.debug('Using cached secrets');
+        console.log('[SECRETS] Using cached secrets');
         return cachedSecrets;
     }
 
     const secretArn = process.env.WHATSAPP_SECRET_ARN;
     
     if (!secretArn) {
-        logger.error('WHATSAPP_SECRET_ARN environment variable not set');
+        console.error('[SECRETS] WHATSAPP_SECRET_ARN environment variable not set');
         throw new Error('Secret ARN not configured');
     }
 
     try {
-        logger.debug(`Fetching secrets from: ${secretArn}`);
+        console.log(`[SECRETS] Fetching secrets from: ${secretArn}`);
         
         const command = new GetSecretValueCommand({
             SecretId: secretArn
@@ -43,7 +42,7 @@ export async function getWhatsAppCredentials() {
 
         const secrets = JSON.parse(response.SecretString);
         
-        // Validate required fields
+        // Validate required fields - including WHATSAPP_PRIVATE_KEY
         if (!secrets.TOKEN_WHATSAPP || !secrets.ID_PHONE_WHATSAPP || !secrets.VERIFY_TOKEN_WHATSAPP) {
             throw new Error('Missing required secret fields');
         }
@@ -52,15 +51,19 @@ export async function getWhatsAppCredentials() {
         cachedSecrets = {
             TOKEN_WHATS: secrets.TOKEN_WHATSAPP,
             IPHONE_ID_WHATS: secrets.ID_PHONE_WHATSAPP,
-            VERIFY_TOKEN: secrets.VERIFY_TOKEN_WHATSAPP
+            VERIFY_TOKEN: secrets.VERIFY_TOKEN_WHATSAPP,
+            WHATSAPP_PRIVATE_KEY: secrets.WHATSAPP_PRIVATE_KEY || '',
+            WHATSAPP_PRIVATE_KEY_PASSPHRASE: secrets.WHATSAPP_PRIVATE_KEY_PASSPHRASE || ''
         };
         cacheTimestamp = now;
 
-        logger.info('Successfully fetched WhatsApp credentials from Secrets Manager');
+        console.log('[SECRETS] Successfully fetched WhatsApp credentials from Secrets Manager');
         return cachedSecrets;
 
     } catch (error) {
-        logger.error('Error fetching secrets from Secrets Manager:', error);
+        console.error('[SECRETS] Error fetching secrets from Secrets Manager:', error);
         throw error;
     }
 }
+
+module.exports = { getWhatsAppCredentials };
