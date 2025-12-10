@@ -175,8 +175,10 @@ async function handleWebhookVerification(event) {
  * Maneja mensajes entrantes de WhatsApp (POST)
  */
 async function handleWhatsAppMessage(event) {
+    let idFlow = "660310043715044"; // ID del flujo en WhatsApp Flow
     try {
         const body = JSON.parse(event.body || '{}');
+        
 
         //console.log('📨 Webhook POST recibido:', JSON.stringify(body, null, 2));
 
@@ -202,19 +204,10 @@ async function handleWhatsAppMessage(event) {
                             from = message.from;
                             const messageType = message.type;
 
-                            // Envío básico
 
+                            //await sendFlow(from, "660310043715044", "Hola, aqui puede capturar su incidencia");
 
-                            // Con texto personalizado del botón
-                            await sendFlow(from, "660310043715044", "Hola, aqui puede capturar su incidencia");
-
-
-                            /*  await sendFlow(from, "660310043715044", "Reportar", {
-                                  nombre: "Juan Pérez",
-                                  email: "juan@example.com"
-                              });*/
-
-                            /*if (messageType === 'text' && message.text) {
+                            if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;
 
@@ -234,10 +227,18 @@ async function handleWhatsAppMessage(event) {
 
                                     let startTime = Date.now();
                                     const agentResponse = await inputLlm(messageBody);
-
-
                                     logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
-                                    await sendMessage(from, agentResponse);
+
+                                    /*logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
+                                    await sendMessage(from, agentResponse);*/
+
+                                    await sendFlow(from, idFlow, "Hola, con este formulario puedes capturar tu incidencia", {
+                                        nombre: "Juan Pérez",
+                                        email: "juan@example.com"
+                                    });
+
+                                    //await sendFlow(from, idFlow, "Hola, con este formulario puedes capturar tu incidencia");
+
 
                                     let endTime = Date.now();
                                     const duration = endTime - startTime;
@@ -251,17 +252,32 @@ async function handleWhatsAppMessage(event) {
                                     };
                                     // Guardar mensaje de forma asíncrona sin esperar (fire and forget)
                                     const conversationService = new ConversationService();
-                                    conversationService.saveMessage(from, messageBody, agentResponse, messageId, traceabilityData).catch(err => {
+                                    conversationService.saveMessage(from, messageBody, 'Flow', messageId, traceabilityData).catch(err => {
                                         logger.error('Error guardando mensaje (background):', err);
                                     });
 
-                                    
+
 
                                 } catch (processError) {
                                     logger.error('Error procesando mensaje:', processError);
                                     response = 'Lo siento, hubo un error interno. Por favor, inténtalo de nuevo.';
                                 }
-                            }*/
+                            } else {
+
+                                const interactive = message.interactive;
+                                if (interactive && interactive.type === 'nfm_reply' && interactive.nfm_reply && interactive.nfm_reply.response_json) {
+                                    try {
+                                        const responseData = JSON.parse(interactive.nfm_reply.response_json);
+                                        const { nombre, local, flow_token, incidencia, email } = responseData;
+                                        const agentResponse = `Gracias ${nombre} por reportar la incidencia en ${local}. Hemos registrado tu reporte: "${incidencia}". Nos pondremos en contacto contigo a través del email: ${email}.`;
+                                        logger.info(`Datos extraídos: nombre=${nombre}, local=${local}, flow_token=${flow_token}, incidencia=${incidencia}, email=${email}`);
+
+                                        await sendMessage(from, agentResponse);
+                                    } catch (err) {
+                                        logger.error('Error parseando response_json:', err);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

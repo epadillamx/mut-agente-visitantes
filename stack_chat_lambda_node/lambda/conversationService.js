@@ -111,7 +111,8 @@ class ConversationService {
                     user: message.length,
                     agent: response.length
                 },
-                traceabilityData: traceabilityData_input
+                traceabilityData: traceabilityData_input,
+                type: 'locatarios',
             };
 
             await this.dynamoClient.send(new PutCommand({

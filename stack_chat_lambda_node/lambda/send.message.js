@@ -127,7 +127,7 @@ async function sendMessage(phone, userMessage) {
  * @param {object} flowData - Datos opcionales para pre-llenar el flow
  * @returns {Promise<object>} Resultado del envío
  */
-async function sendFlow(phone, flowId = '660310043715044', flowCta = 'Reportar Incidencia', flowData = {}) {
+async function sendFlow(phone, flowId , flowCta, flowData = {}) {
     try {
         const credentials = await getCredentials();
         logger.debug(`Enviando WhatsApp Flow ${flowId} a ${phone}`);
@@ -145,13 +145,13 @@ async function sendFlow(phone, flowId = '660310043715044', flowCta = 'Reportar I
                 "type": "flow",
                 "header": {
                     "type": "text",
-                    "text": "Sistema de Incidencias"
+                    "text": "Formulario Incidencias"
                 },
                 "body": {
                     "text": "Por favor completa el siguiente formulario para reportar tu incidencia."
                 },
                 "footer": {
-                    "text": "Powered by WhatsApp Flow"
+                    "text": "By Apilynk"
                 },
                 "action": {
                     "name": "flow",

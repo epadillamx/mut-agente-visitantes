@@ -116,7 +116,9 @@ class ChatLambdaNodeStack(Stack):
                     "bedrock:InvokeModelWithResponseStream"
                 ],
                 resources=[
-                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*"
+                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*",
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us::{Aws.ACCOUNT_ID}:inference-profile/*"
                 ]
             )
         )
