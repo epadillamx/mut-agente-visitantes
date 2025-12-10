@@ -151,7 +151,7 @@ async function sendFlow(phone, flowId , flowCta,screen) {
                     "text": "Describe el problema que has encontrado y lo atenderemos a la brevedad."
                 },
                 "footer": {
-                    "text": "By Apilynk"
+                    "text": "MUT-Locatarios"
                 },
                 "action": {
                     "name": "flow",
