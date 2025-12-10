@@ -144,7 +144,7 @@ class ChatLambdaNodeStack(Stack):
             runtime=_lambda.Runtime.NODEJS_22_X,
             handler="lambda-handler.handler",
             code=_lambda.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "whatsappflow")
+                os.path.join(os.path.dirname(__file__), "lambda_flow_app")
             ),
             description="Lambda function for WhatsApp Flow incident reporting",
             timeout=Duration.seconds(30),
