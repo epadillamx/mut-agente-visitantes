@@ -3,23 +3,55 @@ from aws_cdk import (
     CfnOutput,
     Duration,
     Aws,
+    RemovalPolicy,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_iam as iam,
     aws_secretsmanager as secretsmanager,
+    aws_dynamodb as dynamodb,
 )
 from constructs import Construct
 import os
 
 class ChatLambdaNodeStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, 
+    def __init__(self, scope: Construct, construct_id: str,
                  conversations_table=None, sessions_table=None,
                  input_metadata=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         """
-        @ Lambda function
+        @ DynamoDB Tables
+        """
+
+        # Create DynamoDB table for incidents
+        self.incidents_table = dynamodb.Table(
+            self,
+            "IncidentsTable",
+            partition_key=dynamodb.Attribute(
+                name="id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.RETAIN,
+            point_in_time_recovery=True
+        )
+
+        # Add GSI for querying by local_id
+        self.incidents_table.add_global_secondary_index(
+            index_name="local_id-fecha_creacion-index",
+            partition_key=dynamodb.Attribute(
+                name="local_id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="fecha_creacion",
+                type=dynamodb.AttributeType.STRING
+            )
+        )
+
+        """
+        @ Lambda function - Chat
         """
 
         # Get secret ARN from context
@@ -33,8 +65,8 @@ class ChatLambdaNodeStack(Stack):
             "WhatsAppSecret",
             secret_complete_arn=secret_arn
         )
-        
-       
+
+
 
         # Build environment variables
         environment_vars = {
@@ -90,6 +122,40 @@ class ChatLambdaNodeStack(Stack):
         )
 
         """
+        @ Lambda function - WhatsApp Flow
+        """
+
+        # Build environment variables for WhatsApp Flow Lambda
+        flow_environment_vars = {
+            "NODE_ENV": "development",
+            "WHATSAPP_SECRET_ARN": secret_arn,
+            "DYNAMODB_TABLE_INCIDENCIAS": self.incidents_table.table_name,
+        }
+
+        # Add private key passphrase if provided
+        whatsapp_passphrase = input_metadata.get("whatsapp_private_key_passphrase") if input_metadata else None
+        if whatsapp_passphrase:
+            flow_environment_vars["WHATSAPP_PRIVATE_KEY_PASSPHRASE"] = whatsapp_passphrase
+
+        # Create WhatsApp Flow Lambda function
+        self.whatsapp_flow_lambda = _lambda.Function(
+            self,
+            "whatsapp-flow-lambda-fn",
+            runtime=_lambda.Runtime.NODEJS_22_X,
+            handler="lambda-handler.handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "whatsappflow")
+            ),
+            description="Lambda function for WhatsApp Flow incident reporting",
+            timeout=Duration.seconds(30),
+            memory_size=256,
+            environment=flow_environment_vars
+        )
+
+        # Grant DynamoDB permissions to WhatsApp Flow Lambda
+        self.incidents_table.grant_read_write_data(self.whatsapp_flow_lambda)
+
+        """
         @ API Gateway
         """
 
@@ -138,6 +204,15 @@ class ChatLambdaNodeStack(Stack):
         stats = api.root.add_resource("stats")
         stats.add_method("GET", lambda_integration)
 
+        # Create /flow resource for WhatsApp Flow endpoint
+        flow = api.root.add_resource("flow")
+        flow_lambda_integration = apigateway.LambdaIntegration(
+            self.whatsapp_flow_lambda,
+            proxy=True,
+            allow_test_invoke=True
+        )
+        flow.add_method("POST", flow_lambda_integration)
+
         """
         @ Outputs
         """
@@ -172,4 +247,28 @@ class ChatLambdaNodeStack(Stack):
             "output-chat-test-url",
             value=f"{api.url}chat",
             description="Direct Chat Test URL"
+        )
+
+        # Return WhatsApp Flow Lambda ARN
+        CfnOutput(
+            self,
+            "output-whatsapp-flow-lambda-arn",
+            value=self.whatsapp_flow_lambda.function_arn,
+            description="WhatsApp Flow Lambda Function ARN"
+        )
+
+        # Return WhatsApp Flow URL
+        CfnOutput(
+            self,
+            "output-whatsapp-flow-url",
+            value=f"{api.url}flow",
+            description="WhatsApp Flow Endpoint URL"
+        )
+
+        # Return Incidents Table Name
+        CfnOutput(
+            self,
+            "output-incidents-table-name",
+            value=self.incidents_table.table_name,
+            description="DynamoDB Incidents Table Name"
         )
