@@ -83,11 +83,11 @@ async function handleFlow(event) {
     // Fallback to file system (for local testing)
     try {
       const secrets = await getWhatsAppCredentials();
-      // Get private key from environment or file system
+      // Get private key from Secrets Manager (comes as base64 encoded string)
       privateKey = Buffer.from(secrets.WHATSAPP_PRIVATE_KEY, 'base64').toString('utf-8');
       passphrase = secrets.WHATSAPP_PRIVATE_KEY_PASSPHRASE;
     } catch (error) {
-      console.error('Private key not found in environment or file system');
+      console.error('Private key not found in environment or file system:', error);
       return {
         statusCode: 500,
         headers: {

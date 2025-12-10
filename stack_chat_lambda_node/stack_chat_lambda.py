@@ -154,6 +154,9 @@ class ChatLambdaNodeStack(Stack):
 
         # Grant DynamoDB permissions to WhatsApp Flow Lambda
         self.incidents_table.grant_read_write_data(self.whatsapp_flow_lambda)
+        
+        # Grant permissions to read from Secrets Manager
+        whatsapp_secret.grant_read(self.whatsapp_flow_lambda)
 
         """
         @ API Gateway
