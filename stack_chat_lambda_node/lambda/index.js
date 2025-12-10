@@ -3,6 +3,8 @@ import { inputLlm } from './llm-vector.js';
 import logger from './logger.js';
 import { ConversationService } from './conversationService.js';
 import { getWhatsAppCredentials } from './secrets.js';
+import { sendFlow } from './send.message.js';
+
 
 /**
  * Cache en memoria para deduplicación de mensajes
@@ -199,7 +201,19 @@ async function handleWhatsAppMessage(event) {
                             logger.warn('************************************************');
                             from = message.from;
                             const messageType = message.type;
-                            await sendMessage(from, "Mensaje recibido. Estoy procesando tu solicitud...");
+
+                            // Envío básico
+
+
+                            // Con texto personalizado del botón
+                            await sendFlow(from, "660310043715044", "Hola, aqui puede capturar su incidencia");
+
+
+                            /*  await sendFlow(from, "660310043715044", "Reportar", {
+                                  nombre: "Juan Pérez",
+                                  email: "juan@example.com"
+                              });*/
+
                             /*if (messageType === 'text' && message.text) {
                                 const messageBody = message.text.body;
                                 const messageId = message.id;

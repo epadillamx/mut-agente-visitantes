@@ -119,4 +119,100 @@ async function sendMessage(phone, userMessage) {
     }
 }
 
-export { sendMessage, MarkStatusMessage };
+/**
+ * Envía un WhatsApp Flow a un usuario
+ * @param {string} phone - Número de teléfono del destinatario (formato: 521234567890)
+ * @param {string} flowId - ID del Flow (default: 660310043715044)
+ * @param {string} flowCta - Texto del botón de llamada a la acción (default: "Reportar Incidencia")
+ * @param {object} flowData - Datos opcionales para pre-llenar el flow
+ * @returns {Promise<object>} Resultado del envío
+ */
+async function sendFlow(phone, flowId = '660310043715044', flowCta = 'Reportar Incidencia', flowData = {}) {
+    try {
+        const credentials = await getCredentials();
+        logger.debug(`Enviando WhatsApp Flow ${flowId} a ${phone}`);
+
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Authorization", `Bearer ${credentials.token}`);
+
+        const flowMessage = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": phone,
+            "type": "interactive",
+            "interactive": {
+                "type": "flow",
+                "header": {
+                    "type": "text",
+                    "text": "Sistema de Incidencias"
+                },
+                "body": {
+                    "text": "Por favor completa el siguiente formulario para reportar tu incidencia."
+                },
+                "footer": {
+                    "text": "Powered by WhatsApp Flow"
+                },
+                "action": {
+                    "name": "flow",
+                    "parameters": {
+                        "flow_message_version": "3",
+                        "flow_token": `flow_token_${Date.now()}`,
+                        "flow_id": flowId,
+                        "flow_cta": flowCta,
+                        "flow_action": "navigate",
+                        "flow_action_payload": {
+                            "screen": "INCIDENT_FORM"
+                        }
+                    }
+                }
+            }
+        };
+
+        // Solo agregar data si hay datos para enviar
+        if (flowData && Object.keys(flowData).length > 0) {
+            flowMessage.interactive.action.parameters.flow_action_payload.data = flowData;
+        }
+
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: JSON.stringify(flowMessage),
+            redirect: "follow"
+        };
+
+        const response = await fetch(
+            `https://graph.facebook.com/v22.0/${credentials.phoneId}/messages`,
+            requestOptions
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error('Error response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        }
+
+        const result = await response.json();
+        logger.success(`Flow enviado exitosamente a ${phone}`);
+
+        return {
+            success: true,
+            data: result,
+            messageId: result.messages?.[0]?.id,
+            phone: phone,
+            flowId: flowId
+        };
+
+    } catch (error) {
+        logger.error('Error enviando Flow:', error);
+
+        return {
+            success: false,
+            error: error.message,
+            phone: phone,
+            flowId: flowId
+        };
+    }
+}
+
+export { sendMessage, MarkStatusMessage, sendFlow };
