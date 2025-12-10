@@ -80,21 +80,25 @@ async function handleFlow(event) {
     let privateKey;
     let passphrase;
 
-    // Fallback to file system (for local testing)
+    // Get private key from Secrets Manager
     try {
       const secrets = await getWhatsAppCredentials();
-      // Get private key from Secrets Manager (comes as base64 encoded string)
-      privateKey = Buffer.from(secrets.WHATSAPP_PRIVATE_KEY, 'base64').toString('utf-8');
+      // Private key comes as plain text (PEM format) from Secrets Manager
+      privateKey = secrets.WHATSAPP_PRIVATE_KEY;
       passphrase = secrets.WHATSAPP_PRIVATE_KEY_PASSPHRASE;
+      
+      console.log('[DEBUG] Private key loaded, length:', privateKey ? privateKey.length : 0);
+      console.log('[DEBUG] Passphrase present:', !!passphrase);
     } catch (error) {
-      console.error('Private key not found in environment or file system:', error);
+      console.error('Private key not found in Secrets Manager:', error);
       return {
         statusCode: 500,
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          error: 'Server configuration error'
+          error: 'Server configuration error',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
         })
       };
     }
