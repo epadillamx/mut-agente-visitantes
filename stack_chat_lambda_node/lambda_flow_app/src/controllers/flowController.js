@@ -182,14 +182,45 @@ class FlowController {
           // Trigger go_to_confirmation: Usuario seleccionó un local y quiere confirmar
           // Navegar de INCIDENT_FORM a CONFIRMATION
           if (data?.trigger === 'go_to_confirmation' && data?.local) {
-            console.log('[FLOW_CONTROLLER] ========== GO TO CONFIRMATION ==========');
+            console.log('[FLOW_CONTROLLER] ========== GO TO CONFIRMATION (CAMBIO LOCAL) ==========');
             console.log('[FLOW_CONTROLLER] Local seleccionado:', data.local);
             
+            // Parsear el local para obtener el nombre
+            const localData = postgresService.parseLocalId(data.local);
+            let localNombre = 'Local seleccionado';
+            
+            if (localData) {
+              // Intentar obtener el nombre del contrato
+              if (localData.numeroContrato) {
+                try {
+                  const contratoInfo = await postgresService.getContratoByNumero(localData.numeroContrato);
+                  if (contratoInfo && contratoInfo.nombre_contrato) {
+                    localNombre = `${contratoInfo.nombre_contrato} - ${localData.tipo}`;
+                  } else {
+                    localNombre = `Local ${localData.codigoLocal} - ${localData.tipo}`;
+                  }
+                } catch (err) {
+                  console.error('[FLOW_CONTROLLER] Error obteniendo nombre del local:', err);
+                  localNombre = `Local ${localData.codigoLocal} - ${localData.tipo}`;
+                }
+              } else {
+                localNombre = `Local ${localData.codigoLocal} - ${localData.tipo}`;
+              }
+            }
+            
+            console.log('[FLOW_CONTROLLER] Nombre del local para confirmación:', localNombre);
+            
+            // El Flow en Meta espera estos campos en la pantalla CONFIRMATION:
+            // - local: el ID compuesto del local seleccionado
+            // - local_nombre: el nombre legible del local (NUEVO - actualizar Flow en Meta)
+            // - mensaje_confirmacion: mensaje completo con el nombre (NUEVO - actualizar Flow en Meta)
             return {
               version: version || '3.0',
               screen: 'CONFIRMATION',
               data: {
-                local: data.local
+                local: data.local,
+                local_nombre: localNombre,
+                mensaje_confirmacion: `¿Confirmas que deseas cambiar tu local a:\n\n📍 *${localNombre}*?`
               }
             };
           }

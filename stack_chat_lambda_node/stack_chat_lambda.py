@@ -114,7 +114,7 @@ class ChatLambdaNodeStack(Stack):
             # Logger configuration - production mode (solo ERROR logs)
             "NODE_ENV": "development",
             # Use development credentials for DB and Fracttal (QA)
-            "USE_DEV_CREDENTIALS": "true",
+            "USE_DEV_CREDENTIALS": "false",
         }
 
         # Add DynamoDB table names if provided

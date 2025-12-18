@@ -172,6 +172,13 @@ async function sendFlow(phone, flowId, flowCta, screen, initData = null) {
 
         // Usar data_exchange para que WhatsApp llame al endpoint con INIT
         // Esto permite al flowController decidir dinámicamente la pantalla inicial
+        // Determinar header y body basado en si es cambio de local o reporte de incidencia
+        const isLocalChange = initData?.is_local_change || false;
+        const headerText = isLocalChange ? "Cambiar Local" : "Reportar Incidencia";
+        const bodyText = isLocalChange 
+            ? "Selecciona tu nuevo local para continuar." 
+            : "Describe el problema que has encontrado y lo atenderemos a la brevedad.";
+
         const flowMessage = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
@@ -181,10 +188,10 @@ async function sendFlow(phone, flowId, flowCta, screen, initData = null) {
                 "type": "flow",
                 "header": {
                     "type": "text",
-                    "text": "Reportar Incidencia"
+                    "text": headerText
                 },
                 "body": {
-                    "text": "Describe el problema que has encontrado y lo atenderemos a la brevedad."
+                    "text": bodyText
                 },
                 "footer": {
                     "text": "MUT-Locatarios"

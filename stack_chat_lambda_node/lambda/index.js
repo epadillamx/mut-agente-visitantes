@@ -641,7 +641,7 @@ async function handleWhatsAppMessage(event) {
                                             }
                                             
                                             // Notificar al usuario que el local fue actualizado (usar nombre_local_display)
-                                            await sendMessage(from, `✅ Tu local ha sido actualizado a: *${localNombreDisplay}*\n\nAhora describe tu incidencia en el formulario ⬇️`);
+                                            await sendMessage(from, `✅ Tu local ha sido actualizado a: *${localNombreDisplay}*\n\n¿Necesitas reportar una incidencia? Completa el formulario ⬇️`);
                                             
                                             // Obtener datos actualizados del usuario
                                             let existingUser = null;
