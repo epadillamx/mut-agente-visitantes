@@ -1,6 +1,7 @@
 const flowController = require('./src/controllers/flowController');
 const { decryptRequest, encryptResponse } = require('./src/utils/crypto');
 const localService = require('./src/services/localService');
+const postgresService = require('./src/services/postgresService');
 const { getWhatsAppCredentials } = require('./src/utils/secrets');
 const fs = require('fs');
 const path = require('path');
@@ -27,6 +28,16 @@ exports.handler = async (event, context) => {
 
     if (method === 'GET' && (requestPath === '/webhook/health' || requestPath === '/health')) {
       return handleHealth();
+    }
+
+    // PostgreSQL health check endpoint
+    if (method === 'GET' && (requestPath === '/webhook/db-health' || requestPath === '/db-health')) {
+      return await handleDbHealth();
+    }
+
+    // Search locatarios endpoint (for testing)
+    if (method === 'GET' && (requestPath.startsWith('/webhook/locatarios') || requestPath.startsWith('/locatarios'))) {
+      return await handleSearchLocatarios(event);
     }
 
     if (method === 'GET' && (requestPath === '/webhook/locales/count' || requestPath === '/locales/count')) {
@@ -242,8 +253,99 @@ function handleRoot() {
       endpoints: {
         webhook: 'POST /webhook/flow',
         health: 'GET /webhook/health',
+        dbHealth: 'GET /webhook/db-health',
+        locatarios: 'GET /webhook/locatarios?q=searchTerm',
         localesCount: 'GET /webhook/locales/count'
       }
     })
   };
+}
+
+/**
+ * Handle PostgreSQL health check GET /webhook/db-health
+ * @returns {object} API Gateway response
+ */
+async function handleDbHealth() {
+  try {
+    const dbStatus = await postgresService.checkConnection();
+    return {
+      statusCode: dbStatus.status === 'ok' ? 200 : 500,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...dbStatus,
+        timestamp: new Date().toISOString(),
+        devMode: process.env.USE_DEV_CREDENTIALS === 'true'
+      })
+    };
+  } catch (error) {
+    console.error('Error checking database health:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        status: 'error',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      })
+    };
+  }
+}
+
+/**
+ * Handle search locatarios GET /webhook/locatarios?q=searchTerm
+ * @param {object} event - API Gateway event
+ * @returns {object} API Gateway response
+ */
+async function handleSearchLocatarios(event) {
+  try {
+    // Get query parameter
+    const queryParams = event.queryStringParameters || {};
+    const searchTerm = queryParams.q || queryParams.search || '';
+    const limit = parseInt(queryParams.limit) || 10;
+
+    if (!searchTerm || searchTerm.length < 3) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          error: 'Search term must be at least 3 characters',
+          provided: searchTerm
+        })
+      };
+    }
+
+    const locatarios = await postgresService.searchLocatarios(searchTerm, limit);
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: searchTerm,
+        count: locatarios.length,
+        results: locatarios,
+        timestamp: new Date().toISOString()
+      })
+    };
+  } catch (error) {
+    console.error('Error searching locatarios:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        status: 'error',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      })
+    };
+  }
 }

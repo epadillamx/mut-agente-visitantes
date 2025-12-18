@@ -3,7 +3,7 @@
     "data_api_version": "3.0",
     "routing_model": {
         "INCIDENT_FORM": [
-            "INCIDENT_DETAILS"
+            "CONFIRMATION"
         ],
         "INCIDENT_DETAILS": [
             "CONFIRMATION"
@@ -11,6 +11,88 @@
         "CONFIRMATION": []
     },
     "screens": [
+        {
+            "id": "INCIDENT_DETAILS",
+            "title": "Detalles de Incidencia",
+            "data": {
+                "nombre": {
+                    "type": "string",
+                    "__example__": "Juan Pérez"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "juan@correo.com"
+                },
+                "local": {
+                    "type": "string",
+                    "__example__": "local_1"
+                },
+                "local_nombre": {
+                    "type": "string",
+                    "__example__": "Mi Local"
+                },
+                "is_returning_user": {
+                    "type": "boolean",
+                    "__example__": true
+                },
+                "show_edit_link": {
+                    "type": "boolean",
+                    "__example__": false
+                },
+                "user_info_text": {
+                    "type": "string",
+                    "__example__": "📍 Mi Local\n👤 Juan Pérez\n📧 juan@correo.com"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "incident_details_form",
+                        "children": [
+                            {
+                                "type": "TextSubheading",
+                                "text": "👤 Tus datos"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.user_info_text}"
+                            },
+                            {
+                                "type": "TextHeading",
+                                "text": "⚠️ Incidencia"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "Por favor describa detalladamente el problema encontrado."
+                            },
+                            {
+                                "type": "TextArea",
+                                "label": "Descripción",
+                                "name": "incidencia",
+                                "required": true,
+                                "helper-text": "Incluya todos los detalles relevantes"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "nombre": "${data.nombre}",
+                                        "email": "${data.email}",
+                                        "local": "${data.local}",
+                                        "incidencia": "${form.incidencia}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
         {
             "id": "INCIDENT_FORM",
             "title": "Reportar Incidencia",
@@ -42,6 +124,10 @@
                 "search_helper": {
                     "type": "string",
                     "__example__": "Escribe mínimo 4 caracteres y presiona Buscar"
+                },
+                "from_fresh_form": {
+                    "type": "boolean",
+                    "__example__": false
                 }
             },
             "layout": {
@@ -69,7 +155,8 @@
                                     "name": "data_exchange",
                                     "payload": {
                                         "trigger": "search_local",
-                                        "busqueda_local": "${form.busqueda_local}"
+                                        "busqueda_local": "${form.busqueda_local}",
+                                        "from_fresh_form": "${data.from_fresh_form}"
                                     }
                                 }
                             },
@@ -95,61 +182,15 @@
                                 "required": true
                             },
                             {
-                                "type": "Footer",
-                                "label": "Continuar",
-                                "on-click-action": {
-                                    "name": "data_exchange",
-                                    "payload": {
-                                        "trigger": "go_to_details",
-                                        "nombre": "${form.nombre}",
-                                        "email": "${form.email}",
-                                        "local": "${form.local}"
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "id": "INCIDENT_DETAILS",
-            "title": "Detalles de Incidencia",
-            "data": {
-                "nombre": {
-                    "type": "string",
-                    "__example__": "Juan Pérez"
-                },
-                "email": {
-                    "type": "string",
-                    "__example__": "juan@correo.com"
-                },
-                "local": {
-                    "type": "string",
-                    "__example__": "local_1"
-                }
-            },
-            "layout": {
-                "type": "SingleColumnLayout",
-                "children": [
-                    {
-                        "type": "Form",
-                        "name": "incident_details_form",
-                        "children": [
-                            {
                                 "type": "TextHeading",
-                                "text": "⚠️ Incidencia"
-                            },
-                            {
-                                "type": "TextBody",
-                                "text": "Por favor describa detalladamente el problema encontrado."
+                                "text": "Incidencia"
                             },
                             {
                                 "type": "TextArea",
-                                "label": "Descripción",
+                                "label": "Descripcion del problema",
                                 "name": "incidencia",
                                 "required": true,
-                                "helper-text": "Incluya todos los detalles relevantes"
+                                "helper-text": "Describa detalladamente el problema encontrado"
                             },
                             {
                                 "type": "Footer",
@@ -158,10 +199,11 @@
                                     "name": "data_exchange",
                                     "payload": {
                                         "trigger": "go_to_confirmation",
-                                        "nombre": "${data.nombre}",
-                                        "email": "${data.email}",
-                                        "local": "${data.local}",
-                                        "incidencia": "${form.incidencia}"
+                                        "nombre": "${form.nombre}",
+                                        "email": "${form.email}",
+                                        "local": "${form.local}",
+                                        "incidencia": "${form.incidencia}",
+                                        "from_fresh_form": "${data.from_fresh_form}"
                                     }
                                 }
                             }

@@ -1,6 +1,13 @@
 const localService = require('../services/localService');
 const dynamoService = require('../services/dynamoService');
+const postgresService = require('../services/postgresService');
+const bedrockService = require('../services/bedrockService');
+const { getFracttalService } = require('../services/fracttalService');
 const { isValidEmail } = require('../utils/crypto');
+const { getFracttalCredentials } = require('../utils/secrets');
+
+// Flag para usar PostgreSQL (true) o JSON local (false)
+const USE_POSTGRES = true;
 
 class FlowController {
   /**
@@ -9,9 +16,11 @@ class FlowController {
    * @returns {object} Response data
    */
   async handleFlow(decryptedData) {
-    console.log('Handling flow:', JSON.stringify(decryptedData, null, 2));
+    console.log('[FLOW_CONTROLLER] ========== INICIO handleFlow ==========');
+    console.log('[FLOW_CONTROLLER] decryptedData:', JSON.stringify(decryptedData, null, 2));
 
     const { action, screen, data, flow_token, version } = decryptedData;
+    console.log('[FLOW_CONTROLLER] action:', action, '| screen:', screen, '| flow_token:', flow_token);
 
     try {
       // Health check
@@ -19,53 +28,269 @@ class FlowController {
         return { version: version || '3.0', data: { status: 'active' } };
       }
 
+      // Función auxiliar para extraer datos de usuario del flow_token
+      const extractUserDataFromToken = (token) => {
+        if (!token || !token.startsWith('returning_')) {
+          return null;
+        }
+        try {
+          // Formato: returning_timestamp_base64data
+          const parts = token.split('_');
+          if (parts.length >= 3) {
+            const base64Data = parts.slice(2).join('_'); // Por si el base64 tiene underscores
+            const jsonStr = Buffer.from(base64Data, 'base64').toString('utf8');
+            const userData = JSON.parse(jsonStr);
+            console.log('[FLOW] Datos de usuario extraídos del token:', JSON.stringify(userData));
+            return userData;
+          }
+        } catch (e) {
+          console.error('[FLOW] Error extrayendo datos del token:', e.message);
+        }
+        return null;
+      };
+
       // Inicialización del flow
       if (action === 'INIT') {
-        return {
+        console.log('[FLOW_CONTROLLER] ========== INIT DETECTADO ==========');
+        // Verificar si hay datos pre-cargados en el flow_token
+        const userData = extractUserDataFromToken(flow_token);
+        console.log('[FLOW_CONTROLLER] userData extraido del token:', JSON.stringify(userData));
+        
+        // ========== FLOW: CAMBIAR LOCAL ==========
+        // Si is_local_change es true, mostrar pantalla de búsqueda de local únicamente
+        // IMPORTANTE: Usamos INCIDENT_FORM porque es la pantalla que tiene el Flow 839718892221678
+        if (userData && userData.is_local_change) {
+          console.log('[FLOW_CONTROLLER] ========== CAMBIAR LOCAL DETECTADO (INIT) ==========');
+          const responseLocalChange = {
+            version: version || '3.0',
+            screen: 'INCIDENT_FORM',
+            data: {
+              locales: [{ id: "0", title: "Buscar local o contrato..." }],
+              is_local_enabled: false,
+              search_helper: "Ingrese el nombre del local o contrato (mínimo 4 caracteres)",
+              from_fresh_form: false
+            }
+          };
+          console.log('[FLOW_CONTROLLER] Response INIT cambiar local:', JSON.stringify(responseLocalChange));
+          return responseLocalChange;
+        }
+        
+        if (userData && userData.is_returning_user && userData.nombre && userData.local) {
+          console.log('[FLOW_CONTROLLER] USUARIO EXISTENTE - Enviando a INCIDENT_DETAILS');
+          
+          // Formatear texto de información del usuario
+          const userInfoText = `Local: ${userData.local_nombre || 'Local no especificado'} | Usuario: ${userData.nombre} | Email: ${userData.email || 'Sin email'}`;
+          
+          const responseExisting = {
+            version: version || '3.0',
+            screen: 'INCIDENT_DETAILS',
+            data: {
+              nombre: userData.nombre,
+              email: userData.email || '',
+              local: userData.local,
+              local_nombre: userData.local_nombre || '',
+              is_returning_user: true,
+              show_edit_link: true,
+              user_info_text: userInfoText
+            }
+          };
+          console.log('[FLOW_CONTROLLER] Response INIT existente:', JSON.stringify(responseExisting));
+          return responseExisting;
+        }
+        
+        // Usuario nuevo: mostrar formulario completo
+        console.log('[FLOW_CONTROLLER] USUARIO NUEVO - Enviando a INCIDENT_FORM');
+        const responseNew = {
           version: version || '3.0',
           screen: 'INCIDENT_FORM',
           data: {
-            locales: [{ id: "0", title: "Escribe arriba para buscar..." }],
+            locales: [{ id: "0", title: "Buscar local o contrato..." }],
             is_local_enabled: false,
-            search_helper: "Escribe mínimo 4 caracteres y presiona Buscar"
+            search_helper: "Ingrese el nombre del local o contrato (minimo 4 caracteres)",
+            from_fresh_form: false
           }
         };
+        console.log('[FLOW_CONTROLLER] Response INIT nuevo:', JSON.stringify(responseNew));
+        return responseNew;
       }
 
       // Data exchange
       if (action === 'data_exchange') {
-        // Búsqueda de local
-        if (data?.trigger === 'search_local') {
-          const searchTerm = data.busqueda_local || '';
+        const userData = extractUserDataFromToken(flow_token);
+        
+        // ========== CAMBIO DE LOCAL: Búsqueda de locales ==========
+        // Si es cambio de local (is_local_change=true), NO redirigir a INCIDENT_DETAILS
+        // Permitir que search_local funcione normalmente
+        if (userData && userData.is_local_change) {
+          console.log('[FLOW_CONTROLLER] ========== CAMBIO DE LOCAL - data_exchange ==========');
+          console.log('[FLOW_CONTROLLER] trigger:', data?.trigger, '| screen:', screen, '| local:', data?.local);
           
-          if (searchTerm.length < 4) {
+          // Búsqueda de local en modo cambio de local
+          if (data?.trigger === 'search_local') {
+            const searchTerm = data.busqueda_local || '';
+            
+            console.log(`[FLOW_SEARCH] ========== BÚSQUEDA DE LOCAL (CAMBIO) ==========`);
+            console.log(`[FLOW_SEARCH] searchTerm: "${searchTerm}"`);
+            
+            if (searchTerm.length < 4) {
+              console.log(`[FLOW_SEARCH] Término muy corto (${searchTerm.length} chars)`);
+              return {
+                version: version || '3.0',
+                screen: 'INCIDENT_FORM',
+                data: {
+                  locales: [{ id: "0", title: "Ingrese más caracteres..." }],
+                  is_local_enabled: false,
+                  search_helper: "Por favor ingrese al menos 4 caracteres para iniciar la búsqueda",
+                  from_fresh_form: false
+                }
+              };
+            }
+
+            // Buscar locatarios
+            let resultados;
+            try {
+              console.log(`[FLOW_SEARCH] Buscando en PostgreSQL: "${searchTerm}"`);
+              if (USE_POSTGRES) {
+                resultados = await postgresService.searchLocatarios(searchTerm, 10);
+              } else {
+                resultados = localService.searchLocales(searchTerm, 10);
+              }
+              console.log(`[FLOW_SEARCH] Resultados encontrados: ${resultados?.length || 0}`);
+            } catch (searchError) {
+              console.error(`[FLOW_SEARCH] ERROR en búsqueda:`, searchError);
+              resultados = [];
+            }
+
+            console.log('[FLOW_SEARCH] Search results:', JSON.stringify(resultados, null, 2));
+
             return {
               version: version || '3.0',
               screen: 'INCIDENT_FORM',
               data: {
-                locales: [{ id: "0", title: "Mínimo 4 caracteres" }],
-                is_local_enabled: false,
-                search_helper: "⚠️ Escribe mínimo 4 caracteres"
+                locales: resultados.length > 0 
+                  ? resultados 
+                  : [{ id: "0", title: "Sin resultados para esta búsqueda" }],
+                is_local_enabled: resultados.length > 0,
+                search_helper: resultados.length > 0 
+                  ? `${resultados.length} resultado(s) encontrado(s). Seleccione una opción.`
+                  : "No se encontraron coincidencias. Intente con otro término.",
+                from_fresh_form: false
               }
             };
           }
-
-          // Buscar en tu lista de locales
-          const resultados = localService.searchLocales(searchTerm, 10);
-
+          
+          // Trigger go_to_confirmation: Usuario seleccionó un local y quiere confirmar
+          // Navegar de INCIDENT_FORM a CONFIRMATION
+          if (data?.trigger === 'go_to_confirmation' && data?.local) {
+            console.log('[FLOW_CONTROLLER] ========== GO TO CONFIRMATION ==========');
+            console.log('[FLOW_CONTROLLER] Local seleccionado:', data.local);
+            
+            return {
+              version: version || '3.0',
+              screen: 'CONFIRMATION',
+              data: {
+                local: data.local
+              }
+            };
+          }
+          
+          // Para cambio de local, cualquier otra acción, mantener en INCIDENT_FORM
+          console.log('[FLOW_CONTROLLER] Cambio de local - mantener en INCIDENT_FORM');
           return {
             version: version || '3.0',
             screen: 'INCIDENT_FORM',
             data: {
-              locales: resultados.length > 0 
-                ? resultados 
-                : [{ id: "0", title: "Sin resultados" }],
-              is_local_enabled: resultados.length > 0,
-              search_helper: resultados.length > 0 
-                ? `✅ ${resultados.length} locales encontrados`
-                : "❌ Sin resultados"
+              locales: [{ id: "0", title: "Buscar local o contrato..." }],
+              is_local_enabled: false,
+              search_helper: "Ingrese el nombre del local o contrato (mínimo 4 caracteres)",
+              from_fresh_form: false
             }
           };
+        }
+        
+        // Si es usuario existente y está en INCIDENT_FORM (pero NO es cambio de local), redirigir a INCIDENT_DETAILS
+        if (userData && userData.is_returning_user && !userData.is_local_change && screen === 'INCIDENT_FORM') {
+          console.log('[FLOW] Usuario existente detectado en INCIDENT_FORM, redirigiendo a INCIDENT_DETAILS');
+          const userInfoText = `📍 ${userData.local_nombre || 'Local no especificado'}\n👤 ${userData.nombre}\n📧 ${userData.email || 'Sin email'}`;
+          
+          return {
+            version: version || '3.0',
+            screen: 'INCIDENT_DETAILS',
+            data: {
+              nombre: userData.nombre,
+              email: userData.email || '',
+              local: userData.local,
+              local_nombre: userData.local_nombre || '',
+              is_returning_user: true,
+              show_edit_link: false,
+              user_info_text: userInfoText
+            }
+          };
+        }
+        
+        // Búsqueda de local
+        if (data?.trigger === 'search_local') {
+          const searchTerm = data.busqueda_local || '';
+          const fromFreshForm = data.from_fresh_form || false;
+          // Detectar de qué pantalla viene la búsqueda (LOCAL_SEARCH para cambio de local, INCIDENT_FORM para nuevo usuario)
+          const screenSource = data.screen_source || screen || 'INCIDENT_FORM';
+          const targetScreen = screenSource === 'LOCAL_SEARCH' ? 'LOCAL_SEARCH' : 'INCIDENT_FORM';
+          
+          console.log(`[FLOW_SEARCH] ========== BÚSQUEDA DE LOCAL ==========`);
+          console.log(`[FLOW_SEARCH] searchTerm: "${searchTerm}", screenSource: ${screenSource}, targetScreen: ${targetScreen}`);
+          
+          if (searchTerm.length < 4) {
+            console.log(`[FLOW_SEARCH] Término muy corto (${searchTerm.length} chars), retornando a ${targetScreen}`);
+            const shortTermResponse = {
+              version: version || '3.0',
+              screen: targetScreen,
+              data: {
+                locales: [{ id: "0", title: "Ingrese más caracteres..." }],
+                is_local_enabled: false,
+                search_helper: "Por favor ingrese al menos 4 caracteres para iniciar la búsqueda",
+                ...(targetScreen === 'INCIDENT_FORM' && { from_fresh_form: fromFreshForm })
+              }
+            };
+            console.log(`[FLOW_SEARCH] Response:`, JSON.stringify(shortTermResponse));
+            return shortTermResponse;
+          }
+
+          // Buscar locatarios - PostgreSQL o JSON local
+          // Los resultados ya vienen en formato {id, title} para WhatsApp Flow
+          // El ID contiene: locatarioId|fractalCode|codigoLocal|tipo|numeroContrato
+          let resultados;
+          try {
+            console.log(`[FLOW_SEARCH] Buscando en PostgreSQL: "${searchTerm}"`);
+            if (USE_POSTGRES) {
+              resultados = await postgresService.searchLocatarios(searchTerm, 10);
+            } else {
+              resultados = localService.searchLocales(searchTerm, 10);
+            }
+            console.log(`[FLOW_SEARCH] Resultados encontrados: ${resultados?.length || 0}`);
+          } catch (searchError) {
+            console.error(`[FLOW_SEARCH] ERROR en búsqueda:`, searchError);
+            resultados = [];
+          }
+
+          console.log('[FLOW_SEARCH] Search results:', JSON.stringify(resultados, null, 2));
+
+          const response = {
+            version: version || '3.0',
+            screen: targetScreen,
+            data: {
+              locales: resultados.length > 0 
+                ? resultados 
+                : [{ id: "0", title: "Sin resultados para esta búsqueda" }],
+              is_local_enabled: resultados.length > 0,
+              search_helper: resultados.length > 0 
+                ? `${resultados.length} resultado(s) encontrado(s). Seleccione una opción.`
+                : "No se encontraron coincidencias. Intente con otro término.",
+              ...(targetScreen === 'INCIDENT_FORM' && { from_fresh_form: fromFreshForm })
+            }
+          };
+
+          console.log('[FLOW_SEARCH] Sending response:', JSON.stringify(response, null, 2));
+          return response;
         }
 
         // Ir a detalles de incidencia
@@ -76,15 +301,51 @@ class FlowController {
             data: {
               nombre: data.nombre,
               email: data.email,
-              local: data.local
+              local: data.local,
+              local_nombre: '',
+              is_returning_user: false,
+              show_edit_link: false,
+              user_info_text: ''
             }
           };
         }
 
         // Ir a confirmación
         if (data?.trigger === 'go_to_confirmation') {
-          const localInfo = localService.getLocalById(data.local);
-          const localNombre = localInfo?.title || data.local;
+          // Parsear el ID compuesto del local
+          // Formato: locatarioId|fractalCode|codigoLocal|tipo|numeroContrato
+          const localData = postgresService.parseLocalId(data.local);
+          
+          let localNombre = data.local; // fallback
+          let fractalCode = null;
+          let locatarioId = null;
+          let codigoLocal = null;
+          let tipoLocal = null;
+          
+          if (localData) {
+            locatarioId = localData.locatarioId;
+            fractalCode = localData.fractalCode;
+            codigoLocal = localData.codigoLocal;
+            tipoLocal = localData.tipo;
+            
+            // Buscar el nombre del contrato en PostgreSQL
+            if (USE_POSTGRES && localData.numeroContrato) {
+              try {
+                const contratoInfo = await postgresService.getContratoByNumero(localData.numeroContrato);
+                if (contratoInfo) {
+                  localNombre = `${contratoInfo.nombre_contrato} - ${tipoLocal}`;
+                } else {
+                  // Fallback: usar código local y tipo
+                  localNombre = `Local ${codigoLocal} - ${tipoLocal}`;
+                }
+              } catch (err) {
+                console.error('[FLOW] Error getting contrato info:', err);
+                localNombre = `Local ${codigoLocal} - ${tipoLocal}`;
+              }
+            } else {
+              localNombre = `Local ${codigoLocal} - ${tipoLocal}`;
+            }
+          }
 
           return {
             version: version || '3.0',
@@ -93,9 +354,12 @@ class FlowController {
               nombre: data.nombre,
               email: data.email,
               local: data.local,
+              local_nombre: localNombre,
+              fractal_code: fractalCode,
+              locatario_id: locatarioId,
               incidencia: data.incidencia,
-              resumen_datos: `Nombre: ${data.nombre}\nEmail: ${data.email}`,
-              resumen_incidencia: `Local: ${localNombre}\nDescripción: ${data.incidencia}`
+              resumen_datos: `Nombre: ${data.nombre}\nCorreo electrónico: ${data.email}`,
+              resumen_incidencia: `Local: ${localNombre}\n\nDescripción de la incidencia:\n${data.incidencia}`
             }
           };
         }
@@ -169,7 +433,7 @@ class FlowController {
    * @param {string} searchQuery - Search query
    * @returns {object} Search results response
    */
-  handleSearchLocal(searchQuery) {
+  async handleSearchLocal(searchQuery) {
     console.log('Searching locales with query:', searchQuery);
 
     // Validate minimum characters
@@ -185,8 +449,13 @@ class FlowController {
       };
     }
 
-    // Search locales
-    const results = localService.searchLocales(searchQuery, 10);
+    // Search locales - PostgreSQL o JSON local
+    let results;
+    if (USE_POSTGRES) {
+      results = await postgresService.searchLocatarios(searchQuery, 10);
+    } else {
+      results = localService.searchLocales(searchQuery, 10);
+    }
 
     return {
       version: '3.0',
@@ -206,17 +475,30 @@ class FlowController {
    * @param {object} data - Form data
    * @returns {object} Confirmation screen response
    */
-  handleIncidentDetailsSubmit(data) {
+  async handleIncidentDetailsSubmit(data) {
     console.log('Processing incident details:', data);
 
     // Validate required fields
-    const errors = this.validateIncidentData(data);
+    const errors = await this.validateIncidentData(data);
     if (errors.length > 0) {
       throw new Error(errors.join(', '));
     }
 
-    // Get local details
-    const local = localService.getLocalById(data.local);
+    // Get local details - PostgreSQL o JSON local
+    let local;
+    let fractalCode = null;
+    let locatarioId = null;
+    
+    if (USE_POSTGRES) {
+      // El ID viene en formato "locatarioId_fractalCode"
+      const [localIdPart, fractalCodePart] = (data.local || '').split('_');
+      locatarioId = localIdPart;
+      fractalCode = fractalCodePart;
+      local = await postgresService.getLocatarioById(locatarioId);
+    } else {
+      local = localService.getLocalById(data.local);
+    }
+    
     if (!local) {
       throw new Error('Local no válido');
     }
@@ -233,6 +515,8 @@ class FlowController {
         email: data.email,
         local: local.title,
         local_id: local.id,
+        locatario_id: locatarioId || local.id,
+        fractal_code: fractalCode || local.fractal_code,
         incidencia: data.incidencia,
         resumen_datos: resumenDatos,
         resumen_incidencia: resumenIncidencia
@@ -246,39 +530,167 @@ class FlowController {
    * @returns {object} Success response
    */
   async handleComplete(data) {
-    console.log('Completing incident report:', data);
+    console.log('[FLOW] Completing incident report:', JSON.stringify(data, null, 2));
 
     // Validate data one more time
-    const errors = this.validateIncidentData(data);
+    const errors = await this.validateIncidentData(data);
     if (errors.length > 0) {
       throw new Error(errors.join(', '));
     }
 
-    // Get local details
-    const local = localService.getLocalById(data.local_id || data.local);
-    if (!local) {
-      throw new Error('Local no válido');
+    // Parsear el ID compuesto del local
+    // Formato: locatarioId|fractalCode|codigoLocal|tipo|numeroContrato
+    const localData = postgresService.parseLocalId(data.local);
+    
+    let fractalCode = data.fractal_code || null;
+    let locatarioId = data.locatario_id || null;
+    let localNombre = data.local_nombre || 'Local';
+    
+    if (localData) {
+      locatarioId = localData.locatarioId;
+      fractalCode = localData.fractalCode;
+      
+      // Obtener nombre del contrato
+      if (localData.numeroContrato) {
+        try {
+          const contratoInfo = await postgresService.getContratoByNumero(localData.numeroContrato);
+          if (contratoInfo) {
+            localNombre = `${contratoInfo.nombre_contrato} - ${localData.tipo}`;
+          }
+        } catch (err) {
+          console.error('[FLOW] Error getting contrato info:', err);
+        }
+      }
     }
 
-    // Save to DynamoDB
+    if (!fractalCode) {
+      throw new Error('No se pudo obtener el código Fracttal del local.');
+    }
+
+    console.log(`[FLOW] Local: ${localNombre}, FractalCode: ${fractalCode}, LocatarioId: ${locatarioId}`);
+
+    // ============================================================
+    // PASO 1: Clasificar la incidencia con Bedrock
+    // ============================================================
+    let clasificacion = {
+      nombre_nivel_1: 'Otros',
+      nombre_nivel_2: 'Otros',
+      nombre_nivel_3: 'Otros'
+    };
+
+    try {
+      console.log('[FLOW] Obteniendo categorías de Fracttal...');
+      const categoriasJson = await postgresService.getClasificacionFracttal();
+      
+      console.log('[FLOW] Clasificando incidencia con Bedrock...');
+      clasificacion = await bedrockService.clasificarIncidencia(data.incidencia, categoriasJson);
+      
+      console.log('[FLOW] Clasificación obtenida:', clasificacion);
+    } catch (error) {
+      console.error('[FLOW] Error en clasificación, usando "Otros":', error);
+      // Continuar con clasificación por defecto "Otros"
+    }
+
+    // ============================================================
+    // PASO 2: Crear ticket en Fracttal
+    // ============================================================
+    let fracttalId = null;
+    
+    try {
+      console.log('[FLOW] Creando ticket en Fracttal...');
+      
+      const fracttalCreds = await getFracttalCredentials();
+      const fracttalService = getFracttalService({
+        fracttalKey: fracttalCreds.key,
+        fracttalSecret: fracttalCreds.secret,
+        fracttalUserCode: fracttalCreds.userCode
+      });
+
+      const fracttalResult = await fracttalService.createWorkRequest({
+        fractalCode: fractalCode,
+        descripcion: data.incidencia,
+        nombre: data.nombre,
+        email: data.email,
+        nivel1: clasificacion.nombre_nivel_1,  // types_description
+        nivel2: clasificacion.nombre_nivel_2,  // types_1_description
+        nivel3: clasificacion.nombre_nivel_3,  // types_2_description
+        locatarioId: locatarioId,
+        urgente: false
+      });
+
+      if (fracttalResult.success && fracttalResult.fracttalId) {
+        fracttalId = fracttalResult.fracttalId;
+        console.log(`[FLOW] Ticket creado en Fracttal. ID: ${fracttalId}`);
+      }
+    } catch (error) {
+      console.error('[FLOW] Error creando ticket en Fracttal:', error);
+      // Continuar - guardaremos en BD con estado pendiente
+    }
+
+    // ============================================================
+    // PASO 3: Guardar en PostgreSQL (whatsapp_tickets)
+    // ============================================================
+    let ticketDbId = null;
+    
+    try {
+      console.log('[FLOW] Guardando ticket en PostgreSQL...');
+      
+      ticketDbId = await postgresService.createTicket({
+        userName: data.nombre,
+        userEmail: data.email,
+        localId: locatarioId,
+        localName: localNombre,
+        fractalCode: fractalCode,
+        descripcion: data.incidencia,
+        categoria: clasificacion.nombre_nivel_3,
+        idFracttal: fracttalId,
+        estado: fracttalId ? 'Abierto' : 'pendiente',
+        isNewUser: true,  // Por ahora siempre crear usuario nuevo
+        userPhone: data.phone || null
+      });
+      
+      console.log(`[FLOW] Ticket guardado en PostgreSQL. ID: ${ticketDbId}`);
+    } catch (error) {
+      console.error('[FLOW] Error guardando en PostgreSQL:', error);
+    }
+
+    // ============================================================
+    // PASO 4: Guardar en DynamoDB (historial/log)
+    // ============================================================
     const incidentData = {
       nombre: data.nombre,
       email: data.email,
-      local_id: local.id,
-      local_nombre: local.title,
-      incidencia: data.incidencia
+      local_id: locatarioId,
+      local_nombre: localNombre,
+      fractal_code: fractalCode,
+      incidencia: data.incidencia,
+      // Clasificación
+      clasificacion_nivel1: clasificacion.nombre_nivel_1,
+      clasificacion_nivel2: clasificacion.nombre_nivel_2,
+      clasificacion_nivel3: clasificacion.nombre_nivel_3,
+      // IDs externos
+      fracttal_id: fracttalId,
+      ticket_db_id: ticketDbId,
+      estado: fracttalId ? 'creado_fracttal' : 'pendiente'
     };
 
     const savedIncident = await dynamoService.saveIncident(incidentData);
+    console.log(`[FLOW] Incidencia guardada en DynamoDB. ID: ${savedIncident.id}`);
 
-    console.log('Incident saved successfully:', savedIncident.id);
+    // ============================================================
+    // RESPUESTA FINAL
+    // ============================================================
+    const mensaje = fracttalId 
+      ? `Su incidencia ha sido registrada exitosamente con el número de ticket: ${fracttalId}. Pronto nos pondremos en contacto con usted.`
+      : 'Su incidencia ha sido registrada exitosamente. Pronto nos pondremos en contacto con usted.';
 
     return {
       version: '3.0',
       data: {
         success: true,
         incident_id: savedIncident.id,
-        message: 'Incidencia reportada exitosamente'
+        fracttal_id: fracttalId,
+        message: mensaje
       }
     };
   }
@@ -288,32 +700,44 @@ class FlowController {
    * @param {object} data - Data to validate
    * @returns {Array} Array of error messages
    */
-  validateIncidentData(data) {
+  async validateIncidentData(data) {
     const errors = [];
 
     // Validate nombre
     if (!data.nombre || data.nombre.trim().length === 0) {
-      errors.push('El nombre es requerido');
+      errors.push('Por favor ingrese su nombre');
     }
 
     // Validate email
     if (!data.email || !isValidEmail(data.email)) {
-      errors.push('Email inválido');
+      errors.push('Por favor ingrese un correo electrónico válido');
     }
 
     // Validate local
-    if (!data.local && !data.local_id) {
-      errors.push('Debe seleccionar un local');
+    if (!data.local && !data.local_id && !data.locatario_id) {
+      errors.push('Por favor seleccione un local o contrato');
     }
 
-    const localId = data.local_id || data.local;
-    if (localId && !localService.isValidLocal(localId)) {
-      errors.push('Local no válido');
+    // Validar que el local exista
+    const localId = data.locatario_id || data.local_id || data.local;
+    if (localId && localId !== '0') {
+      if (USE_POSTGRES) {
+        // Extraer ID si viene en formato "locatarioId_fractalCode"
+        const [locatarioIdPart] = (localId || '').split('_');
+        const locatario = await postgresService.getLocatarioById(locatarioIdPart);
+        if (!locatario) {
+          errors.push('El local seleccionado no es válido');
+        }
+      } else {
+        if (!localService.isValidLocal(localId)) {
+          errors.push('El local seleccionado no es válido');
+        }
+      }
     }
 
     // Validate incidencia
     if (!data.incidencia || data.incidencia.trim().length < 10) {
-      errors.push('La descripción debe tener al menos 10 caracteres');
+      errors.push('La descripción de la incidencia debe tener al menos 10 caracteres');
     }
 
     return errors;

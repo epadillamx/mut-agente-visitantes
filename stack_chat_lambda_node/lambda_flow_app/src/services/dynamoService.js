@@ -32,13 +32,24 @@ class DynamoService {
   async saveIncident(incidentData) {
     const item = {
       id: uuidv4(),
+      type: 'incidencia',  // Tipo para diferenciar de otras conversaciones
       nombre: incidentData.nombre,
       email: incidentData.email,
       local_id: incidentData.local_id,
       local_nombre: incidentData.local_nombre,
+      fractal_code: incidentData.fractal_code || null,
       incidencia: incidentData.incidencia,
+      // Clasificación Fracttal
+      clasificacion_nivel1: incidentData.clasificacion_nivel1 || null,
+      clasificacion_nivel2: incidentData.clasificacion_nivel2 || null,
+      clasificacion_nivel3: incidentData.clasificacion_nivel3 || null,
+      // IDs externos
+      fracttal_id: incidentData.fracttal_id || null,
+      ticket_db_id: incidentData.ticket_db_id || null,
+      // Metadata
       fecha_creacion: new Date().toISOString(),
-      estado: 'pendiente'
+      estado: incidentData.estado || 'pendiente',
+      source: 'whatsapp_flow'
     };
 
     const command = new PutCommand({
@@ -48,10 +59,10 @@ class DynamoService {
 
     try {
       await this.dynamodb.send(command);
-      console.log('Incident saved successfully:', item.id);
+      console.log('[DYNAMO] Incident saved successfully:', item.id);
       return item;
     } catch (error) {
-      console.error('Error saving incident to DynamoDB:', error);
+      console.error('[DYNAMO] Error saving incident:', error);
       throw new Error('Failed to save incident');
     }
   }

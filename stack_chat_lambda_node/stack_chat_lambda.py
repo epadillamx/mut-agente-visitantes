@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_iam as iam,
     aws_secretsmanager as secretsmanager,
     aws_dynamodb as dynamodb,
+    aws_ec2 as ec2,  # Para configuración VPC (producción)
 )
 from constructs import Construct
 import os
@@ -17,8 +18,46 @@ class ChatLambdaNodeStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str,
                  conversations_table=None, sessions_table=None,
+                 whatsapp_usuarios_table=None, whatsapp_tickets_table=None,
+                 incidencia_sessions_table=None,
                  input_metadata=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        # ============================================================================
+        # VPC CONFIGURATION (Comentado - Solo necesario para PRODUCCIÓN con RDS privado)
+        # El RDS de QA es público, no necesita VPC
+        # Descomentar cuando se necesite conectar a RDS PostgreSQL de PRODUCCIÓN
+        # ============================================================================
+        # VPC_ID = "vpc-0d57dff405e619cd8"
+        # VPC_SUBNET_IDS = ["subnet-036a190a48b0b6656", "subnet-079ddf3624577788a"]
+        # VPC_SECURITY_GROUP_IDS = ["sg-0a36e272934165600"]
+        #
+        # # Import existing VPC
+        # vpc = ec2.Vpc.from_lookup(
+        #     self,
+        #     "ExistingVpc",
+        #     vpc_id=VPC_ID
+        # )
+        #
+        # # Import existing subnets
+        # subnets = [
+        #     ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
+        #     for i, subnet_id in enumerate(VPC_SUBNET_IDS)
+        # ]
+        #
+        # # Import existing security group
+        # security_groups = [
+        #     ec2.SecurityGroup.from_security_group_id(self, f"SG{i}", sg_id)
+        #     for i, sg_id in enumerate(VPC_SECURITY_GROUP_IDS)
+        # ]
+        #
+        # # VPC configuration for Lambda functions
+        # vpc_config = {
+        #     "vpc": vpc,
+        #     "vpc_subnets": ec2.SubnetSelection(subnets=subnets),
+        #     "security_groups": security_groups
+        # }
+        # ============================================================================
 
         """
         @ DynamoDB Tables
@@ -74,6 +113,8 @@ class ChatLambdaNodeStack(Stack):
             "WHATSAPP_SECRET_ARN": secret_arn,
             # Logger configuration - production mode (solo ERROR logs)
             "NODE_ENV": "development",
+            # Use development credentials for DB and Fracttal (QA)
+            "USE_DEV_CREDENTIALS": "true",
         }
 
         # Add DynamoDB table names if provided
@@ -81,6 +122,12 @@ class ChatLambdaNodeStack(Stack):
             environment_vars["CONVERSATIONS_TABLE"] = conversations_table.table_name
         if sessions_table:
             environment_vars["SESSIONS_TABLE"] = sessions_table.table_name
+        if whatsapp_usuarios_table:
+            environment_vars["WHATSAPP_USUARIOS_TABLE"] = whatsapp_usuarios_table.table_name
+        if whatsapp_tickets_table:
+            environment_vars["WHATSAPP_TICKETS_TABLE"] = whatsapp_tickets_table.table_name
+        if incidencia_sessions_table:
+            environment_vars["INCIDENCIA_SESSIONS_TABLE"] = incidencia_sessions_table.table_name
 
         # Create Node.js 20.x Lambda function
         self.lambda_fn = _lambda.Function(
@@ -103,6 +150,12 @@ class ChatLambdaNodeStack(Stack):
             conversations_table.grant_read_write_data(self.lambda_fn)
         if sessions_table:
             sessions_table.grant_read_write_data(self.lambda_fn)
+        if whatsapp_usuarios_table:
+            whatsapp_usuarios_table.grant_read_write_data(self.lambda_fn)
+        if whatsapp_tickets_table:
+            whatsapp_tickets_table.grant_read_write_data(self.lambda_fn)
+        if incidencia_sessions_table:
+            incidencia_sessions_table.grant_read_write_data(self.lambda_fn)
 
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
@@ -142,6 +195,11 @@ class ChatLambdaNodeStack(Stack):
             "NODE_ENV": "development",
             "WHATSAPP_SECRET_ARN": secret_arn,
             "DYNAMODB_TABLE_INCIDENCIAS": self.incidents_table.table_name,
+            # ============================================================================
+            # QA: USE_DEV_CREDENTIALS=true usa credenciales de QA hardcodeadas
+            # PRODUCCIÓN: Cambiar a "false" para usar credenciales del secret 'main'
+            # ============================================================================
+            "USE_DEV_CREDENTIALS": "false",
         }
 
         # Add private key passphrase if provided
@@ -150,6 +208,11 @@ class ChatLambdaNodeStack(Stack):
             flow_environment_vars["WHATSAPP_PRIVATE_KEY_PASSPHRASE"] = whatsapp_passphrase
 
         # Create WhatsApp Flow Lambda function
+        # ============================================================================
+        # PRODUCCIÓN: Para conectar a RDS PostgreSQL, agregar vpc_config:
+        # Descomentar las siguientes líneas y la sección VPC al inicio del archivo:
+        #   **vpc_config,  # Agregar al final de los parámetros
+        # ============================================================================
         self.whatsapp_flow_lambda = _lambda.Function(
             self,
             "whatsapp-flow-lambda-fn",
@@ -161,7 +224,11 @@ class ChatLambdaNodeStack(Stack):
             description="Lambda function for WhatsApp Flow incident reporting",
             timeout=Duration.seconds(30),
             memory_size=256,
-            environment=flow_environment_vars
+            environment=flow_environment_vars,
+            # ============================================================================
+            # VPC CONFIG (Descomentar para PRODUCCIÓN con RDS)
+            # **vpc_config,
+            # ============================================================================
         )
 
         # Grant DynamoDB permissions to WhatsApp Flow Lambda
@@ -169,6 +236,25 @@ class ChatLambdaNodeStack(Stack):
         
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.whatsapp_flow_lambda)
+
+        # Grant permissions to invoke Bedrock models (for classification)
+        self.whatsapp_flow_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
+                ],
+                resources=[
+                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*",
+                    "arn:aws:bedrock:us-east-1::foundation-model/*",
+                    "arn:aws:bedrock:us-east-2::foundation-model/*",
+                    "arn:aws:bedrock:us-west-2::foundation-model/*",
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-east-1:{Aws.ACCOUNT_ID}:inference-profile/*",
+                ]
+            )
+        )
 
         """
         @ API Gateway

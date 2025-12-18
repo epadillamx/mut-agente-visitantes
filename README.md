@@ -59,3 +59,8 @@ aws ssm put-parameter \
   https://idzi04z9sh.execute-api.us-east-1.amazonaws.com/prod/webhook
 
   source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never --profile mut-prod-territoria
+
+
+  deploy:
+
+  cd /c/Users/gusta/Documents/apylink/repositorios/mut/mut-agente-visitantes && source venv/Scripts/activate && AWS_PROFILE=mut-prod cdk deploy ChatLambdaNodeStack --require-approval never 2>&1

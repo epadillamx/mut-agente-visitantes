@@ -1,0 +1,151 @@
+{
+    "version": "7.2",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "LOCAL_SEARCH": [
+            "CONFIRMATION"
+        ],
+        "CONFIRMATION": []
+    },
+    "screens": [
+        {
+            "id": "LOCAL_SEARCH",
+            "title": "Cambiar Local",
+            "data": {
+                "locales": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "0",
+                            "title": "Escribe arriba para buscar..."
+                        }
+                    ]
+                },
+                "is_local_enabled": {
+                    "type": "boolean",
+                    "__example__": false
+                },
+                "search_helper": {
+                    "type": "string",
+                    "__example__": "Escribe mínimo 4 caracteres y presiona Buscar"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "local_search_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "🏢 Selecciona tu nuevo local"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "Busca y selecciona el local al que deseas cambiar."
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Buscar local o contrato...",
+                                "name": "busqueda_local",
+                                "required": true,
+                                "helper-text": "${data.search_helper}"
+                            },
+                            {
+                                "type": "EmbeddedLink",
+                                "text": "🔍 Buscar Local",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "search_local",
+                                        "busqueda_local": "${form.busqueda_local}"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "Dropdown",
+                                "label": "Seleccionar Local",
+                                "name": "local",
+                                "data-source": "${data.locales}",
+                                "required": true,
+                                "enabled": "${data.is_local_enabled}"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "local": "${form.local}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "CONFIRMATION",
+            "title": "Confirmar Cambio",
+            "terminal": true,
+            "data": {
+                "local_seleccionado": {
+                    "type": "string",
+                    "__example__": "123|456|789|Local|10"
+                },
+                "local_nombre": {
+                    "type": "string",
+                    "__example__": "ADIDAS ORIGINALS"
+                },
+                "mensaje_confirmacion": {
+                    "type": "string",
+                    "__example__": "¿Confirmas que deseas cambiar tu local a:\n\n📍 ADIDAS ORIGINALS?"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "confirmation_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "✅ Confirmar Cambio de Local"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.mensaje_confirmacion}"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Confirmar Cambio",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "local": "${data.local_seleccionado}",
+                                        "is_local_change": true
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
