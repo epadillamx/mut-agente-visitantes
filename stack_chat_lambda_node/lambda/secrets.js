@@ -12,7 +12,7 @@ const CACHE_TTL_MS = 300000; // 5 minutes
 // DESARROLLO: Credenciales hardcodeadas para desarrollo local
 // En producción, estas se obtienen del secret 'main'
 // ============================================================================
-const DEV_MODE = process.env.NODE_ENV === 'development' || process.env.USE_DEV_CREDENTIALS === 'true';
+const DEV_MODE = false; // Cambiar a true para desarrollo local
 
 const DEV_CREDENTIALS = {
     // PostgreSQL - PRODUCCIÓN (solo lectura desde analytics)

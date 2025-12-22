@@ -185,6 +185,17 @@ class StackConversationDynamoDB(Stack):
             )
         )
 
+        # GSI para buscar tickets por ID unificado (Fracttal o Zendesk)
+        # PK: ticket_id (formato: "260", "12345", etc. - sin prefijo)
+        # Permite búsqueda directa sin importar el sistema de origen
+        self.whatsapp_tickets_table.add_global_secondary_index(
+            index_name="ticket-id-index",
+            partition_key=dynamodb.Attribute(
+                name="ticket_id",
+                type=dynamodb.AttributeType.STRING
+            )
+        )
+
         # ============================================================================
         # TABLA DE SESIONES DE INCIDENCIA (para vincular logs con tickets)
         # ============================================================================

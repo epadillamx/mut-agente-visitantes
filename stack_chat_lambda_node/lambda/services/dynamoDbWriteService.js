@@ -226,6 +226,15 @@ async function saveTicket(ticketData) {
     // date_partition para GSI date-index (formato: "2025-12-17")
     const date_partition = new Date(now).toISOString().split('T')[0];
     
+    // ticket_id unificado para GSI ticket-id-index
+    // Guarda el ID como string sin prefijo (260, 12345, etc.)
+    let ticket_id = null;
+    if (idfracttal) {
+        ticket_id = String(idfracttal);
+    } else if (idzendesk) {
+        ticket_id = String(idzendesk);
+    }
+    
     const item = {
         // Keys
         phone,
@@ -236,6 +245,7 @@ async function saveTicket(ticketData) {
         
         // Identificadores
         id: ticketId,
+        ticket_id,  // ID unificado para búsqueda (260, 12345, etc.) sin prefijo
         user_id,
         sessionid,
         
@@ -247,7 +257,7 @@ async function saveTicket(ticketData) {
         typeclass,
         destino,
         
-        // IDs externos
+        // IDs externos (mantener para compatibilidad)
         idfracttal,
         idzendesk,
         
