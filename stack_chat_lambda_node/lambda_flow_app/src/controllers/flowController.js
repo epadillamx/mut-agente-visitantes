@@ -56,6 +56,22 @@ class FlowController {
         const userData = extractUserDataFromToken(flow_token);
         console.log('[FLOW_CONTROLLER] userData extraido del token:', JSON.stringify(userData));
         
+        // ========== FLOW: CAMBIAR CORREO ==========
+        // Si is_email_change es true, mostrar pantalla de cambio de correo
+        if (userData && userData.is_email_change) {
+          console.log('[FLOW_CONTROLLER] ========== CAMBIAR CORREO DETECTADO (INIT) ==========');
+          const responseEmailChange = {
+            version: version || '3.0',
+            screen: 'EMAIL_FORM',
+            data: {
+              current_email: userData.current_email || 'Sin correo registrado',
+              email_helper: "Ingresa tu nuevo correo electrónico"
+            }
+          };
+          console.log('[FLOW_CONTROLLER] Response INIT cambiar correo:', JSON.stringify(responseEmailChange));
+          return responseEmailChange;
+        }
+        
         // ========== FLOW: CAMBIAR LOCAL ==========
         // Si is_local_change es true, mostrar pantalla de búsqueda de local únicamente
         // IMPORTANTE: Usamos INCIDENT_FORM porque es la pantalla que tiene el Flow 839718892221678
@@ -117,6 +133,54 @@ class FlowController {
       // Data exchange
       if (action === 'data_exchange') {
         const userData = extractUserDataFromToken(flow_token);
+        
+        // ========== CAMBIO DE CORREO: Validación de email ==========
+        // Si es cambio de correo (is_email_change=true), manejar validación y confirmación
+        if (userData && userData.is_email_change) {
+          console.log('[FLOW_CONTROLLER] ========== CAMBIO DE CORREO - data_exchange ==========');
+          console.log('[FLOW_CONTROLLER] trigger:', data?.trigger, '| screen:', screen, '| nuevo_email:', data?.nuevo_email);
+          
+          // Trigger validate_email: Validar formato del correo y pasar a confirmación
+          if (data?.trigger === 'validate_email' && data?.nuevo_email) {
+            const nuevoEmail = data.nuevo_email.trim().toLowerCase();
+            console.log('[FLOW_CONTROLLER] Validando nuevo email:', nuevoEmail);
+            
+            // Validar formato del email
+            if (!isValidEmail(nuevoEmail)) {
+              console.log('[FLOW_CONTROLLER] Email inválido:', nuevoEmail);
+              return {
+                version: version || '3.0',
+                screen: 'EMAIL_FORM',
+                data: {
+                  current_email: userData.current_email || 'Sin correo registrado',
+                  email_helper: "⚠️ El formato del correo no es válido. Por favor verifica e intenta de nuevo."
+                }
+              };
+            }
+            
+            // Email válido, pasar a pantalla de confirmación
+            console.log('[FLOW_CONTROLLER] Email válido, enviando a CONFIRMATION');
+            return {
+              version: version || '3.0',
+              screen: 'CONFIRMATION',
+              data: {
+                nuevo_email: nuevoEmail,
+                mensaje_confirmacion: `¿Confirmas que deseas cambiar tu correo a:\n\n📧 ${nuevoEmail}?`
+              }
+            };
+          }
+          
+          // Para cualquier otra acción en cambio de correo, mantener en EMAIL_FORM
+          console.log('[FLOW_CONTROLLER] Cambio de correo - mantener en EMAIL_FORM');
+          return {
+            version: version || '3.0',
+            screen: 'EMAIL_FORM',
+            data: {
+              current_email: userData.current_email || 'Sin correo registrado',
+              email_helper: "Ingresa tu nuevo correo electrónico"
+            }
+          };
+        }
         
         // ========== CAMBIO DE LOCAL: Búsqueda de locales ==========
         // Si es cambio de local (is_local_change=true), NO redirigir a INCIDENT_DETAILS

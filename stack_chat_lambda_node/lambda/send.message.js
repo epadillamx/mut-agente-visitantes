@@ -150,15 +150,17 @@ async function sendFlow(phone, flowId, flowCta, screen, initData = null) {
             const userData = {
                 nombre: initData.nombre,
                 email: initData.email || '',
+                current_email: initData.current_email || '', // Para cambio de correo
                 local: initData.local,
                 local_nombre: initData.local_nombre || '',
                 is_returning_user: true,
                 is_local_change: initData.is_local_change || false, // Flag para identificar cambio de local
+                is_email_change: initData.is_email_change || false, // Flag para identificar cambio de correo
                 incidencia_session_id: initData.incidencia_session_id || null
             };
             const base64Data = Buffer.from(JSON.stringify(userData)).toString('base64');
             flowToken = `returning_${Date.now()}_${base64Data}`;
-            logger.debug(`Usuario existente - datos codificados en flow_token para INIT (is_local_change: ${userData.is_local_change})`);
+            logger.debug(`Usuario existente - datos codificados en flow_token para INIT (is_local_change: ${userData.is_local_change}, is_email_change: ${userData.is_email_change})`);
         } else {
             // Usuario nuevo: incluir incidencia_session_id en el token
             const userData = {
@@ -172,12 +174,21 @@ async function sendFlow(phone, flowId, flowCta, screen, initData = null) {
 
         // Usar data_exchange para que WhatsApp llame al endpoint con INIT
         // Esto permite al flowController decidir dinámicamente la pantalla inicial
-        // Determinar header y body basado en si es cambio de local o reporte de incidencia
+        // Determinar header y body basado en el tipo de operación
         const isLocalChange = initData?.is_local_change || false;
-        const headerText = isLocalChange ? "Cambiar Local" : "Reportar Incidencia";
-        const bodyText = isLocalChange 
-            ? "Selecciona tu nuevo local para continuar." 
-            : "Describe el problema que has encontrado y lo atenderemos a la brevedad.";
+        const isEmailChange = initData?.is_email_change || false;
+        
+        let headerText, bodyText;
+        if (isEmailChange) {
+            headerText = "Cambiar Correo";
+            bodyText = "Actualiza tu correo electrónico.";
+        } else if (isLocalChange) {
+            headerText = "Cambiar Local";
+            bodyText = "Selecciona tu nuevo local para continuar.";
+        } else {
+            headerText = "Reportar Incidencia";
+            bodyText = "Describe el problema que has encontrado y lo atenderemos a la brevedad.";
+        }
 
         const flowMessage = {
             "messaging_product": "whatsapp",

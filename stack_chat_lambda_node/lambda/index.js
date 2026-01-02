@@ -88,12 +88,14 @@ try {
     var deleteIncidenciaSession = dynamoDbModule.deleteIncidenciaSession;
     // Función para actualizar local del usuario
     var updateUsuarioLocal = dynamoDbModule.updateUsuarioLocal;
+    // Función para guardar/actualizar usuario (usada para cambio de correo)
+    var saveUsuario = dynamoDbModule.saveUsuario;
     console.log('[INIT] dynamoDbWriteService cargado exitosamente');
 } catch (e) {
     console.error('[INIT] Error cargando dynamoDbWriteService:', e.message);
 }
 
-console.log('[INIT] Lambda index.js inicializado - VERSION 5.0 con Flujo de Cambio de Local');
+console.log('[INIT] Lambda index.js inicializado - VERSION 5.1 con Flujo de Cambio de Correo');
 
 
 /**
@@ -270,6 +272,7 @@ async function handleWhatsAppMessage(event) {
     let idFlowFulla = "660310043715044"; // todo el flujo desde la captura de local hasta el resumen
     let idFlowincidencia = "1906191903584411"; // solo la captura de incidencia
     let idFlowCambiarLocal = "839718892221678"; // solo selector de local (para usuarios existentes que quieren cambiar)
+    let idFlowCambiarCorreo = "1786233032221818"; // cambiar correo electrónico
     try {
         const body = JSON.parse(event.body || '{}');
         
@@ -355,12 +358,14 @@ async function handleWhatsAppMessage(event) {
                                         const nombreCorto = capitalizeWords(existingUser.nombre.split(' ')[0]);
                                         const localActual = existingUser.nombre_local_display || existingUser.nombre_local || 'tu local';
                                         
-                                        agentResponse = `¡Hola ${nombreCorto}! 👋\n\nTu local actual: *${localActual}*\n\n¿Qué deseas hacer?`;
+                                        const emailActual = existingUser.email || 'Sin correo';
+                                        agentResponse = `¡Hola ${nombreCorto}! 👋\n\nTu local actual: *${localActual}*\nTu correo: *${emailActual}*\n\n¿Qué deseas hacer?`;
                                         
                                         // Enviar botones con opciones
                                         const buttons = [
                                             { id: `reportar_${incidenciaSessionId}`, title: "📝 Reportar" },
-                                            { id: `cambiar_${incidenciaSessionId}`, title: "🏢 Cambiar Local" }
+                                            { id: `cambiar_${incidenciaSessionId}`, title: "🏢 Cambiar Local" },
+                                            { id: `correo_${incidenciaSessionId}`, title: "📧 Cambiar Correo" }
                                         ];
                                         
                                         console.log(`[USER_CHECK] Usuario EXISTENTE - Enviando botones de opciones`);
@@ -477,6 +482,26 @@ async function handleWhatsAppMessage(event) {
                                             conversationService.saveMessage(from, '[Botón: Cambiar Local]', '[Se envió formulario de cambio de local]', messageId, { incidenciaSessionId }, 'incidencias').catch(err => {
                                                 logger.error('Error guardando mensaje (background):', err);
                                             });
+                                        } else if (action === 'correo') {
+                                            // Usuario eligió "Cambiar Correo" - enviar Flow de cambio de correo
+                                            console.log(`[BUTTON_REPLY] Enviando Flow de cambio de correo`);
+                                            
+                                            // Preparar datos para el Flow de cambio de correo
+                                            const initData = {
+                                                is_returning_user: true,
+                                                is_email_change: true, // Flag para identificar que es cambio de correo
+                                                nombre: existingUser?.nombre || '',
+                                                current_email: existingUser?.email || 'Sin correo registrado',
+                                                incidencia_session_id: incidenciaSessionId
+                                            };
+                                            
+                                            await sendFlow(from, idFlowCambiarCorreo, "Cambiar Correo", 'EMAIL_FORM', initData);
+                                            
+                                            // Log de conversación
+                                            const conversationService = new ConversationService();
+                                            conversationService.saveMessage(from, '[Botón: Cambiar Correo]', '[Se envió formulario de cambio de correo]', messageId, { incidenciaSessionId }, 'incidencias').catch(err => {
+                                                logger.error('Error guardando mensaje (background):', err);
+                                            });
                                         }
                                         
                                     } catch (buttonError) {
@@ -488,12 +513,12 @@ async function handleWhatsAppMessage(event) {
                                 } else if (interactive && interactive.type === 'nfm_reply' && interactive.nfm_reply && interactive.nfm_reply.response_json) {
                                     try {
                                         const responseData = JSON.parse(interactive.nfm_reply.response_json);
-                                        let { nombre, local, flow_token, incidencia, email } = responseData;
+                                        let { nombre, local, flow_token, incidencia, email, nuevo_email, is_email_change } = responseData;
                                         let localNombreFromToken = null;  // Para guardar el nombre del local del token
                                         
                                         console.log('[FLOW_COMPLETE] ========== PROCESANDO INCIDENCIA V2.0 ==========');
                                         console.log(`[FLOW_COMPLETE] Servicios disponibles: parseLocalId=${!!parseLocalId}, clasificarIncidencia=${!!clasificarIncidencia}, getFracttalService=${!!getFracttalService}`);
-                                        console.log(`[FLOW_COMPLETE] Datos recibidos del Flow: nombre=${nombre}, local=${local}, incidencia=${incidencia}, email=${email}`);
+                                        console.log(`[FLOW_COMPLETE] Datos recibidos del Flow: nombre=${nombre}, local=${local}, incidencia=${incidencia}, email=${email}, nuevo_email=${nuevo_email}, is_email_change=${is_email_change}`);
                                         console.log(`[FLOW_COMPLETE] flow_token: ${flow_token}`);
                                         
                                         // Si el flow_token indica usuario existente, extraer datos del token
@@ -501,6 +526,7 @@ async function handleWhatsAppMessage(event) {
                                         // IMPORTANTE: También extraemos incidencia_session_id para vincular la conversación
                                         let incidenciaSessionId = null;
                                         let isLocalChange = false; // Flag para detectar cambio de local
+                                        let isEmailChange = is_email_change || false; // Flag para detectar cambio de correo
                                         
                                         if (flow_token && (flow_token.startsWith('returning_') || flow_token.startsWith('new_'))) {
                                             try {
@@ -520,6 +546,12 @@ async function handleWhatsAppMessage(event) {
                                                     if (userData.is_local_change) {
                                                         isLocalChange = true;
                                                         console.log('[FLOW_COMPLETE] ========== CAMBIO DE LOCAL DETECTADO ==========');
+                                                    }
+                                                    
+                                                    // Detectar si es un cambio de correo
+                                                    if (userData.is_email_change) {
+                                                        isEmailChange = true;
+                                                        console.log('[FLOW_COMPLETE] ========== CAMBIO DE CORREO DETECTADO ==========');
                                                     }
                                                     
                                                     // Usar datos del token si no vienen en el response (solo para returning users)
@@ -669,6 +701,62 @@ async function handleWhatsAppMessage(event) {
                                             // Log de conversación
                                             const conversationService = new ConversationService();
                                             conversationService.saveMessage(from, `[Cambio de local a: ${localNombre}]`, `Local actualizado. Se envió formulario de incidencia.`, message.id, { incidenciaSessionId }, 'incidencias').catch(err => {
+                                                logger.error('Error guardando mensaje (background):', err);
+                                            });
+                                            
+                                            // Terminar procesamiento aquí - no continuar con clasificación de ticket
+                                            continue;
+                                        }
+                                        
+                                        // ========== MANEJO DE CAMBIO DE CORREO ==========
+                                        // Si es un cambio de correo, actualizar el usuario y mostrar confirmación
+                                        if (isEmailChange && nuevo_email) {
+                                            console.log('[EMAIL_CHANGE] ========== PROCESANDO CAMBIO DE CORREO ==========');
+                                            console.log(`[EMAIL_CHANGE] Nuevo correo: ${nuevo_email}`);
+                                            
+                                            // Obtener usuario actual
+                                            let existingUser = null;
+                                            if (getUsuarioByPhone) {
+                                                existingUser = await getUsuarioByPhone(from);
+                                            }
+                                            
+                                            const correoAnterior = existingUser?.email || 'Sin correo anterior';
+                                            
+                                            // Actualizar el correo en DynamoDB usando saveUsuario
+                                            if (saveUsuario) {
+                                                try {
+                                                    const updatedUser = await saveUsuario({
+                                                        phone: from,
+                                                        nombre: existingUser?.nombre,
+                                                        email: nuevo_email,
+                                                        local_id: existingUser?.local_id,
+                                                        nombre_local: existingUser?.nombre_local,
+                                                        nombre_local_display: existingUser?.nombre_local_display,
+                                                        fractal_code: existingUser?.fractal_code,
+                                                        numero_contrato: existingUser?.numero_contrato
+                                                    });
+                                                    console.log(`[EMAIL_CHANGE] Usuario actualizado:`, JSON.stringify(updatedUser));
+                                                } catch (updateErr) {
+                                                    console.error('[EMAIL_CHANGE] Error actualizando usuario:', updateErr);
+                                                    await sendMessage(from, '❌ Hubo un error al actualizar tu correo. Por favor intenta de nuevo.');
+                                                    continue;
+                                                }
+                                            }
+                                            
+                                            // Notificar al usuario que el correo fue actualizado y mostrar opciones
+                                            const mensajeExito = `✅ Tu correo ha sido actualizado exitosamente.\n\n📧 Correo anterior: ${correoAnterior}\n📧 Nuevo correo: *${nuevo_email}*\n\n¿Qué deseas hacer ahora?`;
+                                            
+                                            // Enviar botones con las opciones disponibles
+                                            const buttonsPostEmail = [
+                                                { id: `reportar_${incidenciaSessionId}`, title: "📝 Reportar" },
+                                                { id: `cambiar_${incidenciaSessionId}`, title: "🏢 Cambiar Local" }
+                                            ];
+                                            
+                                            await sendInteractiveButtons(from, mensajeExito, buttonsPostEmail);
+                                            
+                                            // Log de conversación
+                                            const conversationService = new ConversationService();
+                                            conversationService.saveMessage(from, `[Cambio de correo de: ${correoAnterior} a: ${nuevo_email}]`, `Correo actualizado exitosamente. Se mostraron opciones.`, message.id, { incidenciaSessionId }, 'incidencias').catch(err => {
                                                 logger.error('Error guardando mensaje (background):', err);
                                             });
                                             
