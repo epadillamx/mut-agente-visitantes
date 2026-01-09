@@ -1,0 +1,297 @@
+{
+    "version": "7.2",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "INCIDENT_FORM": [
+            "CONFIRMATION"
+        ],
+        "INCIDENT_DETAILS": [
+            "CONFIRMATION"
+        ],
+        "CONFIRMATION": []
+    },
+    "screens": [
+        {
+            "id": "INCIDENT_DETAILS",
+            "title": "Detalles de Incidencia",
+            "data": {
+                "nombre": {
+                    "type": "string",
+                    "__example__": "Juan Pérez"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "juan@correo.com"
+                },
+                "local": {
+                    "type": "string",
+                    "__example__": "local_1"
+                },
+                "local_nombre": {
+                    "type": "string",
+                    "__example__": "Mi Local"
+                },
+                "is_returning_user": {
+                    "type": "boolean",
+                    "__example__": true
+                },
+                "show_edit_link": {
+                    "type": "boolean",
+                    "__example__": false
+                },
+                "user_info_text": {
+                    "type": "string",
+                    "__example__": "📍 Mi Local\n👤 Juan Pérez\n📧 juan@correo.com"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "incident_details_form",
+                        "children": [
+                            {
+                                "type": "TextSubheading",
+                                "text": "👤 Tus datos"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.user_info_text}"
+                            },
+                            {
+                                "type": "TextHeading",
+                                "text": "⚠️ Incidencia"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "Por favor describa detalladamente el problema encontrado."
+                            },
+                            {
+                                "type": "TextArea",
+                                "label": "Descripción",
+                                "name": "incidencia",
+                                "required": true,
+                                "helper-text": "Incluya todos los detalles relevantes"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "nombre": "${data.nombre}",
+                                        "email": "${data.email}",
+                                        "local": "${data.local}",
+                                        "incidencia": "${form.incidencia}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "INCIDENT_FORM",
+            "title": "Reportar Incidencia",
+            "data": {
+                "locales": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "0",
+                            "title": "Escribe arriba para buscar..."
+                        }
+                    ]
+                },
+                "is_local_enabled": {
+                    "type": "boolean",
+                    "__example__": false
+                },
+                "search_helper": {
+                    "type": "string",
+                    "__example__": "Escribe mínimo 4 caracteres y presiona Buscar"
+                },
+                "from_fresh_form": {
+                    "type": "boolean",
+                    "__example__": false
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "incident_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "📍 Local"
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Buscar ..",
+                                "name": "busqueda_local",
+                                "required": true,
+                                "helper-text": "${data.search_helper}"
+                            },
+                            {
+                                "type": "EmbeddedLink",
+                                "text": "🔍 Buscar Local",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "search_local",
+                                        "busqueda_local": "${form.busqueda_local}",
+                                        "from_fresh_form": "${data.from_fresh_form}"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "Dropdown",
+                                "label": "Seleccionar Local",
+                                "name": "local",
+                                "data-source": "${data.locales}",
+                                "required": true,
+                                "enabled": "${data.is_local_enabled}"
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Nombre completo",
+                                "name": "nombre",
+                                "required": true
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Correo electrónico",
+                                "name": "email",
+                                "input-type": "email",
+                                "required": true
+                            },
+                            {
+                                "type": "TextHeading",
+                                "text": "Incidencia"
+                            },
+                            {
+                                "type": "TextArea",
+                                "label": "Descripcion del problema",
+                                "name": "incidencia",
+                                "required": true,
+                                "helper-text": "Describa detalladamente el problema encontrado"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "nombre": "${form.nombre}",
+                                        "email": "${form.email}",
+                                        "local": "${form.local}",
+                                        "incidencia": "${form.incidencia}",
+                                        "from_fresh_form": "${data.from_fresh_form}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "CONFIRMATION",
+            "title": "Confirmación",
+            "terminal": true,
+            "data": {
+                "nombre": {
+                    "type": "string",
+                    "__example__": "Juan Pérez"
+                },
+                "email": {
+                    "type": "string",
+                    "__example__": "juan@correo.com"
+                },
+                "local": {
+                    "type": "string",
+                    "__example__": "local_1"
+                },
+                "incidencia": {
+                    "type": "string",
+                    "__example__": "Problema con el aire acondicionado"
+                },
+                "resumen_datos": {
+                    "type": "string",
+                    "__example__": "Nombre: Juan Pérez\nEmail: juan@correo.com"
+                },
+                "resumen_incidencia": {
+                    "type": "string",
+                    "__example__": "Local: Centro Comercial Norte\nDescripción: Problema con el aire acondicionado"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "confirmation_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "📋 Resumen"
+                            },
+                            {
+                                "type": "TextSubheading",
+                                "text": "Datos del reportante"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.resumen_datos}"
+                            },
+                            {
+                                "type": "TextSubheading",
+                                "text": "Detalles de la incidencia"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.resumen_incidencia}"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "confirmacion",
+                                "label": "Confirmo que la información es correcta",
+                                "required": true
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Enviar Reporte",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "nombre": "${data.nombre}",
+                                        "email": "${data.email}",
+                                        "local": "${data.local}",
+                                        "incidencia": "${data.incidencia}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.log
+.DS_Store
+coverage/
+dist/
+.vscode/
+.env_key
+.env_key_dev

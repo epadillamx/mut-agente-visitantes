@@ -3,7 +3,8 @@
 2. Cree un entorno virtual:
 ```
 python -m venv venv
-source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never
+source venv/Scripts/activate && cdk deploy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
+source venv/Scripts/activate && cdk destroy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
 
 3. Instale las dependencias:
 ```
@@ -58,3 +59,8 @@ aws ssm put-parameter \
   https://idzi04z9sh.execute-api.us-east-1.amazonaws.com/prod/webhook
 
   source venv/Scripts/activate && cdk deploy ChatRunnerNodeStack --require-approval never --profile mut-prod-territoria
+
+
+  deploy:
+
+  cd /c/Users/gusta/Documents/apylink/repositorios/mut/mut-agente-visitantes && source venv/Scripts/activate && AWS_PROFILE=mut-prod cdk deploy ChatLambdaNodeStack --require-approval never 2>&1

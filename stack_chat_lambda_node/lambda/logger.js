@@ -12,15 +12,16 @@ const LOG_LEVELS = {
 
 class Logger {
     constructor() {
-        // Detectar ambiente: production si NODE_ENV está en producción o si está en Lambda
-        const isProduction = process.env.NODE_ENV === 'production' || 
-                           process.env.AWS_EXECUTION_ENV !== undefined;
+        // Detectar ambiente: solo usar NODE_ENV, no AWS_EXECUTION_ENV
+        // Si NODE_ENV no está definido, por defecto usar production
+        const nodeEnv = process.env.NODE_ENV || 'production';
+        const isProduction = nodeEnv === 'production';
         
         // En producción WARN y ERROR (1), en desarrollo DEBUG (3)
         this.currentLevel = isProduction ? LOG_LEVELS.WARN : LOG_LEVELS.DEBUG;
         this.isProduction = isProduction;
         
-        console.log(`🔧 Logger inicializado - Ambiente: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}, Nivel: ${this.getLevelName()}`);
+        console.log(`🔧 Logger inicializado - NODE_ENV: ${nodeEnv}, Ambiente: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}, Nivel: ${this.getLevelName()}`);
     }
 
     getLevelName() {

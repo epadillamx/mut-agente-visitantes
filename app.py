@@ -59,7 +59,9 @@ chat_stack = ChatLambdaNodeStack(app,
                                  env=env_aws_settings,
                                  conversations_table=conversation_stack.conversations_table,
                                  sessions_table=conversation_stack.sessions_table,
-                                 agent_id="G7LSHMCB2H",
+                                 whatsapp_usuarios_table=conversation_stack.whatsapp_usuarios_table,
+                                 whatsapp_tickets_table=conversation_stack.whatsapp_tickets_table,
+                                 incidencia_sessions_table=conversation_stack.incidencia_sessions_table,
                                  input_metadata=env_context_params)
 
 chat_stack_runner = ChatRunnerNodeStack(app,
