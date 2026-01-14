@@ -77,9 +77,10 @@ export async function getWhatsAppCredentials() {
             DB_NAME: process.env.DB_NAME,
             
             // Fracttal credentials - DEV: desde .env, PROD: desde secret
+            // En PROD se usa FRACTTAL_USER_CODE_BOT (usuario bot dedicado)
             FRACTTAL_KEY: devMode ? process.env.FRACTTAL_KEY : secrets.FRACTTAL_KEY,
             FRACTTAL_SECRET: devMode ? process.env.FRACTTAL_SECRET : secrets.FRACTTAL_SECRET,
-            FRACTTAL_USER_CODE: devMode ? process.env.FRACTTAL_USER_CODE : secrets.FRACTTAL_USER_CODE
+            FRACTTAL_USER_CODE: devMode ? process.env.FRACTTAL_USER_CODE : secrets.FRACTTAL_USER_CODE_BOT
         };
         cacheTimestamp = now;
 
