@@ -34,7 +34,7 @@ require = function(module) {
                 host: 'localhost',
                 port: 5432,
                 user: 'postgres',
-                password: '213557lol',
+                password: 'xxxxxxxx',
                 database: 'copiaprod'
             }),
             getWhatsAppCredentials: async () => mockSecrets,
@@ -44,7 +44,7 @@ require = function(module) {
                 DB_PORT: 5432,
                 DB_USER: 'postgres',
                 DB_PASSWORD: '213557lol',
-                DB_NAME: 'copiaprod',
+                DB_NAME: 'xxxxxxxx',
                 FRACTTAL_KEY: 'OKRXgjm4z1WO9aew3f',
                 FRACTTAL_SECRET: 'gASgcVFirbc4uN5wANdkjAsgVkaQ5Kly',
                 FRACTTAL_USER_CODE: 'FD1'

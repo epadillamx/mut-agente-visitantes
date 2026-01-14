@@ -21,7 +21,7 @@ python -m pip install -r requirements.txt
 
 ## Instalacion
 ```
-cdk bootstrap aws://529928147458/us-east-1
+cdk bootstrap aws://529928147458/us-east-1 --profile mut-prod
 cd stack_frontend_vpc_ecs_streamlit/streamlit_apps
 streamlit run app-chat-with-agent.py
 
@@ -64,3 +64,15 @@ aws ssm put-parameter \
   deploy:
 
   cd /c/Users/gusta/Documents/apylink/repositorios/mut/mut-agente-visitantes && source venv/Scripts/activate && AWS_PROFILE=mut-prod cdk deploy ChatLambdaNodeStack --require-approval never 2>&1
+
+
+  cd /c/Users/gusta/Documents/apylink/repositorios/mut/mut-agente-visitantes && source venv/Scripts/activate && AWS_PROFILE=mut-prod cdk deploy ChatRunnerNodeStack --require-approval never 2>&1
+
+
+  cd /c/Users/gusta/Documents/apylink/repositorios/mut/mut-agente-visitantes && source venv/Scripts/activate && AWS_PROFILE=mut-prod cdk bootstrap aws://529928147458/us-east-1 2>&1
+
+
+
+
+stack_chat_lambda_node pertenece a incidencias de los locatarios
+stack_chat_runner pertenece a visitantes

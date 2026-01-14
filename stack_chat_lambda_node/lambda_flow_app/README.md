@@ -639,3 +639,6 @@ Para despliegue en AWS EC2, ECS, o Lambda:
 - Notificaciones por email
 - Exportación de reportes
 - Tests unitarios e integración
+
+
+openssl genrsa -out private.pem -aes256 -passout pass:CHANGE 2048openssl rsa -in private.pem -pubout -out public.pem -passout pass:CHANGE

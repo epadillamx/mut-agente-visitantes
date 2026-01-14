@@ -1,27 +1,49 @@
 /**
  * Servicio de Zendesk para la Lambda de WhatsApp
  * Maneja creación de usuarios y tickets en Zendesk
- * Credenciales hardcodeadas (no sensibles)
+ * Credenciales leídas desde variables de entorno (.env)
  */
 import logger from '../logger.js';
 
 // ============================================================================
-// CONFIGURACIÓN ZENDESK (Hardcodeada)
+// CONFIGURACIÓN ZENDESK (desde variables de entorno)
 // ============================================================================
-const ZENDESK_CONFIG = {
-    remoteUri: 'https://territoria.zendesk.com/api/v2',
-    username: 'integrador@mut.cl',
-    token: 'mwaNfxfGUxqtiRppJcBVBpgKnUpPphij25m2JEim',
+let zendeskConfigLogged = false;
+
+function getZendeskConfig() {
+    const isProd = process.env.DEV_MODE !== 'true';
     
-    // Grupos de Zendesk
-    groups: {
-        dev:  { id: 12461124345101, name: 'test' },
-        prod: { id: 17318820134669, name: 'SAC MUT' }
-    },
+    const config = {
+        remoteUri: process.env.ZENDESK_REMOTE_URI,
+        username: process.env.ZENDESK_USERNAME,
+        token: process.env.ZENDESK_TOKEN,
+        
+        // Grupos de Zendesk - selección basada en DEV_MODE
+        group: isProd 
+            ? { 
+                id: parseInt(process.env.ZENDESK_GROUP_PROD_ID), 
+                name: process.env.ZENDESK_GROUP_PROD_NAME
+              }
+            : { 
+                id: parseInt(process.env.ZENDESK_GROUP_DEV_ID), 
+                name: process.env.ZENDESK_GROUP_DEV_NAME
+              },
+        
+        isProd
+    };
     
-    // Cambiar a true para producción (grupo SAC MUT)
-    isProd: true
-};
+    // Log solo una vez para no saturar los logs
+    if (!zendeskConfigLogged) {
+        logger.info(`[ZENDESK_CONFIG] DEV_MODE=${process.env.DEV_MODE}, isProd=${isProd}`);
+        logger.info(`[ZENDESK_CONFIG] remoteUri: ${config.remoteUri || 'MISSING'}`);
+        logger.info(`[ZENDESK_CONFIG] username: ${config.username || 'MISSING'}`);
+        logger.info(`[ZENDESK_CONFIG] token: ${config.token ? config.token.substring(0, 5) + '...' : 'MISSING'}`);
+        logger.info(`[ZENDESK_CONFIG] group: id=${config.group.id}, name=${config.group.name}`);
+        zendeskConfigLogged = true;
+    }
+    
+    return config;
+}
 
 // Tags por tipo de ticket (EXACTOS del portal de locatarios)
 const TAGS_POR_TIPO = {
@@ -57,7 +79,8 @@ function isValidEmail(email) {
  * Genera headers de autenticación para Zendesk API
  */
 function getAuthHeaders() {
-    const auth = Buffer.from(`${ZENDESK_CONFIG.username}/token:${ZENDESK_CONFIG.token}`).toString('base64');
+    const config = getZendeskConfig();
+    const auth = Buffer.from(`${config.username}/token:${config.token}`).toString('base64');
     return {
         'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/json'
@@ -68,14 +91,21 @@ function getAuthHeaders() {
  * Obtiene el ID del grupo según el ambiente (prod/dev)
  */
 function getGroupId() {
-    return ZENDESK_CONFIG.isProd ? ZENDESK_CONFIG.groups.prod.id : ZENDESK_CONFIG.groups.dev.id;
+    return getZendeskConfig().group.id;
 }
 
 /**
  * Obtiene el nombre del grupo según el ambiente
  */
 function getGroupName() {
-    return ZENDESK_CONFIG.isProd ? ZENDESK_CONFIG.groups.prod.name : ZENDESK_CONFIG.groups.dev.name;
+    return getZendeskConfig().group.name;
+}
+
+/**
+ * Obtiene la URL base de Zendesk
+ */
+function getRemoteUri() {
+    return getZendeskConfig().remoteUri;
 }
 
 // ============================================================================
@@ -92,7 +122,7 @@ async function findUserByEmail(email) {
     if (!isValidEmail(clean)) return null;
     
     try {
-        const url = `${ZENDESK_CONFIG.remoteUri}/users/search.json?query=email:${encodeURIComponent(clean)}`;
+        const url = `${getRemoteUri()}/users/search.json?query=email:${encodeURIComponent(clean)}`;
         
         const response = await fetch(url, {
             method: 'GET',
@@ -150,7 +180,7 @@ async function createZendeskUser({ email, nombre, apellido = '' }) {
     const name = [nombre, apellido].filter(Boolean).join(' ').trim() || clean;
     
     try {
-        const url = `${ZENDESK_CONFIG.remoteUri}/users.json`;
+        const url = `${getRemoteUri()}/users.json`;
         
         const response = await fetch(url, {
             method: 'POST',
@@ -283,7 +313,7 @@ function buildTicketData({
  */
 async function createZendeskTicket(ticketData) {
     try {
-        const url = `${ZENDESK_CONFIG.remoteUri}/tickets.json`;
+        const url = `${getRemoteUri()}/tickets.json`;
         
         logger.info('[ZENDESK] Creando ticket:', JSON.stringify(ticketData, null, 2));
         
@@ -346,7 +376,7 @@ async function crearTicketZendesk({
     logger.info('[ZENDESK] Urgencia:', urgencia);
     logger.info('[ZENDESK] Local:', localNombre);
     logger.info('[ZENDESK] Contrato:', numeroContrato);
-    logger.info('[ZENDESK] Ambiente:', ZENDESK_CONFIG.isProd ? 'PRODUCCIÓN' : 'DESARROLLO');
+    logger.info('[ZENDESK] Ambiente:', getZendeskConfig().isProd ? 'PRODUCCIÓN' : 'DESARROLLO');
     
     try {
         // 1) Obtener o crear usuario en Zendesk
@@ -400,11 +430,12 @@ async function crearTicketZendesk({
 // ============================================================================
 export {
     // Configuración
-    ZENDESK_CONFIG,
+    getZendeskConfig,
     TAGS_POR_TIPO,
     TAG_TO_TYPE,
     getGroupId,
     getGroupName,
+    getRemoteUri,
     
     // Usuarios
     findUserByEmail,

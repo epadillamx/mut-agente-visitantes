@@ -9,24 +9,13 @@ let cacheTimestamp = null;
 const CACHE_TTL_MS = 300000; // 5 minutes
 
 // ============================================================================
-// DESARROLLO: Credenciales hardcodeadas para desarrollo local
-// En producción, estas se obtienen del secret 'main'
+// MODO DE EJECUCIÓN: Se lee desde process.env.DEV_MODE
+// true = desarrollo (usa .env para Fracttal)
+// false = producción (usa secret para Fracttal)
 // ============================================================================
-const DEV_MODE = false; // Cambiar a true para desarrollo local
-
-const DEV_CREDENTIALS = {
-    // PostgreSQL - PRODUCCIÓN (solo lectura desde analytics)
-    DB_HOST: 'analitycs-public.csv0o86qyhsj.us-east-1.rds.amazonaws.com',
-    DB_PORT: 5432,
-    DB_USER: 'administrator',
-    DB_PASSWORD: '4]EdCEx?h6254l1fBeQ6B.jHLwVl',
-    DB_NAME: 'sisgest',
-    
-    // Fracttal - QA/Desarrollo (hardcodeadas - NO CAMBIAR)
-    FRACTTAL_KEY: 'OKRXgjm4z1WO9aew3f',
-    FRACTTAL_SECRET: 'gASgcVFirbc4uN5wANdkjAsgVkaQ5Kly',
-    FRACTTAL_USER_CODE: 'FD1'
-};
+function isDevMode() {
+    return process.env.DEV_MODE === 'true';
+}
 
 /**
  * Fetches all credentials from AWS Secrets Manager
@@ -70,6 +59,8 @@ export async function getWhatsAppCredentials() {
         }
 
         // Cache the secrets - WhatsApp credentials always from secret 'main'
+        const devMode = isDevMode();
+        
         cachedSecrets = {
             // WhatsApp credentials (siempre del secret)
             TOKEN_WHATS: secrets.TOKEN_WHATSAPP,
@@ -78,22 +69,31 @@ export async function getWhatsAppCredentials() {
             WHATSAPP_PRIVATE_KEY: secrets.WHATSAPP_PRIVATE_KEY || '',
             WHATSAPP_PRIVATE_KEY_PASSPHRASE: secrets.WHATSAPP_PRIVATE_KEY_PASSPHRASE || '',
             
-            // PostgreSQL credentials - DEV: hardcoded, PROD: from secret
-            DB_HOST: DEV_MODE ? DEV_CREDENTIALS.DB_HOST : secrets.host,
-            DB_PORT: DEV_MODE ? DEV_CREDENTIALS.DB_PORT : secrets.port,
-            DB_USER: DEV_MODE ? DEV_CREDENTIALS.DB_USER : secrets.username,
-            DB_PASSWORD: DEV_MODE ? DEV_CREDENTIALS.DB_PASSWORD : secrets.password,
-            DB_NAME: DEV_MODE ? DEV_CREDENTIALS.DB_NAME : secrets.dbname,
+            // PostgreSQL credentials - desde variables de entorno (.env)
+            DB_HOST: process.env.DB_HOST,
+            DB_PORT: process.env.DB_PORT,
+            DB_USER: process.env.DB_USER,
+            DB_PASSWORD: process.env.DB_PASSWORD,
+            DB_NAME: process.env.DB_NAME,
             
-            // Fracttal credentials - DEV: hardcoded, PROD: from secret
-            FRACTTAL_KEY: DEV_MODE ? DEV_CREDENTIALS.FRACTTAL_KEY : secrets.FRACTTAL_KEY,
-            FRACTTAL_SECRET: DEV_MODE ? DEV_CREDENTIALS.FRACTTAL_SECRET : secrets.FRACTTAL_SECRET,
-            FRACTTAL_USER_CODE: DEV_MODE ? DEV_CREDENTIALS.FRACTTAL_USER_CODE : secrets.FRACTTAL_USER_CODE
+            // Fracttal credentials - DEV: desde .env, PROD: desde secret
+            FRACTTAL_KEY: devMode ? process.env.FRACTTAL_KEY : secrets.FRACTTAL_KEY,
+            FRACTTAL_SECRET: devMode ? process.env.FRACTTAL_SECRET : secrets.FRACTTAL_SECRET,
+            FRACTTAL_USER_CODE: devMode ? process.env.FRACTTAL_USER_CODE : secrets.FRACTTAL_USER_CODE
         };
         cacheTimestamp = now;
 
         logger.info('Successfully fetched credentials from Secrets Manager');
-        logger.info(`Using ${DEV_MODE ? 'DEVELOPMENT' : 'PRODUCTION'} credentials for DB and Fracttal`);
+        logger.info(`Using ${devMode ? 'DEVELOPMENT (.env)' : 'PRODUCTION (secret)'} credentials for Fracttal`);
+        
+        // Log para verificar credenciales (mostrando solo prefijos por seguridad)
+        logger.info(`[CREDENTIALS] DEV_MODE=${devMode}`);
+        logger.info(`[CREDENTIALS] FRACTTAL_KEY=${cachedSecrets.FRACTTAL_KEY ? cachedSecrets.FRACTTAL_KEY.substring(0, 5) + '...' : 'MISSING'}`);
+        logger.info(`[CREDENTIALS] FRACTTAL_SECRET=${cachedSecrets.FRACTTAL_SECRET ? cachedSecrets.FRACTTAL_SECRET.substring(0, 5) + '...' : 'MISSING'}`);
+        logger.info(`[CREDENTIALS] FRACTTAL_USER_CODE=${cachedSecrets.FRACTTAL_USER_CODE || 'MISSING'}`);
+        logger.info(`[CREDENTIALS] DB_HOST=${cachedSecrets.DB_HOST || 'MISSING'}`);
+        logger.info(`[CREDENTIALS] DB_USER=${cachedSecrets.DB_USER || 'MISSING'}`);
+        
         return cachedSecrets;
 
     } catch (error) {

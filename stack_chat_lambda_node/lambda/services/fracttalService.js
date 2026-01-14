@@ -41,44 +41,76 @@ class FracttalService {
         }
 
         const credentials = Buffer.from(`${this.FRACTTAL_KEY}:${this.FRACTTAL_SECRET}`).toString('base64');
+        const maxRetries = 3;
+        let lastError = null;
 
-        try {
-            const params = new URLSearchParams();
-            params.append('grant_type', 'client_credentials');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const params = new URLSearchParams();
+                params.append('grant_type', 'client_credentials');
 
-            const response = await fetch(this.authUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': `Basic ${credentials}`
-                },
-                body: params.toString()
-            });
+                this.log(`Intento ${attempt}/${maxRetries} de obtener token...`);
+                this.log(`[OAUTH] URL: ${this.authUrl}`);
+                this.log(`[OAUTH] FRACTTAL_KEY: ${this.FRACTTAL_KEY ? this.FRACTTAL_KEY.substring(0, 5) + '...' : 'MISSING'}`);
+                this.log(`[OAUTH] FRACTTAL_SECRET: ${this.FRACTTAL_SECRET ? this.FRACTTAL_SECRET.substring(0, 5) + '...' : 'MISSING'}`);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                throw new Error(`HTTP ${response.status}: ${JSON.stringify(errorData)}`);
+                const response = await fetch(this.authUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `Basic ${credentials}`
+                    },
+                    body: params.toString()
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                    const errorMsg = `HTTP ${response.status}: ${JSON.stringify(errorData)}`;
+                    
+                    // Si es error 5xx (servidor), reintentar
+                    if (response.status >= 500 && attempt < maxRetries) {
+                        this.log(`Error ${response.status} del servidor, reintentando en ${attempt * 1000}ms...`);
+                        await this.sleep(attempt * 1000);
+                        lastError = new Error(errorMsg);
+                        continue;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await response.json();
+                const { access_token, refresh_token, token_type, expires_in } = data;
+                const expiresAt = new Date(Date.now() + expires_in * 1000);
+
+                // Guardar token
+                this.tokenStorage = {
+                    accessToken: access_token,
+                    refreshToken: refresh_token,
+                    tokenType: token_type,
+                    expiresAt: expiresAt
+                };
+
+                this.log('Token obtenido exitosamente');
+                return access_token;
+
+            } catch (error) {
+                lastError = error;
+                if (attempt < maxRetries) {
+                    this.log(`Error en intento ${attempt}: ${error.message}, reintentando...`);
+                    await this.sleep(attempt * 1000);
+                }
             }
-
-            const data = await response.json();
-            const { access_token, refresh_token, token_type, expires_in } = data;
-            const expiresAt = new Date(Date.now() + expires_in * 1000);
-
-            // Guardar token
-            this.tokenStorage = {
-                accessToken: access_token,
-                refreshToken: refresh_token,
-                tokenType: token_type,
-                expiresAt: expiresAt
-            };
-
-            this.log('Token obtenido exitosamente');
-            return access_token;
-
-        } catch (error) {
-            this.error('Error obteniendo token:', error.message);
-            throw new Error('No se pudo autenticar con Fracttal API');
         }
+
+        this.error('Error obteniendo token después de todos los reintentos:', lastError?.message);
+        throw new Error('No se pudo autenticar con Fracttal API');
+    }
+
+    /**
+     * Helper para esperar un tiempo determinado
+     * @param {number} ms - Milisegundos a esperar
+     */
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
@@ -177,6 +209,12 @@ let fracttalInstance = null;
  */
 export function getFracttalService(credentials) {
     if (!fracttalInstance) {
+        // Log para verificar credenciales recibidas
+        logger.info(`[FRACTTAL_SERVICE] Creando instancia con:`);
+        logger.info(`[FRACTTAL_SERVICE] - fracttalKey: ${credentials.fracttalKey ? credentials.fracttalKey.substring(0, 5) + '...' : 'MISSING/UNDEFINED'}`);
+        logger.info(`[FRACTTAL_SERVICE] - fracttalSecret: ${credentials.fracttalSecret ? credentials.fracttalSecret.substring(0, 5) + '...' : 'MISSING/UNDEFINED'}`);
+        logger.info(`[FRACTTAL_SERVICE] - userCode: ${credentials.fracttalUserCode || 'MISSING/UNDEFINED'}`);
+        
         fracttalInstance = new FracttalService(
             credentials.fracttalKey,
             credentials.fracttalSecret,

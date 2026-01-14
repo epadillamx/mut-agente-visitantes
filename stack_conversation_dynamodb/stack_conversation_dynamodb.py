@@ -126,7 +126,7 @@ class StackConversationDynamoDB(Stack):
         # Tabla de tickets WhatsApp (reemplaza public.whatsapp_tickets)
         # PK: phone (agrupa tickets por usuario)
         # SK: created_at (timestamp para ordenar tickets)
-        # TTL: 20 días para limpieza automática (ETL extrae antes)
+        # TTL: 90 días (3 meses) para limpieza automática
         self.whatsapp_tickets_table = dynamodb.Table(
             self, "WhatsAppTicketsTable",
             table_name="mut-whatsapp-tickets",

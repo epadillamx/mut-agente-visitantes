@@ -13,6 +13,15 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde configuraciones/.env
+env_path = os.path.join(os.path.dirname(__file__), 'configuraciones', '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+    print(f"✓ Credenciales cargadas desde: {env_path}")
+else:
+    print(f"⚠️ ADVERTENCIA: No se encontró {env_path}")
 
 class ChatLambdaNodeStack(Stack):
 
@@ -107,14 +116,43 @@ class ChatLambdaNodeStack(Stack):
 
 
 
-        # Build environment variables
+        # Build environment variables (leer desde .env)
         environment_vars = {
             # Reference to Secrets Manager secret (resolved at runtime by Lambda)
             "WHATSAPP_SECRET_ARN": secret_arn,
-            # Logger configuration - production mode (solo ERROR logs)
+            # Logger configuration
             "NODE_ENV": "development",
-            # Use development credentials for DB and Fracttal (QA)
-            "USE_DEV_CREDENTIALS": "false",
+            # ============================================================================
+            # DEV_MODE: true = desarrollo, false = producción
+            # Controla si Fracttal usa credenciales de desarrollo o del secret
+            # ============================================================================
+            "DEV_MODE": os.environ.get("DEV_MODE", "true"),
+            # ============================================================================
+            # ZENDESK - Credenciales y configuración (desde .env)
+            # ============================================================================
+            "ZENDESK_REMOTE_URI": os.environ.get("ZENDESK_REMOTE_URI", ""),
+            "ZENDESK_USERNAME": os.environ.get("ZENDESK_USERNAME", ""),
+            "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
+            # Grupos de Zendesk
+            "ZENDESK_GROUP_DEV_ID": os.environ.get("ZENDESK_GROUP_DEV_ID", ""),
+            "ZENDESK_GROUP_DEV_NAME": os.environ.get("ZENDESK_GROUP_DEV_NAME", ""),
+            "ZENDESK_GROUP_PROD_ID": os.environ.get("ZENDESK_GROUP_PROD_ID", ""),
+            "ZENDESK_GROUP_PROD_NAME": os.environ.get("ZENDESK_GROUP_PROD_NAME", ""),
+            # ============================================================================
+            # FRACTTAL - Credenciales de desarrollo (desde .env cuando DEV_MODE=true)
+            # En producción (DEV_MODE=false), se usan las del secret
+            # ============================================================================
+            "FRACTTAL_KEY": os.environ.get("FRACTTAL_KEY", ""),
+            "FRACTTAL_SECRET": os.environ.get("FRACTTAL_SECRET", ""),
+            "FRACTTAL_USER_CODE": os.environ.get("FRACTTAL_USER_CODE", ""),
+            # ============================================================================
+            # POSTGRESQL - Credenciales de lectura (desde .env)
+            # ============================================================================
+            "DB_HOST": os.environ.get("DB_HOST", ""),
+            "DB_PORT": os.environ.get("DB_PORT", ""),
+            "DB_USER": os.environ.get("DB_USER", ""),
+            "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "DB_NAME": os.environ.get("DB_NAME", ""),
         }
 
         # Add DynamoDB table names if provided
@@ -190,16 +228,42 @@ class ChatLambdaNodeStack(Stack):
         @ Lambda function - WhatsApp Flow
         """
 
-        # Build environment variables for WhatsApp Flow Lambda
+        # Build environment variables for WhatsApp Flow Lambda (desde .env)
         flow_environment_vars = {
             "NODE_ENV": "development",
             "WHATSAPP_SECRET_ARN": secret_arn,
             "DYNAMODB_TABLE_INCIDENCIAS": self.incidents_table.table_name,
             # ============================================================================
-            # QA: USE_DEV_CREDENTIALS=true usa credenciales de QA hardcodeadas
-            # PRODUCCIÓN: Cambiar a "false" para usar credenciales del secret 'main'
+            # DEV_MODE: true = desarrollo, false = producción
+            # Controla si Fracttal usa credenciales de desarrollo o del secret
             # ============================================================================
-            "USE_DEV_CREDENTIALS": "false",
+            "DEV_MODE": os.environ.get("DEV_MODE", "true"),
+            # ============================================================================
+            # ZENDESK - Credenciales y configuración (desde .env)
+            # ============================================================================
+            "ZENDESK_REMOTE_URI": os.environ.get("ZENDESK_REMOTE_URI", ""),
+            "ZENDESK_USERNAME": os.environ.get("ZENDESK_USERNAME", ""),
+            "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
+            # Grupos de Zendesk
+            "ZENDESK_GROUP_DEV_ID": os.environ.get("ZENDESK_GROUP_DEV_ID", ""),
+            "ZENDESK_GROUP_DEV_NAME": os.environ.get("ZENDESK_GROUP_DEV_NAME", ""),
+            "ZENDESK_GROUP_PROD_ID": os.environ.get("ZENDESK_GROUP_PROD_ID", ""),
+            "ZENDESK_GROUP_PROD_NAME": os.environ.get("ZENDESK_GROUP_PROD_NAME", ""),
+            # ============================================================================
+            # FRACTTAL - Credenciales de desarrollo (desde .env cuando DEV_MODE=true)
+            # En producción (DEV_MODE=false), se usan las del secret
+            # ============================================================================
+            "FRACTTAL_KEY": os.environ.get("FRACTTAL_KEY", ""),
+            "FRACTTAL_SECRET": os.environ.get("FRACTTAL_SECRET", ""),
+            "FRACTTAL_USER_CODE": os.environ.get("FRACTTAL_USER_CODE", ""),
+            # ============================================================================
+            # POSTGRESQL - Credenciales de lectura (desde .env)
+            # ============================================================================
+            "DB_HOST": os.environ.get("DB_HOST", ""),
+            "DB_PORT": os.environ.get("DB_PORT", ""),
+            "DB_USER": os.environ.get("DB_USER", ""),
+            "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "DB_NAME": os.environ.get("DB_NAME", ""),
         }
 
         # Add private key passphrase if provided

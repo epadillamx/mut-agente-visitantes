@@ -219,8 +219,8 @@ async function saveTicket(ticketData) {
     const now = Date.now();
     const ticketId = randomUUID();
     
-    // TTL: 20 días desde ahora (en segundos Unix para DynamoDB)
-    const TTL_DAYS = 20;
+    // TTL: 90 días (3 meses) desde ahora (en segundos Unix para DynamoDB)
+    const TTL_DAYS = 90;
     const ttl = Math.floor(now / 1000) + (TTL_DAYS * 24 * 60 * 60);
     
     // date_partition para GSI date-index (formato: "2025-12-17")
@@ -228,6 +228,7 @@ async function saveTicket(ticketData) {
     
     // ticket_id unificado para GSI ticket-id-index
     // Guarda el ID como string sin prefijo (260, 12345, etc.)
+    // Si no hay ID externo, no se incluye en el item (DynamoDB no permite NULL en índices)
     let ticket_id = null;
     if (idfracttal) {
         ticket_id = String(idfracttal);
@@ -245,7 +246,6 @@ async function saveTicket(ticketData) {
         
         // Identificadores
         id: ticketId,
-        ticket_id,  // ID unificado para búsqueda (260, 12345, etc.) sin prefijo
         user_id,
         sessionid,
         
@@ -285,6 +285,11 @@ async function saveTicket(ticketData) {
         updated_at: now,
         fecha_creacion: new Date(now).toISOString()
     };
+    
+    // Agregar ticket_id solo si existe (DynamoDB no permite NULL en índices GSI)
+    if (ticket_id) {
+        item.ticket_id = ticket_id;
+    }
     
     try {
         const command = new PutCommand({

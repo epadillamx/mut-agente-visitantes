@@ -269,10 +269,10 @@ async function handleWebhookVerification(event) {
  * Maneja mensajes entrantes de WhatsApp (POST)
  */
 async function handleWhatsAppMessage(event) {
-    let idFlowFulla = "660310043715044"; // todo el flujo desde la captura de local hasta el resumen
-    let idFlowincidencia = "1906191903584411"; // solo la captura de incidencia
-    let idFlowCambiarLocal = "839718892221678"; // solo selector de local (para usuarios existentes que quieren cambiar)
-    let idFlowCambiarCorreo = "1786233032221818"; // cambiar correo electrónico
+    let idFlowFulla = "1201179491533927"; // todo el flujo desde la captura de local hasta el resumen
+    let idFlowincidencia = "859129910310451"; // solo la captura de incidencia
+    let idFlowCambiarLocal = "1190329649444329"; // solo selector de local (para usuarios existentes que quieren cambiar)
+    let idFlowCambiarCorreo = "4301611183491681"; // cambiar correo electrónico
     try {
         const body = JSON.parse(event.body || '{}');
         
