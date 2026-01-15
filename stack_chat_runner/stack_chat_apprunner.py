@@ -154,7 +154,7 @@ class ChatRunnerNodeStack(Stack):
                 },
                 {
                     "name": "IPHONE_ID_WHATS",
-                    "value": f"{whatsapp_secret.secret_arn}:ID_PHONE_WHATSAPP::"
+                    "value": f"{whatsapp_secret.secret_arn}:VISITANTES_PHONE_ID::"
                 },
                 {
                     "name": "VERIFY_TOKEN",

@@ -70,7 +70,7 @@ class ChatRunnerNodeStack(Stack):
             "AGENT_ALIAS_ID": 'change',
             # WhatsApp credentials from Secrets Manager
             "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
-            "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
+            "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("VISITANTES_PHONE_ID").unsafe_unwrap(),
             "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap(),
             # S3 Cache bucket
             "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name,
