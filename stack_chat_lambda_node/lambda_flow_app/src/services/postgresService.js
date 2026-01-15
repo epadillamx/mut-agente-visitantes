@@ -84,8 +84,10 @@ async function searchLocatarios(searchTerm, limit = 10) {
         
         // Query corregida: buscar por nombreComercial del CONTRATO
         // y mostrar el nombre del contrato con sufijo de tipo (Oficina/Local)
+        // DISTINCT ON: evita duplicados cuando un fractal_code tiene múltiples contratos
+        // Se queda con el contrato más reciente (ORDER BY created_at DESC)
         const query = `
-            SELECT 
+            SELECT DISTINCT ON (ul."fracttalCode")
                 c."nombreComercial" as nombre_contrato,
                 c."numeroContrato" as numero_contrato,
                 ul."fracttalCode" as fractal_code,
@@ -104,7 +106,7 @@ async function searchLocatarios(searchTerm, limit = 10) {
                 AND c.status = 1
                 AND ul."fracttalCode" IS NOT NULL
                 AND c."centroComercial" IN ('RETAIL', 'OFICINAS', 'RETAILNOVENTAS')
-            ORDER BY c."nombreComercial", c."numeroContrato"
+            ORDER BY ul."fracttalCode", c.created_at DESC
             LIMIT $2
         `;
 
