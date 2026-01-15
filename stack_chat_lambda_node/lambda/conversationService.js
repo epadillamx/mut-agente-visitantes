@@ -96,7 +96,9 @@ class ConversationService {
             // TTL: 90 días desde ahora (en segundos Unix)
             const ttl = Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60);
 
-          
+            // Campo para GSI chat-type-index (Sort Key)
+            const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const date_timestamp = `${dateStr}#${timestamp}`;
 
             const conversationItem = {
                 conversation_id: conversationId,
@@ -112,6 +114,8 @@ class ConversationService {
                     agent: response.length
                 },
                 traceabilityData: traceabilityData_input,
+                // Campo para GSI chat-type-index (Sort Key)
+                date_timestamp: date_timestamp
             };
             
             // Guardar incidencia_session_id como atributo de primer nivel para GSI
@@ -121,9 +125,8 @@ class ConversationService {
             }
             
             // Solo agregar chat_type si se proporciona (para distinguir incidencias de recomendaciones)
-            if (chatType) {
-                conversationItem.chat_type = chatType;
-            }
+            // Por defecto será 'incidencias' si no se especifica
+            conversationItem.chat_type = chatType || 'incidencias';
 
             await this.dynamoClient.send(new PutCommand({
                 TableName: this.conversationsTable,

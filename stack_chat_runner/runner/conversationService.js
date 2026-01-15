@@ -96,7 +96,9 @@ class ConversationService {
             // TTL: 90 días desde ahora (en segundos Unix)
             const ttl = Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60);
 
-          
+            // Campos para GSI chat-type-index
+            const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const date_timestamp = `${dateStr}#${timestamp}`; // Para Sort Key del GSI
 
             const conversationItem = {
                 conversation_id: conversationId,
@@ -111,7 +113,10 @@ class ConversationService {
                     user: message.length,
                     agent: response.length
                 },
-                traceabilityData: traceabilityData_input
+                traceabilityData: traceabilityData_input,
+                // Campos para GSI chat-type-index
+                chat_type: 'visitantes',
+                date_timestamp: date_timestamp
             };
 
             await this.dynamoClient.send(new PutCommand({

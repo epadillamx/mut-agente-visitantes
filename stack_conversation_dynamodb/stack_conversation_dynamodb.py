@@ -74,6 +74,20 @@ class StackConversationDynamoDB(Stack):
             )
         )
 
+        # GSI para consultar conversaciones por tipo (visitantes/incidencias) y fecha
+        # Permite queries eficientes: chat_type = "visitantes" AND begins_with(date_timestamp, "2026-01-15")
+        self.conversations_table.add_global_secondary_index(
+            index_name="chat-type-index",
+            partition_key=dynamodb.Attribute(
+                name="chat_type",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="date_timestamp",
+                type=dynamodb.AttributeType.STRING
+            )
+        )
+
         # Tabla de sesiones activas
         self.sessions_table = dynamodb.Table(
             self, "SessionsTable",
