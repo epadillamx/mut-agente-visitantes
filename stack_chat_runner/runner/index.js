@@ -366,8 +366,8 @@ async function handleDirectChat(event) {
         const userId = sessionId || `test-${Date.now()}`;
         logger.info(`Prueba directa - SessionId: ${userId}, Question: ${userQuestion}`);
 
-        // Llamar directamente al agente
-        const agentResponse = await getAgente(userId, userQuestion, 'test-message-id');
+        // Llamar directamente al sistema de clasificación + eventos + vectorial
+        const agentResponse = await inputLlm(userQuestion);
 
         return createResponse(200, {
             sessionId: userId,

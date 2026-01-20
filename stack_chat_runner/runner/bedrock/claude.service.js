@@ -35,8 +35,15 @@ async function invokeClaude(prompt, systemMessage = '') {
   });
 
   try {
+    const startClaude = Date.now();
     const response = await bedrockRuntimeClient.send(command);
+    const claudeTime = ((Date.now() - startClaude) / 1000).toFixed(2);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    
+    // Log de métricas de Claude
+    const usage = responseBody.usage || {};
+    logger.info(`⚡ Claude: ${claudeTime}s | in:${usage.input_tokens || '?'} out:${usage.output_tokens || '?'} | cache: ${usage.cache_read_input_tokens || 0} read, ${usage.cache_creation_input_tokens || 0} created`);
+    
     return responseBody.content[0].text;
   } catch (error) {
     logger.error('Error invocando Claude:', error);

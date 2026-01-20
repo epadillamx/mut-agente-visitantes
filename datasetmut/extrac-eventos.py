@@ -1,97 +1,176 @@
+"""
+Extractor de eventos desde la API de MUT
+Genera CSV con los mismos campos que usa eventos.service.js
+"""
 import requests
 import pandas as pd
+import re
+from datetime import datetime
+
+def limpiar_texto(texto):
+    """Limpia texto HTML y caracteres especiales"""
+    if not texto:
+        return ''
+    texto = str(texto)
+    # Remover tags HTML
+    texto = re.sub(r'<[^>]*>', '', texto)
+    # Reemplazar entidades HTML
+    texto = texto.replace('&#8220;', '"')
+    texto = texto.replace('&#8221;', '"')
+    texto = texto.replace('&#8230;', '...')
+    texto = texto.replace('&amp;', '&')
+    texto = texto.replace('&nbsp;', ' ')
+    texto = texto.replace('\xa0', ' ')
+    return texto.strip()
+
+def formatear_fecha_legible(date_str):
+    """Convierte YYYYMMDD a texto legible"""
+    if not date_str or len(str(date_str)) != 8:
+        return ''
+    try:
+        date_str = str(date_str)
+        year = int(date_str[0:4])
+        month = int(date_str[4:6])
+        day = int(date_str[6:8])
+        
+        meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+        
+        return f"{day} de {meses[month-1]} de {year}"
+    except:
+        return ''
 
 # Lista para acumular todos los eventos
 todos_eventos = []
+page = 1
+max_pages = 10
 
-for i in range(1, 101):
-    url = f"https://mut.cl/wp-json/wp/v2/event?per_page=100&page={i}"
-    payload = {}
-    headers = {}
+print("=" * 60)
+print("🎭 EXTRACTOR DE EVENTOS MUT")
+print("=" * 60)
+
+while page <= max_pages:
+    url = f"https://mut.cl/wp-json/wp/v2/event?per_page=100&page={page}"
+    
+    print(f"\n📡 Consultando página {page}: {url}")
 
     try:
-        response = requests.request("GET", url, headers=headers, data=payload)
-        response.raise_for_status()  # Verifica errores HTTP
+        response = requests.get(url, timeout=30)
+        
+        if response.status_code == 400:
+            print(f"   ⚠️ API respondió 400 en página {page} - fin de datos")
+            break
+            
+        response.raise_for_status()
         data = response.json()
 
-        # Si no hay datos, terminar el loop
-        if len(data) == 0:
-            print(f"No hay más datos en la página {i}")
+        if not data or len(data) == 0:
+            print(f"   ℹ️ No hay más datos en página {page}")
             break
 
-        print(f"Procesando página {i} con {len(data)} eventos...")
+        print(f"   ✅ Procesando {len(data)} eventos...")
 
         for item in data:
             # Obtener información ACF
-            acf = item.get('acf', {})
-            info_destacada = acf.get('informacion_destacada', {})
-            info_tienda = acf.get('informacion_tienda', [])
+            acf = item.get('acf', {}) or {}
+            info_destacada = acf.get('informacion_destacada', {}) or {}
+            info_tienda = acf.get('informacion_tienda', []) or []
 
-            # Extraer horas (puede ser una lista)
-            hours_list = info_destacada.get('hours', [])
-            hours = ', '.join([h.get('hour', '') for h in hours_list if h.get('hour')]) if hours_list else ''
+            # ⭐ CAMPO CRÍTICO: event_date (formato YYYYMMDD)
+            event_date = info_destacada.get('event_date', None)
+            
+            # Extraer horas de info_destacada (puede ser una lista)
+            hours_list = info_destacada.get('hours', []) or []
+            horas = ', '.join([
+                limpiar_texto(h.get('hour', '')) 
+                for h in hours_list 
+                if h.get('hour')
+            ])
 
             # Extraer información del primer card si existe
-            date_text = ''
-            hour_text = ''
-            place_text = ''
-            description = ''
-            button_url = ''
-            button_title = ''
+            fecha_texto = ''
+            hora_texto = ''
+            lugar = ''
+            descripcion = ''
 
             if info_tienda and len(info_tienda) > 0:
-                cards = info_tienda[0].get('cards', [])
+                cards = info_tienda[0].get('cards', []) or []
                 if cards and len(cards) > 0:
-                    card = cards[0]
-                    data_card = card.get('data', {})
+                    card_data = cards[0].get('data', {}) or {}
+                    fecha_texto = card_data.get('date', '')
+                    hora_texto = limpiar_texto(card_data.get('hour', ''))
+                    lugar = card_data.get('place', '')
+                    descripcion = card_data.get('description', '')
 
-                    date_text = data_card.get('date', '')
-                    hour_text = data_card.get('hour', '')
-                    place_text = data_card.get('place', '')
-                    description = data_card.get('description', '')
+            # Si no hay hora del card, usar la de info_destacada
+            if not hora_texto and horas:
+                hora_texto = horas
 
-                    # Extraer botón
-                    button = card.get('button', {})
-                    if button and button.get('is_active'):
-                        anchor = button.get('anchor', {})
-                        button_url = anchor.get('url', '')
-                        button_title = anchor.get('title', '')
+            # Calcular fecha legible desde event_date
+            fecha_exacta = formatear_fecha_legible(event_date) if event_date else ''
+            
+            # Si no hay fecha_texto, usar fecha_exacta
+            if not fecha_texto and fecha_exacta:
+                fecha_texto = fecha_exacta
 
-            # Limpiar contenido
-            contenido = item.get('content', {}).get('rendered', '')
-            contenido_limpio = contenido.replace('<p>', '').replace('</p>', '').replace('&#8230;', '...')
-
-            todos_eventos.append({
-                'titulo': item.get('title', {}).get('rendered', ''),
-                'link': item.get('link', ''),
-                'contenido': contenido_limpio,
-                'horas': hours,
-                'fecha_texto': date_text,
-                'hora_texto': hour_text,
-                'lugar': place_text,
-                'descripcion': description,
+            # Crear registro del evento (mismos campos que eventos.service.js)
+            evento = {
+                'titulo': limpiar_texto(item.get('title', {}).get('rendered', '')),
+                'event_date': event_date,  # YYYYMMDD - campo crítico para filtrar
+                'fecha': fecha_texto,       # Texto del card (puede tener rangos)
+                'fecha_exacta': fecha_exacta,  # Fecha legible desde event_date
+                'hora': hora_texto,
+                'lugar': lugar,
+                'descripcion': limpiar_texto(descripcion)[:200] if descripcion else '',
                 'organizador': info_destacada.get('organizer', ''),
-                'tipo': 'event'
-            })
+                'link': item.get('link', '')
+            }
+
+            # Solo agregar si tiene título
+            if evento['titulo']:
+                todos_eventos.append(evento)
+
+        page += 1
 
     except requests.exceptions.RequestException as e:
-        print(f"Error en la página {i}: {e}")
+        print(f"   ❌ Error de conexión en página {page}: {e}")
         break
     except Exception as e:
-        print(f"Error procesando página {i}: {e}")
+        print(f"   ❌ Error procesando página {page}: {e}")
         continue
 
-# Crear DataFrame con TODOS los eventos y guardar
+# Crear DataFrame y guardar
+print("\n" + "=" * 60)
+
 if todos_eventos:
     df = pd.DataFrame(todos_eventos)
-    df.to_csv(r"C:\gitkraken\SISGEST\AGENTE-AWS\eventos.csv", index=False, encoding='utf-8-sig')
+    
+    # Ordenar por event_date (eventos con fecha primero, luego por fecha)
+    df['sort_key'] = df['event_date'].fillna('99999999')
+    df = df.sort_values('sort_key').drop('sort_key', axis=1)
+    
+    # Guardar CSV
+    output_path = r"C:\Users\gusta\Documents\apylink\repositorios\mut\mut-agente-visitantes\datasetmut\eventos.csv"
+    df.to_csv(output_path, index=False, encoding='utf-8-sig')
 
-    print(f"\n{'=' * 60}")
-    print(f"✓ TOTAL: {len(df)} eventos guardados en eventos.csv")
-    print(f"{'=' * 60}")
-    print(f"\nPrimeras 5 eventos:")
-    print(df.head())
-    print(f"\nColumnas extraídas:")
-    print(list(df.columns))
+    print(f"✅ TOTAL: {len(df)} eventos guardados")
+    print(f"📁 Archivo: eventos.csv")
+    print("=" * 60)
+    
+    # Resumen de campos
+    print(f"\n📊 RESUMEN:")
+    print(f"   • Con event_date: {df['event_date'].notna().sum()}")
+    print(f"   • Sin event_date: {df['event_date'].isna().sum()}")
+    print(f"   • Con fecha texto: {(df['fecha'] != '').sum()}")
+    print(f"   • Con hora: {(df['hora'] != '').sum()}")
+    print(f"   • Con lugar: {(df['lugar'] != '').sum()}")
+    print(f"   • Con link: {(df['link'] != '').sum()}")
+    
+    print(f"\n📋 COLUMNAS:")
+    print(f"   {list(df.columns)}")
+    
+    print(f"\n🔍 PRIMEROS 5 EVENTOS:")
+    print(df[['titulo', 'event_date', 'fecha', 'hora']].head().to_string())
+    
 else:
-    print("No se encontraron eventos")
+    print("❌ No se encontraron eventos")

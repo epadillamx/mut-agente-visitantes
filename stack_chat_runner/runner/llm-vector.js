@@ -1,6 +1,7 @@
 import { invokeClaude } from './bedrock/claude.service.js';
 import { PROMPT_TEMPLATES } from './plantillas/prompts.js';
 import { searchVectorStore, formatSearchResults, isCacheActive, initAllVectorStores } from './vectorial.service.js';
+import { getEventos, formatEventosForLLM } from './eventos.service.js';
 import logger from './logger.js';
 
 // Detectar saludos simples sin llamar al LLM
@@ -15,6 +16,7 @@ function getWelcomeMessage() {
 }
 
 async function invokeQuestions(inputTextuser) {
+    logger.info('🔍 Llamando Claude para CLASIFICACIÓN...');
     const datos = (await invokeClaude(inputTextuser, PROMPT_TEMPLATES.extractInfo.system)).replace("```json", "").replace("```", "").trim();
     const resultlocalerroneo = JSON.parse(datos);
     return resultlocalerroneo;
@@ -33,14 +35,109 @@ ${vectorContext}
 
 Usa esta información de restaurantes cuando sea relevante para la pregunta del usuario.`;
 
+    logger.info('🏪 Llamando Claude para RESTAURANTES/TIENDAS...');
     const datos = (await invokeClaude(inputTextuser, enrichedSystemPrompt)).replace("```json", "").replace("```", "").trim();
     const resultlocalerroneo = JSON.parse(datos);
 
     return resultlocalerroneo;
 }
 
+/**
+ * Consulta eventos desde la API de mut.cl
+ * @param {string} inputTextuser - Pregunta del usuario sobre eventos
+ * @returns {Object} Respuesta con eventos encontrados
+ */
+async function consultarEventos(inputTextuser) {
+    logger.info('Consultando eventos...');
+    
+    // Obtener eventos (de cache o API)
+    const eventos = await getEventos();
+    const eventosContext = formatEventosForLLM(eventos);
+    
+    // Obtener fecha actual para contexto
+    const fechaActual = new Date().toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // User prompt con fecha y eventos (dinámico)
+    const userPrompt = `Hoy: ${fechaActual}
+
+EVENTOS:\n${eventosContext}\n\nPREGUNTA: ${inputTextuser}`;
+
+    logger.info('📅 Llamando Claude para EVENTOS...');
+    const rawResponse = await invokeClaude(userPrompt, PROMPT_TEMPLATES.extractEventos.system);
+    
+    // Limpiar respuesta de Claude
+    let datos = rawResponse
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/gi, '')
+        .trim();
+    
+    // Intentar extraer JSON si hay texto extra
+    const jsonMatch = datos.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        datos = jsonMatch[0];
+    }
+    
+    logger.debug(`📝 Claude raw (eventos): ${datos.substring(0, 200)}...`);
+    
+    let resultado;
+    try {
+        resultado = JSON.parse(datos);
+    } catch (parseError) {
+        // Intentar arreglar comillas no escapadas dentro de strings
+        // Patrón: buscar comillas dentro de valores de "respuesta"
+        try {
+            // Reemplazar comillas dobles dentro de texto por comillas simples
+            const fixedDatos = datos.replace(
+                /("respuesta"\s*:\s*")([^"]*?)(")/g,
+                (match, prefix, content, suffix) => {
+                    // No tocar, buscar de otra forma
+                    return match;
+                }
+            );
+            
+            // Estrategia: extraer manualmente los campos
+            const respuestaMatch = datos.match(/"respuesta"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"isEncontrada)/);
+            const isEncontradaMatch = datos.match(/"isEncontrada"\s*:\s*(true|false)/);
+            const eventosMatch = datos.match(/"eventosEncontrados"\s*:\s*(\d+)/);
+            
+            if (respuestaMatch && isEncontradaMatch) {
+                resultado = {
+                    respuesta: respuestaMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'),
+                    isEncontrada: isEncontradaMatch[1] === 'true',
+                    eventosEncontrados: eventosMatch ? parseInt(eventosMatch[1]) : 1
+                };
+                logger.info('✅ JSON recuperado con regex');
+            } else {
+                throw new Error('No se pudo extraer respuesta');
+            }
+        } catch (regexError) {
+            logger.warn(`⚠️ JSON inválido de Claude, usando fallback`);
+            logger.debug(`Raw completo: ${datos}`);
+            // Fallback: no se encontraron eventos
+            resultado = {
+                respuesta: '📅 Puedes ver los eventos actuales en *mut.cl/eventos*',
+                isEncontrada: false,
+                eventosEncontrados: 0
+            };
+        }
+    }
+    
+    logger.info(`Eventos encontrados: ${resultado.eventosEncontrados || 0}`);
+    
+    return resultado;
+}
+
 async function inputLlm(inputTextuser) {
     let startTime = Date.now();
+    
+    logger.info('═══════════════════════════════════════════════════════════');
+    logger.info(`📩 PREGUNTA RECIBIDA: "${inputTextuser}"`);
+    logger.info('═══════════════════════════════════════════════════════════');
 
     // Validar si el cache está activo antes de procesar
     let cacheStatus = isCacheActive();
@@ -71,8 +168,30 @@ async function inputLlm(inputTextuser) {
     // OPTIMIZACIÓN: Una sola llamada inicial para clasificar
     const messagePreguntas = await invokeQuestions(inputTextuser);
     
+    logger.info('───────────────────────────────────────────────────────────');
+    logger.info(`🤖 CLASIFICACIÓN IA:`);
+    logger.info(`   ├─ Tipo: ${messagePreguntas.typeQuestions || 'N/A'}`);
+    logger.info(`   ├─ Encontrada: ${messagePreguntas.isEncontrada}`);
+    if (messagePreguntas.respuesta) {
+        logger.info(`   └─ Respuesta directa: ${messagePreguntas.respuesta.substring(0, 80)}...`);
+    }
+    logger.info('───────────────────────────────────────────────────────────');
+    
     if (messagePreguntas.isEncontrada) {
         respuestaFinal = messagePreguntas.respuesta;
+    } else if (messagePreguntas.typeQuestions === 'eventos') {
+        // NUEVO: Flujo de eventos - consulta API en tiempo real
+        try {
+            const messageEventos = await consultarEventos(inputTextuser);
+            if (messageEventos.isEncontrada) {
+                respuestaFinal = messageEventos.respuesta;
+            } else {
+                respuestaFinal = '📅 No encontré eventos que coincidan con tu búsqueda. Puedes ver todos los eventos en *mut.cl/eventos* o preguntar de otra forma 😊';
+            }
+        } catch (error) {
+            logger.error('Error consultando eventos:', error);
+            respuestaFinal = '📅 Puedes ver los eventos actuales en *mut.cl/eventos* o acercarte a *Servicio al Cliente* en *Piso -3*';
+        }
     } else if (messagePreguntas.typeQuestions !== 'otros') {
         // Solo llamar a búsqueda vectorial si es restaurante/tienda
         const messageStore = await vectorial(inputTextuser);
@@ -85,11 +204,13 @@ async function inputLlm(inputTextuser) {
         respuestaFinal = 'El equipo de *Servicio al Cliente* en *Piso -3* te puede ayudar mejor con eso. Están al fondo, al lado de *Pastelería Jo* 😊';
     }
 
-    logger.info('Respuesta final generada');
-    logger.debug('Contenido:', respuestaFinal);
+    logger.info('═══════════════════════════════════════════════════════════');
+    logger.info(`📤 RESPUESTA FINAL:`);
+    logger.info(`   ${respuestaFinal}`);
+    logger.info('═══════════════════════════════════════════════════════════');
     let wordCount = respuestaFinal.split(/\s+/).length;
     let endTime = Date.now();
-    logger.time(`Tiempo de respuesta: ${((endTime - startTime) / 1000)}s, Palabras: ${wordCount}`);
+    logger.time(`⏱️  Tiempo: ${((endTime - startTime) / 1000)}s | Palabras: ${wordCount}`);
     
     return respuestaFinal;
 }
