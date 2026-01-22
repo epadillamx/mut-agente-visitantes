@@ -366,14 +366,19 @@ async function handleDirectChat(event) {
         const userId = sessionId || `test-${Date.now()}`;
         logger.info(`Prueba directa - SessionId: ${userId}, Question: ${userQuestion}`);
 
-        // Llamar directamente al agente
-        const agentResponse = await getAgente(userId, userQuestion, 'test-message-id');
+        // Llamar directamente a inputLlm (flujo local sin Bedrock Agent)
+        const startTime = Date.now();
+        const agentResponse = await inputLlm(userQuestion);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        
+        logger.info(`✅ Respuesta generada en ${elapsed}s`);
 
         return createResponse(200, {
             sessionId: userId,
             question: userQuestion,
             answer: agentResponse,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            processingTime: `${elapsed}s`
         });
 
     } catch (error) {
