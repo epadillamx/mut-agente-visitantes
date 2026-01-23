@@ -21,3 +21,11 @@ frontend_docker_app
 
 **/node_modules
 stack_chat_lambda_node/lambda/.env
+
+# ============================================================================
+# IMPORTANTE: Carpeta con credenciales - NO SUBIR AL REPOSITORIO
+# ============================================================================
+stack_chat_lambda_node/configuraciones/
+
+# Scripts de migración y utilidades (contienen credenciales)
+scripts/

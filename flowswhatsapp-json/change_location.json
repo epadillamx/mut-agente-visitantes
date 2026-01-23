@@ -1,0 +1,149 @@
+{
+    "version": "7.2",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "INCIDENT_FORM": [
+            "CONFIRMATION"
+        ],
+        "CONFIRMATION": []
+    },
+    "screens": [
+        {
+            "id": "INCIDENT_FORM",
+            "title": "Seleccionar Local",
+            "data": {
+                "locales": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "__example__": [
+                        {
+                            "id": "0",
+                            "title": "Escribe arriba para buscar..."
+                        }
+                    ]
+                },
+                "is_local_enabled": {
+                    "type": "boolean",
+                    "__example__": true
+                },
+                "search_helper": {
+                    "type": "string",
+                    "__example__": "Escribe mínimo 4 caracteres y presiona Buscar"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "incident_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "📍 Local"
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Buscar ..",
+                                "name": "busqueda_local",
+                                "required": true,
+                                "helper-text": "${data.search_helper}"
+                            },
+                            {
+                                "type": "EmbeddedLink",
+                                "text": "🔍 Buscar Local",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "search_local",
+                                        "busqueda_local": "${form.busqueda_local}"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "Dropdown",
+                                "label": "Seleccionar Local",
+                                "name": "local",
+                                "data-source": "${data.locales}",
+                                "required": true,
+                                "enabled": "${data.is_local_enabled}"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "go_to_confirmation",
+                                        "local": "${form.local}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "CONFIRMATION",
+            "title": "Confirmación",
+            "terminal": true,
+            "data": {
+                "local": {
+                    "type": "string",
+                    "__example__": "local_1"
+                },
+                "mensaje_confirmacion": {
+                    "type": "string",
+                    "__example__": "¿Confirmas que deseas cambiar tu local a:\n\n📍 ADIDAS ORIGINALS - Local?"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "confirmation_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "✅ Confirmación"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.mensaje_confirmacion}"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "confirmacion",
+                                "label": "Confirmo la selección",
+                                "required": true
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Confirmar",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "local": "${data.local}",
+                                        "is_local_change": true
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

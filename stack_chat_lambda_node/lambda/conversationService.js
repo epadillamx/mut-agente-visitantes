@@ -84,10 +84,10 @@ class ConversationService {
      * @param {string} response - Respuesta del agente
      * @param {string} messageId - ID único del mensaje
      * @param {Object} traceabilityData - Datos de trazabilidad (citations, traceEvents, agentMetadata)
-     * @param {string} ticketNumber - Número de ticket (opcional)
+     * @param {string} chatType - Tipo de chat ('incidencias' o 'recomendaciones')
      * @returns {Promise<Object>} El item guardado en DynamoDB
      */
-    async saveMessage(userId, message, response, messageId, traceabilityData_input = null) {
+    async saveMessage(userId, message, response, messageId, traceabilityData_input = null, chatType = null) {
         try {
              console.log(`************************** 8 | saveMessage | ********************************************* `);
             const conversationId = this.generateConversationId(userId);
@@ -96,7 +96,9 @@ class ConversationService {
             // TTL: 90 días desde ahora (en segundos Unix)
             const ttl = Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60);
 
-          
+            // Campo para GSI chat-type-index (Sort Key)
+            const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const date_timestamp = `${dateStr}#${timestamp}`;
 
             const conversationItem = {
                 conversation_id: conversationId,
@@ -111,8 +113,20 @@ class ConversationService {
                     user: message.length,
                     agent: response.length
                 },
-                traceabilityData: traceabilityData_input
+                traceabilityData: traceabilityData_input,
+                // Campo para GSI chat-type-index (Sort Key)
+                date_timestamp: date_timestamp
             };
+            
+            // Guardar incidencia_session_id como atributo de primer nivel para GSI
+            // Esto permite usar Query en lugar de Scan para buscar conversaciones por ticket
+            if (traceabilityData_input?.incidenciaSessionId) {
+                conversationItem.incidencia_session_id = traceabilityData_input.incidenciaSessionId;
+            }
+            
+            // Solo agregar chat_type si se proporciona (para distinguir incidencias de recomendaciones)
+            // Por defecto será 'incidencias' si no se especifica
+            conversationItem.chat_type = chatType || 'incidencias';
 
             await this.dynamoClient.send(new PutCommand({
                 TableName: this.conversationsTable,

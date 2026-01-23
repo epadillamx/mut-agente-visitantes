@@ -1,0 +1,107 @@
+{
+    "version": "7.2",
+    "data_api_version": "3.0",
+    "routing_model": {
+        "EMAIL_FORM": [
+            "CONFIRMATION"
+        ],
+        "CONFIRMATION": []
+    },
+    "screens": [
+        {
+            "id": "EMAIL_FORM",
+            "title": "Cambiar Correo",
+            "data": {
+                "email_helper": {
+                    "type": "string",
+                    "__example__": "Ingresa tu nuevo correo electrónico"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "email_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "📧 Cambiar Correo"
+                            },
+                            {
+                                "type": "TextInput",
+                                "label": "Nuevo correo",
+                                "name": "nuevo_email",
+                                "input-type": "email",
+                                "required": true,
+                                "helper-text": "${data.email_helper}"
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Continuar",
+                                "on-click-action": {
+                                    "name": "data_exchange",
+                                    "payload": {
+                                        "trigger": "validate_email",
+                                        "nuevo_email": "${form.nuevo_email}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "CONFIRMATION",
+            "title": "Confirmación",
+            "terminal": true,
+            "data": {
+                "nuevo_email": {
+                    "type": "string",
+                    "__example__": "nuevo@ejemplo.com"
+                },
+                "mensaje_confirmacion": {
+                    "type": "string",
+                    "__example__": "¿Confirmas que deseas cambiar tu correo a: nuevo@ejemplo.com?"
+                }
+            },
+            "layout": {
+                "type": "SingleColumnLayout",
+                "children": [
+                    {
+                        "type": "Form",
+                        "name": "confirmation_form",
+                        "children": [
+                            {
+                                "type": "TextHeading",
+                                "text": "✅ Confirmación"
+                            },
+                            {
+                                "type": "TextBody",
+                                "text": "${data.mensaje_confirmacion}"
+                            },
+                            {
+                                "type": "OptIn",
+                                "name": "confirmacion",
+                                "label": "Confirmo el cambio de correo",
+                                "required": true
+                            },
+                            {
+                                "type": "Footer",
+                                "label": "Confirmar",
+                                "on-click-action": {
+                                    "name": "complete",
+                                    "payload": {
+                                        "nuevo_email": "${data.nuevo_email}",
+                                        "is_email_change": true
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

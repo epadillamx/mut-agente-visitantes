@@ -5,8 +5,7 @@ boto3>=1.36.16,<1.37.0
 pandas==2.2.3
 streamlit==1.43.0
 awswrangler==3.11.0
-loguru==0.7.3
-
+loguru==0.7.3python-dotenv==1.0.0
 # Optional for CDK Deployments
 aws-cdk-lib==2.177.0
 aws-cdk.aws-lambda-python-alpha==2.177.0a0

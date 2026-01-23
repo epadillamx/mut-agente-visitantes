@@ -16,12 +16,27 @@ WhatsApp → Meta Webhook → API Gateway → Lambda → Bedrock Agent → Knowl
 ## Configuración
 
 ### Variables de Entorno
-- `AGENT_ID`: FH6HJUBIZQ (ID del agente de Bedrock)
-- `AGENT_ALIAS_ID`: LP1AND7OTN (ID del alias del agente)
-- `AWS_REGION`: us-east-1 (región por defecto)
+
+**Configuradas automáticamente por CDK:**
+- `NODE_ENV`: Ambiente (development/production) - controla el nivel de logging
+- `WHATSAPP_SECRET_ARN`: ARN del secreto en AWS Secrets Manager
+- `CONVERSATIONS_TABLE`: Nombre de la tabla DynamoDB de conversaciones
+- `SESSIONS_TABLE`: Nombre de la tabla DynamoDB de sesiones  
+- `AWS_REGION`: Región AWS (automática por Lambda Runtime)
+
+**Obtenidas desde Secrets Manager en runtime:**
 - `TOKEN_WHATS`: Token de acceso de WhatsApp Business API
 - `IPHONE_ID_WHATS`: ID del teléfono de WhatsApp Business
 - `VERIFY_TOKEN`: Token de verificación para webhook de WhatsApp
+
+**🔒 Nota de Seguridad:** Las credenciales sensibles ya NO se configuran como variables de entorno. Se obtienen dinámicamente desde AWS Secrets Manager usando el helper `getWhatsAppCredentials()` del módulo `secrets.js`. 
+
+**Beneficios:**
+- ✅ Evita exposición de credenciales en variables de entorno
+- ✅ Centraliza gestión de secretos
+- ✅ Permite rotación automática de credenciales
+- ✅ Aplica controles de acceso IAM granulares
+- ✅ Cache en memoria (5 min TTL) para mejor performance
 
 ## Endpoints
 
@@ -120,29 +135,50 @@ El sistema acumula múltiples mensajes del mismo usuario durante 3 segundos ante
 
 ## Instalación y Despliegue
 
-### 1. Instalar dependencias
+### 1. Configurar AWS Secrets Manager
+
+Cree un secreto con las credenciales de WhatsApp:
+
 ```bash
-cd stack_chat_lambda_node/lambda
-npm install
+aws secretsmanager create-secret \
+  --name whatsapp-credentials \
+  --description "WhatsApp API credentials" \
+  --secret-string '{
+    "TOKEN_WHATSAPP": "your-whatsapp-token-here",
+    "ID_PHONE_WHATSAPP": "your-phone-id-here",
+    "VERIFY_TOKEN_WHATSAPP": "your-verify-token-here"
+  }' \
+  --profile mut-prod-territoria
 ```
 
-### 2. Configurar variables de entorno (opcional)
-```bash
-# Linux/Mac
-export TOKEN_WHATS="your-whatsapp-token"
-export IPHONE_ID_WHATS="your-phone-id"
-export VERIFY_TOKEN="your-verify-token"
+Guarde el ARN del secreto que se muestra en la respuesta.
 
-# Windows PowerShell
-$env:TOKEN_WHATS="your-whatsapp-token"
-$env:IPHONE_ID_WHATS="your-phone-id"
-$env:VERIFY_TOKEN="your-verify-token"
+### 2. Configurar cdk.json
+
+Actualice el contexto en `cdk.json`:
+
+```json
+{
+  "context": {
+    "secret_complete_arn": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:whatsapp-credentials-XXXXXX"
+  }
+}
 ```
 
 ### 3. Desplegar el stack
 ```bash
-cd ../..
-cdk deploy ChatLambdaNodeStack --require-approval never
+# Desde la raíz del proyecto
+cd mut-agente-visitantes
+
+# Activar entorno virtual
+source venv/Scripts/activate  # Windows Git Bash
+source venv/bin/activate       # Linux/Mac
+
+# Instalar dependencias de Python
+pip install -r requirements.txt
+
+# Desplegar
+cdk deploy ChatLambdaNodeStack --require-approval never --profile mut-prod-territoria
 ```
 
 ### 4. Obtener las URLs
@@ -164,11 +200,29 @@ https://developers.facebook.com/
 - **Webhook Fields**: Seleccionar `messages`
 
 ### 3. Obtener Tokens
-- **TOKEN_WHATS**: En WhatsApp > API Setup > Temporary access token
+- **TOKEN_WHATS**: En WhatsApp > API Setup > Temporary access token (luego crear permanente)
 - **IPHONE_ID_WHATS**: En WhatsApp > API Setup > Phone number ID
 
-### 4. Actualizar Variables de Entorno en Lambda
-Ir a AWS Console → Lambda → chat-lambda-fn → Configuration → Environment variables
+### 4. Verificar Configuración
+
+**NO es necesario configurar variables de entorno manualmente.** El CDK stack configura automáticamente:
+
+✅ Referencia al secreto de Secrets Manager  
+✅ Permisos IAM para leer el secreto  
+✅ Tablas DynamoDB  
+✅ Permisos de Bedrock  
+
+Para verificar el despliegue:
+```bash
+# Ver logs de la función
+aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn --follow --profile mut-prod-territoria
+
+# Probar health check
+curl https://YOUR-API-URL/prod/
+
+# Probar verificación de webhook
+curl "https://YOUR-API-URL/prod/webhook?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=test123"
+```
 
 ## Ejemplos de Conversación
 
@@ -210,10 +264,17 @@ Bot: "Pasta Amore es la opción más económica, con precios desde $150..."
 
 ### Ver logs en CloudWatch
 ```bash
-aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn --follow
+# Con perfil específico
+aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn --follow --profile mut-prod-territoria
+
+# Filtrar solo errores
+aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn --follow --filter-pattern "ERROR" --profile mut-prod-territoria
 ```
 
 ### Logs importantes
+- `🔧 Logger inicializado`: Configuración del logger (NODE_ENV: development/production)
+- `[SECRETS] Fetching secrets`: Obteniendo credenciales de Secrets Manager
+- `[SECRETS] Using cached secrets`: Usando cache de credenciales (mejor performance)
 - `📥 Event received`: Request completo de API Gateway
 - `🔍 Verificación webhook`: Verificación de webhook de WhatsApp
 - `📨 Webhook POST recibido`: Mensaje de WhatsApp recibido
@@ -223,17 +284,56 @@ aws logs tail /aws/lambda/ChatLambdaNodeStack-chatlambdafn --follow
 - `✅ Respuesta recibida`: Respuesta del agente
 - `💬 Enviando respuesta`: Enviando mensaje a WhatsApp
 
+### Niveles de Logging
+
+El sistema usa diferentes niveles según `NODE_ENV`:
+
+**Development (`NODE_ENV=development`):**
+- Muestra: DEBUG, INFO, WARN, ERROR
+- Útil para troubleshooting y desarrollo
+
+**Production (`NODE_ENV=production`):**
+- Muestra solo: WARN, ERROR  
+- Reduce ruido en logs de producción
+
 ## Estructura de Archivos
 
 ```
 lambda/
-├── index.js              # Handler principal (rutas y lógica)
-├── getAgente.js          # Invocación a Bedrock Agent
-├── send.message.js       # Envío de mensajes a WhatsApp
-├── acumulacion.js        # Acumulación de mensajes
-├── package.json          # Dependencias
-└── README.md            # Esta documentación
+├── index.js                    # Handler principal (rutas y lógica)
+├── getAgente.js                # Invocación a Bedrock Agent
+├── send.message.js             # Envío de mensajes a WhatsApp (usa Secrets Manager)
+├── llm-vector.js               # Integración con vectorial service
+├── conversationService.js      # Gestión de conversaciones en DynamoDB
+├── logger.js                   # Sistema de logging con niveles
+├── secrets.js                  # 🔑 Cliente de AWS Secrets Manager
+├── bedrock/
+│   └── claude.service.js       # Servicio de Claude
+├── plantillas/
+│   └── prompts.js              # Prompts del sistema
+├── package.json                # Dependencias (incluye @aws-sdk/client-secrets-manager)
+└── README.md                   # Esta documentación
 ```
+
+## Módulo secrets.js
+
+Nuevo módulo para gestión segura de credenciales:
+
+```javascript
+import { getWhatsAppCredentials } from './secrets.js';
+
+// Uso en cualquier módulo
+const secrets = await getWhatsAppCredentials();
+console.log(secrets.TOKEN_WHATS);
+console.log(secrets.IPHONE_ID_WHATS);
+console.log(secrets.VERIFY_TOKEN);
+```
+
+**Características:**
+- ⚡ Cache en memoria (5 minutos TTL)
+- 🔄 Recarga automática al expirar
+- 🛡️ Manejo de errores robusto
+- 📊 Logging detallado
 
 ## Manejo de Errores
 

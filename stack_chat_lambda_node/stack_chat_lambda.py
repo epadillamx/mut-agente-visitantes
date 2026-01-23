@@ -2,83 +2,157 @@ from aws_cdk import (
     Stack,
     CfnOutput,
     Duration,
-    Size,
     Aws,
     RemovalPolicy,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_iam as iam,
-    aws_ssm as ssm,
     aws_secretsmanager as secretsmanager,
-    aws_s3 as s3,
+    aws_dynamodb as dynamodb,
+    aws_ec2 as ec2,  # Para configuración VPC (producción)
 )
 from constructs import Construct
 import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde configuraciones/.env
+env_path = os.path.join(os.path.dirname(__file__), 'configuraciones', '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+    print(f"✓ Credenciales cargadas desde: {env_path}")
+else:
+    print(f"⚠️ ADVERTENCIA: No se encontró {env_path}")
 
 class ChatLambdaNodeStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, 
+    def __init__(self, scope: Construct, construct_id: str,
                  conversations_table=None, sessions_table=None,
-                 agent_id=None, input_metadata=None, **kwargs) -> None:
+                 whatsapp_usuarios_table=None, whatsapp_tickets_table=None,
+                 incidencia_sessions_table=None,
+                 input_metadata=None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        # ============================================================================
+        # VPC CONFIGURATION (Comentado - Solo necesario para PRODUCCIÓN con RDS privado)
+        # El RDS de QA es público, no necesita VPC
+        # Descomentar cuando se necesite conectar a RDS PostgreSQL de PRODUCCIÓN
+        # ============================================================================
+        # VPC_ID = "vpc-0d57dff405e619cd8"
+        # VPC_SUBNET_IDS = ["subnet-036a190a48b0b6656", "subnet-079ddf3624577788a"]
+        # VPC_SECURITY_GROUP_IDS = ["sg-0a36e272934165600"]
+        #
+        # # Import existing VPC
+        # vpc = ec2.Vpc.from_lookup(
+        #     self,
+        #     "ExistingVpc",
+        #     vpc_id=VPC_ID
+        # )
+        #
+        # # Import existing subnets
+        # subnets = [
+        #     ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
+        #     for i, subnet_id in enumerate(VPC_SUBNET_IDS)
+        # ]
+        #
+        # # Import existing security group
+        # security_groups = [
+        #     ec2.SecurityGroup.from_security_group_id(self, f"SG{i}", sg_id)
+        #     for i, sg_id in enumerate(VPC_SECURITY_GROUP_IDS)
+        # ]
+        #
+        # # VPC configuration for Lambda functions
+        # vpc_config = {
+        #     "vpc": vpc,
+        #     "vpc_subnets": ec2.SubnetSelection(subnets=subnets),
+        #     "security_groups": security_groups
+        # }
+        # ============================================================================
+
         """
-        @ Lambda function
+        @ DynamoDB Tables
         """
-        
+
+        # Create DynamoDB table for incidents
+        self.incidents_table = dynamodb.Table(
+            self,
+            "IncidentsTable",
+            partition_key=dynamodb.Attribute(
+                name="id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.RETAIN,
+            point_in_time_recovery=True
+        )
+
+        # Add GSI for querying by local_id
+        self.incidents_table.add_global_secondary_index(
+            index_name="local_id-fecha_creacion-index",
+            partition_key=dynamodb.Attribute(
+                name="local_id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="fecha_creacion",
+                type=dynamodb.AttributeType.STRING
+            )
+        )
+
+        """
+        @ Lambda function - Chat
+        """
+
         # Get secret ARN from context
         secret_arn = input_metadata.get("secret_complete_arn") if input_metadata else None
         if not secret_arn:
             raise ValueError("secret_complete_arn must be provided in cdk.json context")
-        
-       
-        
+
         # Import Secrets Manager secret for WhatsApp credentials
         whatsapp_secret = secretsmanager.Secret.from_secret_complete_arn(
             self,
             "WhatsAppSecret",
             secret_complete_arn=secret_arn
         )
-        
-        # Create S3 bucket for temporal cache (embeddings model cache)
-        self.cache_bucket = s3.Bucket(
-            self,
-            "ChatLambdaCacheBucket",
-            bucket_name=f"chat-lambda-cache-{Aws.ACCOUNT_ID}-{Aws.REGION}",
-            encryption=s3.BucketEncryption.S3_MANAGED,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            versioned=False,
-            lifecycle_rules=[
-                s3.LifecycleRule(
-                    id="DeleteOldCacheFiles",
-                    enabled=True,
-                    expiration=Duration.days(7),  # Eliminar archivos después de 7 días
-                    abort_incomplete_multipart_upload_after=Duration.days(1)
-                )
-            ],
-            removal_policy=RemovalPolicy.DESTROY,  # Eliminar bucket al destruir el stack
-            auto_delete_objects=True  # Eliminar objetos automáticamente
-        )
-        
-        # Default values for configuration (can be overridden via environment)
-        DEFAULT_AGENT_ID = agent_id
 
-        # Build environment variables
+
+
+        # Build environment variables (leer desde .env)
         environment_vars = {
-            # Bedrock Agent configuration
-            "AGENT_ID": DEFAULT_AGENT_ID,
-            "AGENT_ALIAS_ID": 'change',
-            # WhatsApp credentials from Secrets Manager
-            "TOKEN_WHATS": whatsapp_secret.secret_value_from_json("TOKEN_WHATSAPP").unsafe_unwrap(),
-            "IPHONE_ID_WHATS": whatsapp_secret.secret_value_from_json("ID_PHONE_WHATSAPP").unsafe_unwrap(),
-            "VERIFY_TOKEN": whatsapp_secret.secret_value_from_json("VERIFY_TOKEN_WHATSAPP").unsafe_unwrap(),
-            # S3 Cache bucket
-            "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name,
-            # Configure transformers to use /tmp for model cache (read-only filesystem issue)
-            "TRANSFORMERS_CACHE": "/tmp/.cache",
-            "HF_HOME": "/tmp/.cache",
-            # Logger configuration - production mode (solo ERROR logs)
+            # Reference to Secrets Manager secret (resolved at runtime by Lambda)
+            "WHATSAPP_SECRET_ARN": secret_arn,
+            # Logger configuration
             "NODE_ENV": "development",
+            # ============================================================================
+            # DEV_MODE: true = desarrollo, false = producción
+            # Controla si Fracttal usa credenciales de desarrollo o del secret
+            # ============================================================================
+            "DEV_MODE": os.environ.get("DEV_MODE", "true"),
+            # ============================================================================
+            # ZENDESK - Credenciales y configuración (desde .env)
+            # ============================================================================
+            "ZENDESK_REMOTE_URI": os.environ.get("ZENDESK_REMOTE_URI", ""),
+            "ZENDESK_USERNAME": os.environ.get("ZENDESK_USERNAME", ""),
+            "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
+            # Grupos de Zendesk
+            "ZENDESK_GROUP_DEV_ID": os.environ.get("ZENDESK_GROUP_DEV_ID", ""),
+            "ZENDESK_GROUP_DEV_NAME": os.environ.get("ZENDESK_GROUP_DEV_NAME", ""),
+            "ZENDESK_GROUP_PROD_ID": os.environ.get("ZENDESK_GROUP_PROD_ID", ""),
+            "ZENDESK_GROUP_PROD_NAME": os.environ.get("ZENDESK_GROUP_PROD_NAME", ""),
+            # ============================================================================
+            # FRACTTAL - Credenciales de desarrollo (desde .env cuando DEV_MODE=true)
+            # En producción (DEV_MODE=false), se usan las del secret
+            # ============================================================================
+            "FRACTTAL_KEY": os.environ.get("FRACTTAL_KEY", ""),
+            "FRACTTAL_SECRET": os.environ.get("FRACTTAL_SECRET", ""),
+            "FRACTTAL_USER_CODE": os.environ.get("FRACTTAL_USER_CODE", ""),
+            # ============================================================================
+            # POSTGRESQL - Credenciales de lectura (desde .env)
+            # ============================================================================
+            "DB_HOST": os.environ.get("DB_HOST", ""),
+            "DB_PORT": os.environ.get("DB_PORT", ""),
+            "DB_USER": os.environ.get("DB_USER", ""),
+            "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "DB_NAME": os.environ.get("DB_NAME", ""),
         }
 
         # Add DynamoDB table names if provided
@@ -86,54 +160,165 @@ class ChatLambdaNodeStack(Stack):
             environment_vars["CONVERSATIONS_TABLE"] = conversations_table.table_name
         if sessions_table:
             environment_vars["SESSIONS_TABLE"] = sessions_table.table_name
+        if whatsapp_usuarios_table:
+            environment_vars["WHATSAPP_USUARIOS_TABLE"] = whatsapp_usuarios_table.table_name
+        if whatsapp_tickets_table:
+            environment_vars["WHATSAPP_TICKETS_TABLE"] = whatsapp_tickets_table.table_name
+        if incidencia_sessions_table:
+            environment_vars["INCIDENCIA_SESSIONS_TABLE"] = incidencia_sessions_table.table_name
 
-        # Create Node.js 22 Lambda function using Docker Container Image
-        # This allows us to package @xenova/transformers which exceeds layer size limits
-        self.lambda_fn = _lambda.DockerImageFunction(
+        # Create Node.js 20.x Lambda function
+        self.lambda_fn = _lambda.Function(
             self,
             "chat-lambda-fn",
-            code=_lambda.DockerImageCode.from_image_asset(
-                directory=os.path.join(os.path.dirname(__file__)),
-                file="Dockerfile"
+            runtime=_lambda.Runtime.NODEJS_22_X,
+            handler="index.handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "lambda")
             ),
             description="Lambda function that invokes Bedrock Agent for WhatsApp chat interactions",
-            timeout=Duration.seconds(120),  # Increased timeout for Bedrock calls
-            memory_size=2048,  # 2GB para soportar modelos de embeddings
-            ephemeral_storage_size=Size.mebibytes(1024),  # 1GB almacenamiento temporal para cache de modelos
+            timeout=Duration.seconds(120),
+            memory_size=512,
             environment=environment_vars
         )
 
-        # Add Bedrock permissions to Lambda
-        self._configure_lambda_permissions(DEFAULT_AGENT_ID)
-
+       
         # Grant DynamoDB permissions if tables are provided
         if conversations_table:
             conversations_table.grant_read_write_data(self.lambda_fn)
         if sessions_table:
             sessions_table.grant_read_write_data(self.lambda_fn)
-        
+        if whatsapp_usuarios_table:
+            whatsapp_usuarios_table.grant_read_write_data(self.lambda_fn)
+        if whatsapp_tickets_table:
+            whatsapp_tickets_table.grant_read_write_data(self.lambda_fn)
+        if incidencia_sessions_table:
+            incidencia_sessions_table.grant_read_write_data(self.lambda_fn)
+
         # Grant permissions to read from Secrets Manager
         whatsapp_secret.grant_read(self.lambda_fn)
-        
-        # Grant S3 permissions for cache bucket
-        self.cache_bucket.grant_read_write(self.lambda_fn)
-        
-        # Grant S3 permissions for data bucket (raw-virtual-assistant-data)
+
+        # Grant permissions to invoke Bedrock models (all regions for cross-region inference)
         self.lambda_fn.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
-                    "s3:ListBucket",
-                    "s3:GetObject",
-                    "s3:PutObject"
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
                 ],
                 resources=[
-                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}",
-                    f"arn:aws:s3:::raw-virtual-assistant-data-{Aws.ACCOUNT_ID}-{Aws.REGION}/*"
+                    # Foundation models in current region
+                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*",
+                    # Foundation models in other regions (for cross-region inference)
+                    "arn:aws:bedrock:us-east-1::foundation-model/*",
+                    "arn:aws:bedrock:us-east-2::foundation-model/*",
+                    "arn:aws:bedrock:us-west-2::foundation-model/*",
+                    # Inference profiles
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-east-1:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-east-2:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-west-2:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    # Cross-region inference profiles (us.anthropic.*)
+                    "arn:aws:bedrock:us:*:inference-profile/*"
                 ]
             )
         )
 
+        """
+        @ Lambda function - WhatsApp Flow
+        """
+
+        # Build environment variables for WhatsApp Flow Lambda (desde .env)
+        flow_environment_vars = {
+            "NODE_ENV": "development",
+            "WHATSAPP_SECRET_ARN": secret_arn,
+            "DYNAMODB_TABLE_INCIDENCIAS": self.incidents_table.table_name,
+            # ============================================================================
+            # DEV_MODE: true = desarrollo, false = producción
+            # Controla si Fracttal usa credenciales de desarrollo o del secret
+            # ============================================================================
+            "DEV_MODE": os.environ.get("DEV_MODE", "true"),
+            # ============================================================================
+            # ZENDESK - Credenciales y configuración (desde .env)
+            # ============================================================================
+            "ZENDESK_REMOTE_URI": os.environ.get("ZENDESK_REMOTE_URI", ""),
+            "ZENDESK_USERNAME": os.environ.get("ZENDESK_USERNAME", ""),
+            "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
+            # Grupos de Zendesk
+            "ZENDESK_GROUP_DEV_ID": os.environ.get("ZENDESK_GROUP_DEV_ID", ""),
+            "ZENDESK_GROUP_DEV_NAME": os.environ.get("ZENDESK_GROUP_DEV_NAME", ""),
+            "ZENDESK_GROUP_PROD_ID": os.environ.get("ZENDESK_GROUP_PROD_ID", ""),
+            "ZENDESK_GROUP_PROD_NAME": os.environ.get("ZENDESK_GROUP_PROD_NAME", ""),
+            # ============================================================================
+            # FRACTTAL - Credenciales de desarrollo (desde .env cuando DEV_MODE=true)
+            # En producción (DEV_MODE=false), se usan las del secret
+            # ============================================================================
+            "FRACTTAL_KEY": os.environ.get("FRACTTAL_KEY", ""),
+            "FRACTTAL_SECRET": os.environ.get("FRACTTAL_SECRET", ""),
+            "FRACTTAL_USER_CODE": os.environ.get("FRACTTAL_USER_CODE", ""),
+            # ============================================================================
+            # POSTGRESQL - Credenciales de lectura (desde .env)
+            # ============================================================================
+            "DB_HOST": os.environ.get("DB_HOST", ""),
+            "DB_PORT": os.environ.get("DB_PORT", ""),
+            "DB_USER": os.environ.get("DB_USER", ""),
+            "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "DB_NAME": os.environ.get("DB_NAME", ""),
+        }
+
+        # Add private key passphrase if provided
+        whatsapp_passphrase = input_metadata.get("whatsapp_private_key_passphrase") if input_metadata else None
+        if whatsapp_passphrase:
+            flow_environment_vars["WHATSAPP_PRIVATE_KEY_PASSPHRASE"] = whatsapp_passphrase
+
+        # Create WhatsApp Flow Lambda function
+        # ============================================================================
+        # PRODUCCIÓN: Para conectar a RDS PostgreSQL, agregar vpc_config:
+        # Descomentar las siguientes líneas y la sección VPC al inicio del archivo:
+        #   **vpc_config,  # Agregar al final de los parámetros
+        # ============================================================================
+        self.whatsapp_flow_lambda = _lambda.Function(
+            self,
+            "whatsapp-flow-lambda-fn",
+            runtime=_lambda.Runtime.NODEJS_22_X,
+            handler="lambda-handler.handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "lambda_flow_app")
+            ),
+            description="Lambda function for WhatsApp Flow incident reporting",
+            timeout=Duration.seconds(30),
+            memory_size=256,
+            environment=flow_environment_vars,
+            # ============================================================================
+            # VPC CONFIG (Descomentar para PRODUCCIÓN con RDS)
+            # **vpc_config,
+            # ============================================================================
+        )
+
+        # Grant DynamoDB permissions to WhatsApp Flow Lambda
+        self.incidents_table.grant_read_write_data(self.whatsapp_flow_lambda)
+        
+        # Grant permissions to read from Secrets Manager
+        whatsapp_secret.grant_read(self.whatsapp_flow_lambda)
+
+        # Grant permissions to invoke Bedrock models (for classification)
+        self.whatsapp_flow_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
+                ],
+                resources=[
+                    f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*",
+                    "arn:aws:bedrock:us-east-1::foundation-model/*",
+                    "arn:aws:bedrock:us-east-2::foundation-model/*",
+                    "arn:aws:bedrock:us-west-2::foundation-model/*",
+                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    f"arn:aws:bedrock:us-east-1:{Aws.ACCOUNT_ID}:inference-profile/*",
+                ]
+            )
+        )
 
         """
         @ API Gateway
@@ -184,6 +369,24 @@ class ChatLambdaNodeStack(Stack):
         stats = api.root.add_resource("stats")
         stats.add_method("GET", lambda_integration)
 
+        # Create /flow resource for WhatsApp Flow endpoint
+        flow = api.root.add_resource("flow")
+        flow_lambda_integration = apigateway.LambdaIntegration(
+            self.whatsapp_flow_lambda,
+            proxy=True,
+            allow_test_invoke=True
+        )
+        flow.add_method("POST", flow_lambda_integration)
+        
+        # Create /health resource for WhatsApp Flow health check
+        health = api.root.add_resource("health")
+        health.add_method("GET", flow_lambda_integration)
+        
+        # Create /locales/count resource for WhatsApp Flow
+        locales = api.root.add_resource("locales")
+        locales_count = locales.add_resource("count")
+        locales_count.add_method("GET", flow_lambda_integration)
+
         """
         @ Outputs
         """
@@ -219,105 +422,27 @@ class ChatLambdaNodeStack(Stack):
             value=f"{api.url}chat",
             description="Direct Chat Test URL"
         )
-        
-        # Return Cache Bucket Name
+
+        # Return WhatsApp Flow Lambda ARN
         CfnOutput(
             self,
-            "output-cache-bucket-name",
-            value=self.cache_bucket.bucket_name,
-            description="S3 Cache Bucket for Lambda temporary storage"
+            "output-whatsapp-flow-lambda-arn",
+            value=self.whatsapp_flow_lambda.function_arn,
+            description="WhatsApp Flow Lambda Function ARN"
         )
 
-    def _configure_lambda_permissions(self, agent_id=None) -> None:
-        """
-        Configures IAM permissions for the Lambda function to invoke Bedrock Agent.
-        CRITICAL: AWS Bedrock requires BOTH permissions:
-        - bedrock:InvokeAgent (control plane - for agent metadata)
-        - bedrock-agent-runtime:InvokeAgent (data plane - for actual invocation)
-        
-        Note: AGENT_ALIAS_ID is dynamic and updated by the sync Lambda, so we use wildcard (*)
-        """
-
-        # ARNs for agent and all its aliases
-        agent_arn = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent/{agent_id}"
-        agent_alias_arn_wildcard = f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:agent-alias/{agent_id}/*"
-
-        # 1. Grant Bedrock Agent RUNTIME permissions (for actual invocation)
-        # This is the CRITICAL permission for invoking the agent
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agent-runtime:InvokeAgent",
-                    "bedrock-agent-runtime:Retrieve"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
+        # Return WhatsApp Flow URL
+        CfnOutput(
+            self,
+            "output-whatsapp-flow-url",
+            value=f"{api.url}flow",
+            description="WhatsApp Flow Endpoint URL"
         )
 
-        # 2. Grant Bedrock Agent CONTROL PLANE permissions
-        # These are needed for agent metadata and invocation validation
-        # CRITICAL: bedrock:InvokeAgent is REQUIRED for agent invocation
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeAgent"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
-        )
-        
-        # 2b. Additional control plane permissions for metadata
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:GetAgent",
-                    "bedrock:GetAgentAlias",
-                    "bedrock:ListAgentAliases"
-                ],
-                resources=[
-                    agent_arn,
-                    agent_alias_arn_wildcard
-                ]
-            )
-        )
-
-        # 3. Grant Knowledge Base runtime permissions
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agent-runtime:Retrieve",
-                    "bedrock-agent-runtime:RetrieveAndGenerate"
-                ],
-                resources=[
-                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:knowledge-base/*"
-                ]
-            )
-        )
-
-        # 4. Grant Foundation Model permissions (for direct model invocation if needed)
-        # Note: The agent already has permissions to invoke models, but this allows
-        # the Lambda to directly invoke models for any custom processing if required
-        # Includes both foundation-model/* and inference-profile/* resources
-        self.lambda_fn.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel",
-                    "bedrock:InvokeModelWithResponseStream"
-                ],
-                resources=[
-                    "arn:aws:bedrock:*::foundation-model/*",
-                    f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*"
-                ]
-            )
+        # Return Incidents Table Name
+        CfnOutput(
+            self,
+            "output-incidents-table-name",
+            value=self.incidents_table.table_name,
+            description="DynamoDB Incidents Table Name"
         )
