@@ -108,9 +108,6 @@ const csvContent = `pregunta;Respuesta
                     - piso 1: Adidas, Skechers, Fjall Raven
                     - piso 2: Decathlon, Nike, Lippi, Drops"
                     Qué tiendas de perfumería hay en MUT;En MUT puedes encontrar la tienda de perfumes LODORO en el piso -3 y la tienda de aromas Bath and Blanc en el piso -1 y Madison en el piso 3
-                    Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
-                    -piso -3: PSK Joyas
-                    -piso -1: Cantarina joyas, Toty Stone, Cocó de la Vega, Viale Joyas"
                     Qué tiendas de chocolates o chocolaterías hay en MUT;"En MUT hay varias tiendas de chocolates o chocolaterías:
                     -piso -3: Feroz, Jo Pastelería
                     -piso -2: Macarons Riches, Entre lagos
@@ -125,23 +122,9 @@ const csvContent = `pregunta;Respuesta
                     - piso -1: Snog, La Plage, Museo Garment, Stance, Toke, Blundstone, More Amor, Joia, Lomvok
                     -piso 1: Scalpers, Adidas, Fjall Raven, Black
                     -piso 2: Nike, Lippi"
-                    Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
-                    - piso -1: Dinámica, NS Leather, Silvestre, Vístete Local, Coom, Rita Lira, Cons, Sellos Vintage, Vestua, La María Dolores, Mundano, Blue Blood, Jacinta, Froens
-                    -piso 1: Scalpers, Adidas, Fjall Raven, Black, Karyn Coo
-                    -piso 2: Nike, Lippi, Drops"
-                    Qué tiendas de anteojos y ópticas hay en MUT;"En MUT hay varias tiendas de anteojos y ópticas:
-                    -piso -3: Rotter y Krauss, y Birmingham Brothers
-                    -piso -1: Ben and Frank y B+D
-                    -piso 2: Lens"
                     Qué tiendas de suplementos alimenticios hay en MUT;"En MUT hay varias tiendas donde venden suplementos alimneticios:
-                    -piso -3: All Nutrition, Farmacias Ahumada, Knop y Salcobrand
-                    "
+                    -piso -3: All Nutrition, Farmacias Ahumada, Knop y Salcobrand"
                     Qué tiendas de relojes o relojerías hay en MUT;"En MUT está la tienda ""La Relojería"" en el piso -3"
-                    Qué tiendas de hogar, muebles y decoración hay en MUT;"En MUT hay varias tiendas de hogar, muebles y decoración:
-                    -piso -3: Lipka
-                    -piso -1: Rincón Himalaya, Simple by Puro, Creado en Chile, Bumy Lifestyle, The Plant Store , Bath and Blanc, Lycos Vounó, Ojo por Ojo, Kabinet, Karungen y Pasquín
-                    -piso 1: Brando
-                    -piso 3: Larry y Las 7 Vidas del Mueble"
                     Qué tiendas de manualidades, lápices y artículos de librería hay en MUT;"En MUT hay varias tiendas de manualidades, lápices y articulos de librería:
                     -piso -1: Cordelia, Premium Paper, The Color Shop, Lamy y Revesderecho"
                     Qué librerías o tiendas de libros hay en MUT;"En MUT están las siguientes librerías:
@@ -152,7 +135,6 @@ const csvContent = `pregunta;Respuesta
                     Qué tiendas de Flores y plantas hay en MUT;"En MUT hay varias tiendas de flores o florerías y plantas:
                     -piso -1: El Florista, The Plant Store y la tienda de terrarios Karungen"
                     Es MUT pet friendly o se puede venir con mascotas a MUT;Sí, a MUT puedes traer a tu mascota. Debes ejercer una tenencia responsable, preocuparte d esus desechos y de no molestar a otros visitantes.
-                    Hay tiendas de ropa usada o ropa de segunda mano en MUT;Sí, en MUT hay tiendas de ropa usada o ropa de segunda mano y están en el piso -1: Vestúa, Ecocitex y Sellos Vintage
                     ¿Hay tiendas de fotografía, marcos de fotos y revelado de fotos?;Sí, en MUT hay una tienda de fotografías y rveelado digital, que está en el piso -1. Se llama MIGO.
                     Qué tiendas infantiles para niños hay en MUT;"En MUT hay varias tiendas para niños, en el piso -1 están: 
                     - Blum Kids tienda de vestuario infantil; 
@@ -250,15 +232,37 @@ const csvContent = `pregunta;Respuesta
                     Dónde están las REPARADORAS en MUT;En mut hay un sector de REPARADORAS en el piso -3, donde se pueden realizar servicios de reparación en  talabartería, costurería, arreglo de teléfonos y varios más.
                     Venta de pop corn o cabritas;hay un local de pop corn o cabritas, en el piso -3
                     Qué restaurantes o cocinerias o locales que vendan CARNE hay en MUT;Opciones de restaurantes epsecializados en carne: Piso 5 Diablo restaurante. Piso -2 Chancho 1 y Rienda Suelta
-                    Hay locales, tiendas o restaurantes de pescados y mariscos;"Sí, en MUT hay varios lugares para comer o comrpar pescados y mariscos:
-                    -piso -2: Restaurante Emabrcadero, de comida peruana que tiene pescados y sushi;  la cevichería, que es un local de ceviche; Sushilab de sushi; Arigato de comida Nikei; y Caleta de Locos de pescados y mariscos
-                    -piso 1: tienda Catch, pescadería especializada en productos del mar"
                     Hay locales, restaurantes o cocinerías que vendan completos o hot dogs?;"Sí, en Antigua Fuente del piso -3; en Schwencke,Perritos Chao  y en La Fiambrería del piso -2"
                     ¿Cuándo Mut esta cerrado?;Feriados irrenunciables  1 enero, 1 mayo, 18 y 19 de sept y 25 dic.En los demás feriados, mut siempre está abierto, solo cierra en los irrenunciables.
                     ¿Cuál es valor de estacionamiento de autos?;tarifa de estacionamiento de autos es $36 el minuto y tope diario de $15.000.
                     Por qué calles están las entradas de estacionamientos de autos de MUT;Si vienes en auto, puedes entrar al estacionamiento de MUT por las calles El Bosque Norte 50 y Encomenderos 65, para uso público de MUT están en los pisos -7, -8 y -9
                     Cómo llego al estacionamiento de autos MUT caminado;Para ir al estacionamiento de autos de MUT, debes bajar por las escaleras mecánicas centrales de MUT o tomar los ascensores. Los estacionamientos de uso público están en los pisos -7, -8  y -9 de MUT. También hay valet parking los fines de semana.
-                    ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT`;
+                    ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT
+                    Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
+                    -piso -3: PSK Joyas, Humana
+                    -piso -1: Cantarina joyas, Toty Stone, Cocó de la Vega, Viale Joyas"
+                    Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
+                    -piso -3: Humana
+                    - piso -1: Dinámica, NS Leather, Silvestre, Vístete Local, Coom, Rita Lira, Cons, Sellos Vintage, Vestua, La María Dolores, Mundano, Blue Blood, Jacinta, Froens
+                    -piso 1: Scalpers, Adidas, Fjall Raven, Black, Karyn Coo, Bubba
+                    -piso 2: Nike, Lippi, Drops"
+                    Qué tiendas de anteojos y ópticas hay en MUT;"En MUT hay varias tiendas de anteojos y ópticas:
+                    -piso -3: Rotter y Krauss, y Birmingham Brothers
+                    -piso -1: Ben and Frank
+                    -piso 2: Lens"
+                    Qué tiendas de hogar, muebles y decoración hay en MUT;"En MUT hay varias tiendas de hogar, muebles y decoración:
+                    -piso -3: Lipka
+                    -piso -1: Rincón Himalaya, Simple by Puro, Creado en Chile, Bumy Lifestyle, The Plant Store , Bath and Blanc, Lycos Vounó, Ojo por Ojo,  Karungen y Pasquín
+                    -piso 3: Larry y Las 7 Vidas del Mueble"
+                    Hay tiendas de ropa usada o ropa de segunda mano en MUT;Sí, en MUT hay tiendas de ropa usada o ropa de segunda mano y están en el piso -1: Vestúa, Ecocitex, Sellos Vintage y Chile Vintage
+                    Hay locales, tiendas o restaurantes de pescados y mariscos;"Sí, en MUT hay varios lugares para comer o comrpar pescados y mariscos:
+                    -piso -3: Selfish, cocinería de pescados.
+                    -piso -2: Restaurante Emabrcadero, de comida peruana que tiene pescados y sushi;  la cevichería, que es un local de ceviche; Sushilab de sushi; Arigato de comida Nike y Caleta de Locos de pescados y mariscos
+                    -piso 1: tienda Catch, pescadería especializada en productos del mar"
+                    Hay tiendas de mochilas y accesorios de mujer y hombre en MUT?;"Sí, en MUT cuentas con varias tiendas de accesorios, mochilas y variadas cosas:
+                    -piso -3: HUMANA
+                    -piso -1: By buenavista; Joia; Oneaco; Ucon Acrobatics; Zucca; NS Leather; De la Mafia
+                    -Piso 1: Black; Bubba; Scarfme"`;
 
 const PROMPT_TEMPLATES = {
     extractInfo: {

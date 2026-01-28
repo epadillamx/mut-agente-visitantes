@@ -18,7 +18,7 @@ import logger from './logger.js';
 // ============================================================
 const EVENTOS_API_URL = 'https://mut.cl/wp-json/wp/v2/event';
 const EVENTOS_PER_PAGE = 100;
-const EVENTOS_TTL_MS = 15 * 60 * 1000; // 15 minutos
+const EVENTOS_TTL_MS = 24 * 60 * 60 * 1000; // 1 día (24 horas)
 
 // Cache en memoria
 let eventosCache = {
