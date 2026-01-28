@@ -128,6 +128,13 @@ class ChatLambdaNodeStack(Stack):
             # ============================================================================
             "DEV_MODE": os.environ.get("DEV_MODE", "true"),
             # ============================================================================
+            # WHATSAPP - Credenciales de QA (desde .env cuando DEV_MODE=true)
+            # En producción (DEV_MODE=false), se usan las del secret
+            # ============================================================================
+            "TOKEN_WHATS": os.environ.get("TOKEN_WHATS", ""),
+            "PHONE_NUMBER_ID": os.environ.get("PHONE_NUMBER_ID", ""),
+            "VERIFY_TOKEN": os.environ.get("VERIFY_TOKEN", ""),
+            # ============================================================================
             # ZENDESK - Credenciales y configuración (desde .env)
             # ============================================================================
             "ZENDESK_REMOTE_URI": os.environ.get("ZENDESK_REMOTE_URI", ""),

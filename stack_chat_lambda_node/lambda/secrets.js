@@ -58,14 +58,14 @@ export async function getWhatsAppCredentials() {
             throw new Error('Missing required WhatsApp secret fields');
         }
 
-        // Cache the secrets - WhatsApp credentials always from secret 'main'
+        // Cache the secrets - WhatsApp credentials from .env in DEV, from secret in PROD
         const devMode = isDevMode();
         
         cachedSecrets = {
-            // WhatsApp credentials (siempre del secret)
-            TOKEN_WHATS: secrets.TOKEN_WHATSAPP,
-            IPHONE_ID_WHATS: secrets.ID_PHONE_WHATSAPP,
-            VERIFY_TOKEN: secrets.VERIFY_TOKEN_WHATSAPP,
+            // WhatsApp credentials - DEV: desde .env (QA App), PROD: desde secret (Prod App)
+            TOKEN_WHATS: devMode ? process.env.TOKEN_WHATS : secrets.TOKEN_WHATSAPP,
+            IPHONE_ID_WHATS: devMode ? process.env.PHONE_NUMBER_ID : secrets.ID_PHONE_WHATSAPP,
+            VERIFY_TOKEN: devMode ? process.env.VERIFY_TOKEN : secrets.VERIFY_TOKEN_WHATSAPP,
             WHATSAPP_PRIVATE_KEY: secrets.WHATSAPP_PRIVATE_KEY || '',
             WHATSAPP_PRIVATE_KEY_PASSPHRASE: secrets.WHATSAPP_PRIVATE_KEY_PASSPHRASE || '',
             
@@ -89,6 +89,9 @@ export async function getWhatsAppCredentials() {
         
         // Log para verificar credenciales (mostrando solo prefijos por seguridad)
         logger.info(`[CREDENTIALS] DEV_MODE=${devMode}`);
+        logger.info(`[CREDENTIALS] TOKEN_WHATS=${cachedSecrets.TOKEN_WHATS ? cachedSecrets.TOKEN_WHATS.substring(0, 15) + '...' : 'MISSING'}`);
+        logger.info(`[CREDENTIALS] PHONE_NUMBER_ID=${cachedSecrets.IPHONE_ID_WHATS || 'MISSING'}`);
+        logger.info(`[CREDENTIALS] TOKEN_SOURCE=${devMode ? 'process.env.TOKEN_WHATS' : 'secrets.TOKEN_WHATSAPP'}`);
         logger.info(`[CREDENTIALS] FRACTTAL_KEY=${cachedSecrets.FRACTTAL_KEY ? cachedSecrets.FRACTTAL_KEY.substring(0, 5) + '...' : 'MISSING'}`);
         logger.info(`[CREDENTIALS] FRACTTAL_SECRET=${cachedSecrets.FRACTTAL_SECRET ? cachedSecrets.FRACTTAL_SECRET.substring(0, 5) + '...' : 'MISSING'}`);
         logger.info(`[CREDENTIALS] FRACTTAL_USER_CODE=${cachedSecrets.FRACTTAL_USER_CODE || 'MISSING'}`);
