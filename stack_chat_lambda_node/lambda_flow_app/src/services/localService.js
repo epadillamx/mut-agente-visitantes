@@ -29,7 +29,7 @@ class LocalService {
    * @returns {Array} Array of matching locales
    */
   searchLocales(query, limit = 10) {
-    if (!query || query.length < 4) {
+    if (!query || query.length < 3) {
       return [];
     }
 

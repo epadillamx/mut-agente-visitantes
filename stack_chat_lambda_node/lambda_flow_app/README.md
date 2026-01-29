@@ -511,7 +511,7 @@ await dynamoService.updateIncidentStatus(id, 'resuelto');
 
 El sistema implementa las siguientes validaciones:
 
-1. **Búsqueda de local**: Mínimo 4 caracteres
+1. **Búsqueda de local**: Mínimo 3 caracteres
 2. **Nombre**: No vacío
 3. **Email**: Formato válido (regex)
 4. **Local**: ID válido en la lista
