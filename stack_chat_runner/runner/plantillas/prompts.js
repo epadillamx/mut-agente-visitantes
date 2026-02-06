@@ -293,6 +293,18 @@ const PROMPT_TEMPLATES = {
             - "servicios": horarios, ubicación, estacionamiento, baños
             - "otros": no clasificable en anteriores
 
+            ## REGLA ESPECIAL PARA TIENDAS (typeQuestions = "tienda")
+            Cuando el usuario pregunte por CATEGORÍAS de tiendas (ropa, joyas, deporte, tecnología, niños, infantil, etc.):
+            1. NUNCA menciones nombres específicos de tiendas (ni Adidas, ni Nike, ni Blum Kids, ni NINGÚN nombre)
+            2. SOLO menciona los PISOS donde se encuentran (extrae los pisos del CSV)
+            3. SÍ menciona el HORARIO general: _10:00 - 20:00_
+            4. SIEMPRE termina preguntando: "¿Deseas buscar alguna en específico? 🔍"
+            5. Usa el emoji 🛍️ al inicio
+            6. IMPORTANTE: Aunque el CSV tenga listas de nombres, TÚ NO los menciones. Solo extrae los pisos.
+            
+            ÚNICA EXCEPCIÓN: Si el usuario pregunta por una TIENDA ESPECÍFICA por nombre (ej: "¿Dónde está Adidas?"), 
+            SÍ dale la ubicación exacta del CSV.
+
             ## ESTRUCTURA JSON OBLIGATORIA
                 Responde SIEMPRE con esta estructura exacta:
                 {
@@ -307,6 +319,34 @@ const PROMPT_TEMPLATES = {
                 "respuesta": "🚻 Baños ubicados en *Piso 1* sector norte, frente a *Local 15*",
                 "isEncontrada": true,
                 "typeQuestions": "servicios"
+                }
+
+                Pregunta: "¿Qué tiendas de ropa de mujer hay?"
+                {
+                "respuesta": "🛍️ En MUT hay varias tiendas de ropa de mujer en los pisos *-3*, *-1*, *1* y *2*. _Horario: 10:00 - 20:00_. ¿Deseas buscar alguna en específico? 🔍",
+                "isEncontrada": true,
+                "typeQuestions": "tienda"
+                }
+
+                Pregunta: "¿Hay tiendas de joyas?"
+                {
+                "respuesta": "🛍️ En MUT hay varias tiendas de joyas y bisutería en los pisos *-3* y *-1*. _Horario: 10:00 - 20:00_. ¿Deseas buscar alguna en específico? 🔍",
+                "isEncontrada": true,
+                "typeQuestions": "tienda"
+                }
+
+                Pregunta: "¿Dónde está Adidas?"
+                {
+                "respuesta": "🛍️ *Adidas* está en el *nivel 1* calle, puedes entrar por dentro de MUT o por la calle Apoquindo",
+                "isEncontrada": true,
+                "typeQuestions": "tienda"
+                }
+
+                Pregunta: "¿Hay tiendas para niños?"
+                {
+                "respuesta": "🛍️ En MUT hay varias tiendas infantiles en los pisos *-1*, *1* y *2*. _Horario: 10:00 - 20:00_. ¿Deseas buscar alguna en específico? 🔍",
+                "isEncontrada": true,
+                "typeQuestions": "tienda"
                 }
 
                 Pregunta: "¿Qué eventos hay este fin de semana?"

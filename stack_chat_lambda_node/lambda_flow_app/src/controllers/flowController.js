@@ -83,7 +83,7 @@ class FlowController {
             data: {
               locales: [{ id: "0", title: "Buscar local o contrato..." }],
               is_local_enabled: false,
-              search_helper: "Ingrese el nombre del local o contrato (mínimo 4 caracteres)",
+              search_helper: "Ingrese el nombre del local o contrato (mínimo 3 caracteres)",
               from_fresh_form: false
             }
           };
@@ -122,7 +122,7 @@ class FlowController {
           data: {
             locales: [{ id: "0", title: "Buscar local o contrato..." }],
             is_local_enabled: false,
-            search_helper: "Ingrese el nombre del local o contrato (minimo 4 caracteres)",
+            search_helper: "Ingrese el nombre del local o contrato (mínimo 3 caracteres)",
             from_fresh_form: false
           }
         };
@@ -196,7 +196,7 @@ class FlowController {
             console.log(`[FLOW_SEARCH] ========== BÚSQUEDA DE LOCAL (CAMBIO) ==========`);
             console.log(`[FLOW_SEARCH] searchTerm: "${searchTerm}"`);
             
-            if (searchTerm.length < 4) {
+            if (searchTerm.length < 3) {
               console.log(`[FLOW_SEARCH] Término muy corto (${searchTerm.length} chars)`);
               return {
                 version: version || '3.0',
@@ -204,7 +204,7 @@ class FlowController {
                 data: {
                   locales: [{ id: "0", title: "Ingrese más caracteres..." }],
                   is_local_enabled: false,
-                  search_helper: "Por favor ingrese al menos 4 caracteres para iniciar la búsqueda",
+                  search_helper: "Por favor ingrese al menos 3 caracteres para iniciar la búsqueda",
                   from_fresh_form: false
                 }
               };
@@ -297,7 +297,7 @@ class FlowController {
             data: {
               locales: [{ id: "0", title: "Buscar local o contrato..." }],
               is_local_enabled: false,
-              search_helper: "Ingrese el nombre del local o contrato (mínimo 4 caracteres)",
+              search_helper: "Ingrese el nombre del local o contrato (mínimo 3 caracteres)",
               from_fresh_form: false
             }
           };
@@ -334,7 +334,7 @@ class FlowController {
           console.log(`[FLOW_SEARCH] ========== BÚSQUEDA DE LOCAL ==========`);
           console.log(`[FLOW_SEARCH] searchTerm: "${searchTerm}", screenSource: ${screenSource}, targetScreen: ${targetScreen}`);
           
-          if (searchTerm.length < 4) {
+          if (searchTerm.length < 3) {
             console.log(`[FLOW_SEARCH] Término muy corto (${searchTerm.length} chars), retornando a ${targetScreen}`);
             const shortTermResponse = {
               version: version || '3.0',
@@ -342,7 +342,7 @@ class FlowController {
               data: {
                 locales: [{ id: "0", title: "Ingrese más caracteres..." }],
                 is_local_enabled: false,
-                search_helper: "Por favor ingrese al menos 4 caracteres para iniciar la búsqueda",
+                search_helper: "Por favor ingrese al menos 3 caracteres para iniciar la búsqueda",
                 ...(targetScreen === 'INCIDENT_FORM' && { from_fresh_form: fromFreshForm })
               }
             };
@@ -484,7 +484,7 @@ class FlowController {
       data: {
         locales: [],
         is_local_enabled: false,
-        search_helper: '🔍 Ingrese al menos 4 caracteres para buscar'
+        search_helper: '🔍 Ingrese al menos 3 caracteres para buscar'
       }
     };
   }
@@ -532,14 +532,14 @@ class FlowController {
     console.log('Searching locales with query:', searchQuery);
 
     // Validate minimum characters
-    if (!searchQuery || searchQuery.length < 4) {
+    if (!searchQuery || searchQuery.length < 3) {
       return {
         version: '3.0',
         screen: 'INCIDENT_FORM',
         data: {
           locales: [],
           is_local_enabled: false,
-          search_helper: '⚠️ Debe ingresar al menos 4 caracteres'
+          search_helper: '⚠️ Debe ingresar al menos 3 caracteres'
         }
       };
     }
