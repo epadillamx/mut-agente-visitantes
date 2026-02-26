@@ -49,7 +49,7 @@ const csvContent = `pregunta;Respuesta
                     Si vienes en camión, debes estacionarte en el andén de carga, piso -2, previo registro. Cualquier duda adicional, debes comunicarte con tu solicitante"
                     Cuál es la dirección de MUT;La dirección de MUT es: Apoquindo 2730
                     Cuál es la dirección de las oficinas MUT Apoquindo;La dirección de MUT Apoquindo es: Apoquindo 2730
-                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX
+                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON
                     Dónde queda la oficina de Territoria en MUT;La oficina de Territoria queda en Roger de Flor 2736, piso 7, Las Condes.
                     Dónde quedan las oficinas de Enel en MUT;La oficina de Enel queda en el edificio MUT Encomenderos (puerta azul). Su dirección es Roger de Flor 2725
                     Dónde quedan las oficinas de ISDIN en MUT;La oficina de ISDIN queda en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 10.
@@ -62,12 +62,14 @@ const csvContent = `pregunta;Respuesta
                     Dónde quedan las oficinas de ALBEMARLE en MUT;Las oficinas de ALBEMARLE están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, pisos 9 y 10.
                     Dónde quedan las oficinas de MUREX en MUT;Las oficinas de MUREX están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 11.
                     Dónde quedan las oficinas de SII GROUP en MUT;Las oficinas de SII GROUP están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 12.
+                    Dónde quedan las oficinas de AVIRON en MUT;Las oficinas de AVIRON están en la Torre 4 de MUT, esquina El Bosque con Apoquindo. Su dirección es El Bosque Norte 50, oficinas 1101 y 1102, piso 11.
                     Qué tiendas de Belleza y Maquillaje hay en MUT?;"En MUT hay varias tiendas de Belleza y Maquillaje:
                     -Piso 1: Blush Bar
                     -Piso -1: Newen, Majen, Bath and Blanc, Bom Beauty
                     -Piso -3: Natura, The Body Shop, Pichara, Pink Lady, Farmacias Ahumada, Knop y Salcobrand."
                     Cuáles son los horarios de MUT;Horario general MUT: 10:00 – 20:00.  Tiendas retail calle MUT: 10:00 – 20:30. Restaurantes y cocinerías pisos -2 y -3: 10:00 – 21:30 de lunes a miércoles/ jueves a sábado hasta las 23:30. Restaurantes pisos 3, 4 y 5: 13:00 – 23:30.
-                    "Cuáles son los valores o tarifas del estacionamiento de bicicletas o ""bici hub"" de MUT";Público general: 0 a 3 horas: gratis. Valor por minuto adicional: $8. Valor día completo. $5.000 (desde las 13 hrs. en adelante)
+                    "Cuáles son los valores o tarifas del estacionamiento de bicicletas o ""bici hub"" de MUT";Público general: 0 a 3 horas: gratis. Valor por minuto adicional: $8. Valor día completo. $5.000 (desde las 13 hrs. en adelante)
+                    "Cuál es el horario del estacionamiento de bicicletas o ""bici hub"" de MUT";"El horario del bici hub de MUT es: Lunes a Viernes de 07:00 a 22:00 / Sábado y Domingo de 9:00 a 22:00"
                     "Cualés son los valores por membresía o suscripción al estacionamiento de bicicletas o ""bici hub"" MUT";"La suscripción básica al estacionamiento de bicicletas o bici hub de MUT tiene un valor mensual de 1UF + IVA. Incluye acceso ilimitado al bici hub.
                     La suscripción Pro al estacionamiento de bicicletas o bici hub de MUT tiene un valor mensual de 1.5UF +IVA. Incluye acceso ilimitado al bicihub y a los camarines con duchas y lockers."
                     "Cómo obtengo mi membresía o suscripción al estacionamiento de bicicletas o ""bici hub"" MUT";Debes acercarte al estacionamiento de bicicletas o bici hub de MUT, ubicado en el piso -1 al fondo y suscribirte con el personal de recepción del bici hub.
@@ -84,7 +86,7 @@ const csvContent = `pregunta;Respuesta
                     Piso -3: Freddo
                     Piso -2: Fortuna
                     Piso -1: Oakberry Acai y Ciao Amore
-                    Piso 1: El Taller
+                    Piso 1: El Taller, ubicada hacia la calle por Encomenderos
                     Piso 3: Auguri"
                     Se puede fumar en MUT;MUT es un espacio libre de humo
                     Qué hay en cada piso de MUT;"Piso -3: ""La Estación"".  En este piso encontrarás: Tiendas, Servicios, Farmacias, Cafeterías, Supermercado, Gastronomía, Reparadoras y conexión con Metro Tobalaba.
@@ -92,7 +94,7 @@ const csvContent = `pregunta;Respuesta
                     Piso -1: ""El Taller"". Acá encontrarás: industrias creativas, tiendas, cafeterías, el estacionamiento de bicicletas o ""bici hub"" y baños públicos.
                     Piso 1: ""Calle MUT"". En este piso encontrarás: Tiendas, Barbería, Tatuajes, Cafeterías y Oficinas.
                     Piso 2: ""El Barrio"". En este piso encontrarás: Tecnología, Tiendas, Cafetería y baños públicos.
-                    Piso 3: ""El Jardín"". En este piso encontrarás: Librerías, Tiendas, Heladería, Cafetería y un Bar de Vinos.
+                    Piso 3: ""El Jardín"". En este piso encontrarás: Librerías, Tiendas, Heladería, Cafetería, un Bar de Vinos y el restaurante Meli Meló.
                     Piso 4: ""La Terraza"". En este piso encontrarás: Los restaurantes Toni Lautaro y Ambrosía.
                     Pisos-5 y -6: estacionamientos de oficinas
                     Pisos -7 al -9: estacionamientos públicos"
@@ -154,7 +156,14 @@ const csvContent = `pregunta;Respuesta
                     -Piso 4: Toni Lautaro"
                     Hay algún BAR en MUT;"Sí, en MUT están los siguientes BAR:
                     Piso 3: Les Dix Vins, bar de vinos y quesos;
-                    Piso 5: the Loft, Bar y comida internacional"
+                    Piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
+                    Piso -2: Tamango Brebajes, cervecería artesanal;
+                    Piso 5: The Loft, Bar y comida internacional. Horario: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00"
+                    Dónde está The Loft o cuál es el horario de The Loft;The Loft es un Bar y Restaurante de comida internacional, está en el Piso 5 de MUT. Su horario es: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00
+                    Dónde está Meli Meló o cuál es el horario de Meli Meló;Meli Meló es un restaurante de cocina contemporánea que ofrece brunch, almuerzo, comida y bar. Está en el Piso 3 de MUT. Su horario es: 10:00 a 22:30
+                    Dónde está Tamango o qué es Tamango;Tamango Brebajes es una cervecería artesanal que ofrece cervezas frescas y lupuladas. Está en el Piso -2 de MUT
+                    Dónde puedo comer sushi en MUT;"En MUT puedes encontrar sushi en:
+                    -Piso -2: Sushilab, Arigato y Restaurante Embarcadero 41 (comida peruana con sushi)"
                     Cuántas cocinerías y restaurantes de comida asiática hay en MUT;"En MUT puedes encontrar variedad de coicinerías y restaurantes de comida Asiática, están:
                     -Piso -3: Bobibobi
                     -Piso -2: Sushilab, Arigato, WOK, Chicken International, Bibimpop, Mirai, Meze y Chawu"
@@ -181,10 +190,13 @@ const csvContent = `pregunta;Respuesta
                     -piso 2: está la tienda deportiva Lippi"
                     ¿Hay restaurantes en MUT?;"Sí, en MUT hay varios restaurantes, entre ellos puedes encontrar:
                     -piso 5: Restaurante Diablo, que es de vinos y carnes;
-                    -piso 5: Bar y Restaurante The Loft; 
+                    -piso 5: Bar y Restaurante The Loft. Horario: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00; 
                     -piso 4: Restaurante Toni Lautaro, que es de pizzas y comida italiana;
                     -piso 4: Restaurante Ambrosía Bistró, que es un restaurante de cocina de autor creativa;
+                    -piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
+                    -piso 3: Les Dix Vins, bar de vinos y quesos;
                     -piso -2: Restaurante Embarcadero 41, que es de comida Peruana;
+                    -piso -2: Tamango Brebajes, cervecería artesanal;
                     -piso -3: Antigua Fuente, que es una sanguchería típica chilena"
                     Hay algún restaurante de comida peruana en MUT;Sí, en MUT está el Restaurante de comida peruana Embarcadero 41, en el piso -2
                     Hay algún restaurante o local de comida India en MUT;Sí, en MUT hay un local de comida India que se llama Naresh y está en el piso -2
@@ -193,6 +205,9 @@ const csvContent = `pregunta;Respuesta
                     -piso -2: Pan León, Hojas de Cami, Macarons Riches, Pasteles Orientales
                     -piso 3: Rebelde"
                     Hay algún local de comida vegana en MUT;Sí, en MUT hay un local de comida vegana que se llama Alma y está en el piso -2
+                    Dónde puedo comprar o tomar acai en MUT;"En MUT puedes encontrar acai en:
+                    -Piso -2: Green Lab y Fortuna
+                    -Piso -1: Oakberry Acai"
                     Hay queserías o locales de venta de quesos en MUT;"Sí, en MUT puedes encontrar las siguientes queserías:
                     -piso -2: Central Orgánica y Santiago Cheesemongers;
                     -piso 3: Le Dix Vins, que es un bar de quesos y vino"
@@ -211,9 +226,9 @@ const csvContent = `pregunta;Respuesta
                     Piso -3: Juan Valdez, Jo Pastelería, Castaño
                     Piso -2: We are Four, Café Altura
                     Piso -1: Aura, The Coffee
-                    Piso 1: Barra Fundición, Pascucci, El Taller
+                    Piso 1: Barra Fundición, Pascucci, El Taller (hacia la calle por Encomenderos)
                     Piso 2: Starbucks
-                    Piso 3: Rebelde"
+                    Piso 3: Rebelde, Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30)"
                     Tengo emergencia, necesito un numero de emergencia o qué hago en una emergencia o cómo contacto a seguridad;Si necesitas asistencia por cualquier tipo de problema, favor acércate al módulo de servicio al cliente, ubicado en el piso -3 de MUT, al fondo, entre Pastelería Jo y Farmacias Ahumada
                     Donde puedo comprar accesorios de telefónia, accesorios de celular, una carcasa, un cargador de celular para mi teléfono;"Si necesitas productos de telefonía, puedes ir a:
                     -piso 2: Maconline
@@ -239,10 +254,11 @@ const csvContent = `pregunta;Respuesta
                     Cómo llego al estacionamiento de autos MUT caminado;Para ir al estacionamiento de autos de MUT, debes bajar por las escaleras mecánicas centrales de MUT o tomar los ascensores. Los estacionamientos de uso público están en los pisos -7, -8  y -9 de MUT. También hay valet parking los fines de semana.
                     ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT
                     Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
-                    -piso -3: PSK Joyas, Humana
+                    -piso -3: PSK Joyas, Humana, Todomoda, Isadora
                     -piso -1: Cantarina joyas, Toty Stone, Cocó de la Vega, Viale Joyas"
+                    Qué tiendas de lencería, ropa interior o sostenes hay en MUT;En MUT está la tienda Flores, especializada en lencería y ropa interior, ubicada en el piso -3
                     Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
-                    -piso -3: Humana
+                    -piso -3: Humana, Flores (ropa interior)
                     - piso -1: Dinámica, NS Leather, Silvestre, Vístete Local, Coom, Rita Lira, Cons, Sellos Vintage, Vestua, La María Dolores, Mundano, Blue Blood, Jacinta, Froens
                     -piso 1: Scalpers, Adidas, Fjall Raven, Black, Karyn Coo, Bubba
                     -piso 2: Nike, Lippi, Drops"
@@ -257,8 +273,8 @@ const csvContent = `pregunta;Respuesta
                     Hay tiendas de ropa usada o ropa de segunda mano en MUT;Sí, en MUT hay tiendas de ropa usada o ropa de segunda mano y están en el piso -1: Vestúa, Ecocitex, Sellos Vintage y Chile Vintage
                     Hay locales, tiendas o restaurantes de pescados y mariscos;"Sí, en MUT hay varios lugares para comer o comrpar pescados y mariscos:
                     -piso -3: Selfish, cocinería de pescados.
-                    -piso -2: Restaurante Emabrcadero, de comida peruana que tiene pescados y sushi;  la cevichería, que es un local de ceviche; Sushilab de sushi; Arigato de comida Nike y Caleta de Locos de pescados y mariscos
-                    -piso 1: tienda Catch, pescadería especializada en productos del mar"
+                    -piso -2: Restaurante Embarcadero, de comida peruana que tiene pescados y sushi;  la cevichería, que es un local de ceviche; Sushilab de sushi; Arigato de comida Nike y Caleta de Locos de pescados y mariscos
+                    -piso 1: tienda Catch, pescadería especializada en productos del mar, se encuentra hacia la calle por Roger de Flor"
                     Hay tiendas de mochilas y accesorios de mujer y hombre en MUT?;"Sí, en MUT cuentas con varias tiendas de accesorios, mochilas y variadas cosas:
                     -piso -3: HUMANA
                     -piso -1: By buenavista; Joia; Oneaco; Ucon Acrobatics; Zucca; NS Leather; De la Mafia
@@ -272,7 +288,7 @@ const PROMPT_TEMPLATES = {
             1. SIEMPRE responde en JSON válido, sin excepción
             2. NUNCA incluyas texto antes o después del JSON
             3. NUNCA uses markdown  en tu respuesta
-            4. Máximo 50 palabras en el campo "respuesta"
+            4. Máximo 75 palabras en el campo "respuesta"
 
             ## IDENTIDAD
             Tono directo y cálido. Sin disculpas. Sin preguntas de seguimiento. Multiidioma: ES/EN/PT.
@@ -297,6 +313,15 @@ const PROMPT_TEMPLATES = {
             Cuando el usuario pregunte por CATEGORÍAS de tiendas (ropa, joyas, deporte, tecnología, niños, infantil, etc.):
             1. No recomendar tiendas específicas
             2. Listar las tiendas que correspondan a esa categoría, indicando su piso , tienda, horario (ej: "Piso -1,Black; Bubba; Scarfme, 10:00 - 20:00")
+
+            ## REGLA DE CONSULTAS INFORMALES O PALABRAS SUELTAS
+            Cuando el usuario envíe una sola palabra, una frase informal o una consulta mal formulada (ej: "sushi", "pizza", "café", "hola donde como sushi", "quiero hamburguesa"):
+            1. Interpreta la intención detrás del mensaje
+            2. Busca en los datos CSV TODOS los locales, restaurantes, cocinerías o tiendas que ofrezcan ese producto o servicio
+            3. Responde con el listado completo de opciones relevantes, indicando piso y nombre
+            4. NUNCA respondas "No entiendo" si la palabra está relacionada con comida, tiendas, servicios o cualquier cosa presente en MUT
+            5. Clasifica correctamente: si es comida → "restaurantes", si es tienda/producto → "tienda", si es servicio → "servicios"
+            Ejemplos de palabras sueltas válidas: sushi, pizza, café, helado, hamburguesa, empanada, ropa, zapatos, libro, chocolate, farmacia, metro, baño, estacionamiento, bicicleta, vegano, ceviche, brunch
 
             ## ESTRUCTURA JSON OBLIGATORIA
                 Responde SIEMPRE con esta estructura exacta:
