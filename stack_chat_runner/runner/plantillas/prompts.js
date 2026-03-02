@@ -49,7 +49,7 @@ const csvContent = `pregunta;Respuesta
                     Si vienes en camión, debes estacionarte en el andén de carga, piso -2, previo registro. Cualquier duda adicional, debes comunicarte con tu solicitante"
                     Cuál es la dirección de MUT;La dirección de MUT es: Apoquindo 2730
                     Cuál es la dirección de las oficinas MUT Apoquindo;La dirección de MUT Apoquindo es: Apoquindo 2730
-                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON
+                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON - GRENERGY
                     Dónde queda la oficina de Territoria en MUT;La oficina de Territoria queda en Roger de Flor 2736, piso 7, Las Condes.
                     Dónde quedan las oficinas de Enel en MUT;La oficina de Enel queda en el edificio MUT Encomenderos (puerta azul). Su dirección es Roger de Flor 2725
                     Dónde quedan las oficinas de ISDIN en MUT;La oficina de ISDIN queda en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 10.
@@ -63,6 +63,7 @@ const csvContent = `pregunta;Respuesta
                     Dónde quedan las oficinas de MUREX en MUT;Las oficinas de MUREX están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 11.
                     Dónde quedan las oficinas de SII GROUP en MUT;Las oficinas de SII GROUP están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 12.
                     Dónde quedan las oficinas de AVIRON en MUT;Las oficinas de AVIRON están en la Torre 4 de MUT, esquina El Bosque con Apoquindo. Su dirección es El Bosque Norte 50, oficinas 1101 y 1102, piso 11.
+                    Dónde quedan las oficinas de GRENERGY en MUT;Las oficinas de GRENERGY están en la Torre 4 de MUT. Su dirección es El Bosque Norte 50, pisos del 12 al 16.
                     Qué tiendas de Belleza y Maquillaje hay en MUT?;"En MUT hay varias tiendas de Belleza y Maquillaje:
                     -Piso 1: Blush Bar
                     -Piso -1: Newen, Majen, Bath and Blanc, Bom Beauty
@@ -91,7 +92,7 @@ const csvContent = `pregunta;Respuesta
                     Se puede fumar en MUT;MUT es un espacio libre de humo
                     Qué hay en cada piso de MUT;"Piso -3: ""La Estación"".  En este piso encontrarás: Tiendas, Servicios, Farmacias, Cafeterías, Supermercado, Gastronomía, Reparadoras y conexión con Metro Tobalaba.
                     Piso -2: ""El Mercado"". En este piso encontrarás: Tiendas, Cocinerías, Restaurantes, Cafeterías, Heladería y baños públicos.
-                    Piso -1: ""El Taller"". Acá encontrarás: industrias creativas, tiendas, cafeterías, el estacionamiento de bicicletas o ""bici hub"" y baños públicos.
+                    Piso -1: Conocido como ""El Taller"" (nombre del piso, no confundir con la heladería El Taller del piso 1). Acá encontrarás: industrias creativas, tiendas, cafeterías, el estacionamiento de bicicletas o ""bici hub"" y baños públicos.
                     Piso 1: ""Calle MUT"". En este piso encontrarás: Tiendas, Barbería, Tatuajes, Cafeterías y Oficinas.
                     Piso 2: ""El Barrio"". En este piso encontrarás: Tecnología, Tiendas, Cafetería y baños públicos.
                     Piso 3: ""El Jardín"". En este piso encontrarás: Librerías, Tiendas, Heladería, Cafetería, un Bar de Vinos y el restaurante Meli Meló.
@@ -134,8 +135,9 @@ const csvContent = `pregunta;Respuesta
                     -piso -1: Libro Verde y Teraideas"
                     Dónde están las industrias creativas ó living project, cómo llego;Las industrias creativas de MUT están en el piso -1, al fondo, entre la tienda La Plage y la cafetería Aura
                     Qué tiendas hay en las Industrias Creativas;Las Industrias Creativas son el sector del piso -1 de MUT, donde se concentran tiendas de diseño de autor, emprendedores y creadores nacionales. Están las siguientes tiendas: Joia, Atómica, Kahlu, Bumi Lifestyle, Blum Kids, Bom Beauty, Blue Blood, Cantarina Joyas, Cons, Comm, Cocó de la Vega, Karungen, Lycos Vounó, Museo Garment, NS Leather, Ojo por Ojo, Rita Lira, Snog, Silvestre, Sellos Vintange, Teraideas, Vístete Local, Vestuá y Zucca
-                    Qué tiendas de Flores y plantas hay en MUT;"En MUT hay varias tiendas de flores o florerías y plantas:
-                    -piso -1: El Florista, The Plant Store y la tienda de terrarios Karungen"
+                    Qué florerías o tiendas de plantas hay en MUT;"En MUT hay varias florerías y tiendas de plantas:
+                    -piso -1: El Florista, The Plant Store y la tienda de terrarios Karungen.
+                    NOTA: No confundir con la tienda 'Flores' del piso -3, que es de lencería y ropa interior."
                     Es MUT pet friendly o se puede venir con mascotas a MUT;Sí, a MUT puedes traer a tu mascota. Debes ejercer una tenencia responsable, preocuparte d esus desechos y de no molestar a otros visitantes.
                     ¿Hay tiendas de fotografía, marcos de fotos y revelado de fotos?;Sí, en MUT hay una tienda de fotografías y rveelado digital, que está en el piso -1. Se llama MIGO.
                     Qué tiendas infantiles para niños hay en MUT;"En MUT hay varias tiendas para niños, en el piso -1 están: 
@@ -155,9 +157,11 @@ const csvContent = `pregunta;Respuesta
                     -Piso -2: Tony Pizzería, Loca Pasta, Pizzería Savoia
                     -Piso 4: Toni Lautaro"
                     Hay algún BAR en MUT;"Sí, en MUT están los siguientes BAR:
+                    Piso -2: Tierra Cervecera, cervecería especializada;
+                    Piso -2: Tamango Brebajes, cervecería artesanal;
+                    Piso -2: Vique Club, club y venta de vinos;
                     Piso 3: Les Dix Vins, bar de vinos y quesos;
                     Piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
-                    Piso -2: Tamango Brebajes, cervecería artesanal;
                     Piso 5: The Loft, Bar y comida internacional. Horario: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00"
                     Dónde está The Loft o cuál es el horario de The Loft;The Loft es un Bar y Restaurante de comida internacional, está en el Piso 5 de MUT. Su horario es: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00
                     Dónde está Meli Meló o cuál es el horario de Meli Meló;Meli Meló es un restaurante de cocina contemporánea que ofrece brunch, almuerzo, comida y bar. Está en el Piso 3 de MUT. Su horario es: 10:00 a 22:30
@@ -178,7 +182,7 @@ const csvContent = `pregunta;Respuesta
                     -piso -2: La Fiambrería, Don César, Santiago Cheesemongers, Rapaz, Emporio Schwencke
                     -piso 3: Rebelde"
                     Hay tiendas de música o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música o disquerías:
-                    -piso -1: Plaza Música y Needle
+                    -piso -1: Plaza Música, Needle y Music Chile (instrumentos musicales)
                     -piso 3: La Disquería"
                     Hay locales o cocinerías de comida mexicana en MUT;Sí, en MUT está Chinga Tu Taco,  que es una taquerpia mexicana, en el piso -2
                     Hay zapaterías en MUT;"Sí, en MUT hay varias tiendas de zapatos y zapatillas, entre ellas puedes encontrar:
@@ -213,11 +217,13 @@ const csvContent = `pregunta;Respuesta
                     -piso 3: Le Dix Vins, que es un bar de quesos y vino"
                     Qué significa MUT o qué es MUT;MUT significa Mercado Urbano Tobalaba. MUT es el primer mercado Urbano de Chile. Es un proyecto de uso mixto, que combina una mercado urbano con oficinas y áreas verdes.
                     ¿MUT es un mall o un centro comercial?;MUT es un Mercado Urbano, no es un mall.
-                    Hay feria de frutas y verduras en MUT;Sí, en MUT tenemos una feria de frutas y verduras. Está ubicada en el centro del piso -2
+                    Hay feria de frutas y verduras en MUT;Sí, en MUT está Mercado Paine, una feria de frutas y verduras ubicada en el piso -2, al costado de la escalera mecánica
                     Hay teindas de abarrotes y tiendas gourmet en MUT;"Sí, en MUT puedes encontrar tiendas de abarrotes y gourmet entre ellas están en el piso -2:
                     - La tienda de abarrotes Unaf. 
                     - La tienda gourmet Emporio Sabores de Chile.
-                    - La tienda de mate y accesorios Mundo Mate."
+                    - La tienda de mate y accesorios Mundo Mate.
+                    - Mer Coop, cooperativa de frutos, conservas y granel.
+                    - Casa de las Infusiones, variedad de infusiones, mate, hierbas y accesorios."
                     Hay cajero automático en MUT para sacar plata;Sí, en MUT hay un cajero automático en el piso -3 donde puedes sacar dinero. También puedes ir al Santander Work café que está en la esquinode El Bosque con Roger de Flor
                     Hay banco en MUT;Sí, en MUT esta el banco Santander Work Café. Lo encuentras en la esquina de El Bosque Norte con Roger de Flor
                     Hay cine en MUT;NO, en MUT no hay cine
@@ -247,7 +253,9 @@ const csvContent = `pregunta;Respuesta
                     Dónde están las REPARADORAS en MUT;En mut hay un sector de REPARADORAS en el piso -3, donde se pueden realizar servicios de reparación en  talabartería, costurería, arreglo de teléfonos y varios más.
                     Venta de pop corn o cabritas;hay un local de pop corn o cabritas, en el piso -3
                     Qué restaurantes o cocinerias o locales que vendan CARNE hay en MUT;Opciones de restaurantes epsecializados en carne: Piso 5 Diablo restaurante. Piso -2 Chancho 1 y Rienda Suelta
-                    Hay locales, restaurantes o cocinerías que vendan completos o hot dogs?;"Sí, en Antigua Fuente del piso -3; en Schwencke,Perritos Chao  y en La Fiambrería del piso -2"
+                    Hay locales, restaurantes o cocinerías que vendan completos o hot dogs?;"Sí, en Antigua Fuente del piso -3; en Schwencke, Perritos Chao y en La Fiambrería del piso -2"
+                    Dónde puedo comprar fiambres en MUT;"En MUT puedes encontrar fiambres en:
+                    -Piso -2: La Fiambrería y Chancho N1"
                     ¿Cuándo Mut esta cerrado?;Feriados irrenunciables  1 enero, 1 mayo, 18 y 19 de sept y 25 dic.En los demás feriados, mut siempre está abierto, solo cierra en los irrenunciables.
                     ¿Cuál es valor de estacionamiento de autos?;tarifa de estacionamiento de autos es $36 el minuto y tope diario de $15.000.
                     Por qué calles están las entradas de estacionamientos de autos de MUT;Si vienes en auto, puedes entrar al estacionamiento de MUT por las calles El Bosque Norte 50 y Encomenderos 65, para uso público de MUT están en los pisos -7, -8 y -9
@@ -256,7 +264,7 @@ const csvContent = `pregunta;Respuesta
                     Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
                     -piso -3: PSK Joyas, Humana, Todomoda, Isadora
                     -piso -1: Cantarina joyas, Toty Stone, Cocó de la Vega, Viale Joyas"
-                    Qué tiendas de lencería, ropa interior o sostenes hay en MUT;En MUT está la tienda Flores, especializada en lencería y ropa interior, ubicada en el piso -3
+                    Qué tiendas de lencería, ropa interior o sostenes hay en MUT;En MUT está la tienda Flores, especializada en lencería y ropa interior, ubicada en el piso -3. Si buscas flores o florerías, en el piso -1 están El Florista, The Plant Store y Karungen
                     Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
                     -piso -3: Humana, Flores (ropa interior)
                     - piso -1: Dinámica, NS Leather, Silvestre, Vístete Local, Coom, Rita Lira, Cons, Sellos Vintage, Vestua, La María Dolores, Mundano, Blue Blood, Jacinta, Froens
@@ -278,7 +286,39 @@ const csvContent = `pregunta;Respuesta
                     Hay tiendas de mochilas y accesorios de mujer y hombre en MUT?;"Sí, en MUT cuentas con varias tiendas de accesorios, mochilas y variadas cosas:
                     -piso -3: HUMANA
                     -piso -1: By buenavista; Joia; Oneaco; Ucon Acrobatics; Zucca; NS Leather; De la Mafia
-                    -Piso 1: Black; Bubba; Scarfme"`;
+                    -Piso 1: Black; Bubba"
+                    Dónde está El Taller o qué es El Taller;"IMPORTANTE: El Taller es principalmente una heladería, ubicada en el piso 1 de MUT (hacia la calle por Encomenderos). Adicionalmente, el piso -1 de MUT lleva el mismo nombre 'El Taller', donde hay industrias creativas, tiendas, cafeterías, el bici hub y baños públicos."
+                    Flores;"IMPORTANTE: 'Flores' es el NOMBRE de una tienda de lencería y ropa interior en el piso -3. Siempre mencionar PRIMERO la tienda Flores (lencería, piso -3). Solo si el usuario busca flores naturales, mencionar florerías del piso -1: El Florista, The Plant Store y Karungen."
+                    Dónde está la tienda Flores o qué es Flores;"IMPORTANTE: 'Flores' es el NOMBRE de una tienda de lencería y ropa interior en el piso -3. Siempre mencionar PRIMERO la tienda Flores (lencería, piso -3). Solo si el usuario busca flores naturales, mencionar florerías del piso -1: El Florista, The Plant Store y Karungen."
+                    Dónde puedo tomar jugos en MUT;"En MUT puedes encontrar jugos y juguerías en:
+                    -Piso -2: Juguera Peruana y Bar Oculto (cafetería y juguería)"
+                    Dónde puedo comer tapas o comida española en MUT;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT
+                    Dónde puedo comprar o tomar vinos en MUT;"En MUT puedes encontrar vinos en:
+                    -Piso -2: Vique Club, club y venta de vinos
+                    -Piso 3: Les Dix Vins, bar de vinos y quesos
+                    -Piso 5: Restaurante Diablo, que tiene carta de vinos"
+                    Dónde puedo tomar cerveza en MUT;"En MUT puedes encontrar cerveza en:
+                    -Piso -2: Tierra Cervecera, cervecería especializada
+                    -Piso -2: Tamango Brebajes, cervecería artesanal
+                    -Piso 5: The Loft, bar y restaurante
+                    -Piso 5: Restaurante Diablo
+                    -Piso 3: Meli Meló"
+                    Qué locales o restaurantes venden alcohol en MUT;"En MUT hay varios locales y restaurantes que venden alcohol:
+                    -Piso -2: Tierra Cervecera (cervecería), Tamango Brebajes (cervecería artesanal), Vique Club (vinos), Embarcadero 41 (restaurante peruano)
+                    -Piso 3: Les Dix Vins (bar de vinos y quesos), Meli Meló (brunch, almuerzo, comida y bar)
+                    -Piso 4: Ambrosía Bistró, Toni Lautaro
+                    -Piso 5: The Loft (bar y restaurante), Restaurante Diablo (vinos y carnes)"
+                    Dónde está Bar Oculto;Bar Oculto es una cafetería y juguería, ubicada en el piso -2 de MUT
+                    Dónde está La Verita;La Verita es un local de cannoli italiano, ubicado en el piso -2 de MUT
+                    Dónde puedo comer papas fritas en MUT;Potato Patatas es un local de papas fritas naturales en cono, ubicado en el piso -2 de MUT
+                    Dónde está el Valenciano;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT
+                    Dónde está Je sui Raclette;Je sui Raclette es un local de comida internacional, ubicado en el piso -2 de MUT
+                    Dónde está Music Chile;Music Chile es una tienda especialista en instrumentos musicales, ubicada en el piso -1 de MUT
+                    Dónde está Ranty Tablas;Ranty Tablas es una tienda con amplia selección de utensilios de cocina y parrilla, ubicada en el piso -2 de MUT
+                    Dónde está Vique Club;Vique Club es un club y tienda de venta de vinos, ubicado en el piso -2 de MUT
+                    Dónde está Mer Coop;Mer Coop es una cooperativa de frutos, conservas y granel, ubicada en el piso -2 de MUT
+                    Dónde está Casa de las Infusiones;Casa de las Infusiones es una tienda con variedad de infusiones, mate, hierbas y accesorios, ubicada en el piso -2 de MUT
+                    Hay tiendas de utensilios de cocina en MUT;Sí, en MUT está Ranty Tablas, una tienda con amplia selección de utensilios de cocina y parrilla, ubicada en el piso -2"`;
 
 const PROMPT_TEMPLATES = {
     extractInfo: {
@@ -312,7 +352,7 @@ const PROMPT_TEMPLATES = {
             ## REGLA ESPECIAL PARA TIENDAS (typeQuestions = "tienda")
             Cuando el usuario pregunte por CATEGORÍAS de tiendas (ropa, joyas, deporte, tecnología, niños, infantil, etc.):
             1. No recomendar tiendas específicas
-            2. Listar las tiendas que correspondan a esa categoría, indicando su piso , tienda, horario (ej: "Piso -1,Black; Bubba; Scarfme, 10:00 - 20:00")
+            2. Listar las tiendas que correspondan a esa categoría, indicando su piso , tienda, horario (ej: "Piso -1,Black; Bubba, 10:00 - 20:00")
 
             ## REGLA DE CONSULTAS INFORMALES O PALABRAS SUELTAS
             Cuando el usuario envíe una sola palabra, una frase informal o una consulta mal formulada (ej: "sushi", "pizza", "café", "hola donde como sushi", "quiero hamburguesa"):
@@ -341,7 +381,7 @@ const PROMPT_TEMPLATES = {
 
                 Pregunta: "¿Qué tiendas de ropa de mujer hay?"
                 {
-                "respuesta": "🛍️ En MUT hay varias tiendas de ropa de mujer en el *Piso 1:* Black; Bubba; Scarfme *Horario* 10:00 - 20:00 Lunes a Sábado y domingo 10:00 - 18:00. ¿Deseas buscar alguna en específico? 🔍",
+                "respuesta": "🛍️ En MUT hay varias tiendas de ropa de mujer en el *Piso 1:* Black; Bubba *Horario* 10:00 - 20:00 Lunes a Sábado y domingo 10:00 - 18:00. ¿Deseas buscar alguna en específico? 🔍",
                 "isEncontrada": true,
                 "typeQuestions": "tienda"
                 }
