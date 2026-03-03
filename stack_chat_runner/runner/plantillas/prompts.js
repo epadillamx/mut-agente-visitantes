@@ -67,8 +67,9 @@ const csvContent = `pregunta;Respuesta
                     Qué tiendas de Belleza y Maquillaje hay en MUT?;"En MUT hay varias tiendas de Belleza y Maquillaje:
                     -Piso 1: Blush Bar
                     -Piso -1: Newen, Majen, Bath and Blanc, Bom Beauty
-                    -Piso -3: Natura, The Body Shop, Pichara, Pink Lady, Farmacias Ahumada, Knop y Salcobrand."
-                    Cuáles son los horarios de MUT;Horario general MUT: 10:00 – 20:00.  Tiendas retail calle MUT: 10:00 – 20:30. Restaurantes y cocinerías pisos -2 y -3: 10:00 – 21:30 de lunes a miércoles/ jueves a sábado hasta las 23:30. Restaurantes pisos 3, 4 y 5: 13:00 – 23:30.
+                    -Piso -3: Natura, The Body Shop, Pichara (insumos de pelo y belleza), Pink Lady, Farmacias Ahumada, Knop y Salcobrand
+                    -Piso -1: Bumi Lifestyle (jabones y cuidado personal)"
+                    Cuáles son los horarios de MUT;Horario general MUT: 10:00 – 20:00. Tiendas retail calle MUT: 10:00 – 20:30. Cocinerías pisos -2 y -3: generalmente 10:00 – 21:00/21:30. Restaurantes pisos 3, 4 y 5: horarios varían por restaurante, puedes preguntarme por uno en específico.
                     "Cuáles son los valores o tarifas del estacionamiento de bicicletas o ""bici hub"" de MUT";Público general: 0 a 3 horas: gratis. Valor por minuto adicional: $8. Valor día completo. $5.000 (desde las 13 hrs. en adelante)
                     "Cuál es el horario del estacionamiento de bicicletas o ""bici hub"" de MUT";"El horario del bici hub de MUT es: Lunes a Viernes de 07:00 a 22:00 / Sábado y Domingo de 9:00 a 22:00"
                     "Cualés son los valores por membresía o suscripción al estacionamiento de bicicletas o ""bici hub"" MUT";"La suscripción básica al estacionamiento de bicicletas o bici hub de MUT tiene un valor mensual de 1UF + IVA. Incluye acceso ilimitado al bici hub.
@@ -117,7 +118,7 @@ const csvContent = `pregunta;Respuesta
                     -piso 1: La Fete
                     -piso 3: Ponte Chiasso"
                     Qué tiendas de Tecnología hay en MUT:;"En MUT hay varias tiendas de tecnología:
-                    -piso -3: Backonline
+                    -piso -3: Backonline, Casa Royal (audio, electrónica e instrumentos musicales)
                     -piso 2: Maconline y Samsung"
                     Qué tiendas de Bicicletas y accesorios para bicicletas hay en MUT;En MUT está la tienda Ibikes, en el piso -1, que tiene bicicletas, vestuario y accesorios de ciclismo
                     Dónde puedo comprar un regalo en MUT;En MUT puedes comprar muchos tipos de regalo, depende de lo que quieras comprar. Hay chocolaterías, tiendas de vestuario de mujer, hombre y niños. Tiendas de accesorios, joyas, belleza, maquillaje, etc. Qué quieres comprar?
@@ -156,14 +157,12 @@ const csvContent = `pregunta;Respuesta
                     -Piso -3: Pizzario
                     -Piso -2: Tony Pizzería, Loca Pasta, Pizzería Savoia
                     -Piso 4: Toni Lautaro"
-                    Hay algún BAR en MUT;"Sí, en MUT están los siguientes BAR:
-                    Piso -2: Tierra Cervecera, cervecería especializada;
-                    Piso -2: Tamango Brebajes, cervecería artesanal;
-                    Piso -2: Vique Club, club y venta de vinos;
-                    Piso 3: Les Dix Vins, bar de vinos y quesos;
-                    Piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
-                    Piso 5: The Loft, Bar y comida internacional. Horario: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00"
-                    Dónde está The Loft o cuál es el horario de The Loft;The Loft es un Bar y Restaurante de comida internacional, está en el Piso 5 de MUT. Su horario es: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00
+                    Hay algún BAR en MUT;"Sí, en MUT hay varios bares:
+                    Piso -2: La Vermutería (vermut artesanal), Vique Club (vinos), Tierra Cervecera (cerveza artesanal), Tamango Brebajes (cerveza artesanal)
+                    Piso 1: Barra Fundición
+                    Piso 3: Les Dix Vins, bar de vinos y quesos; Meli Meló (brunch, almuerzo, comida y bar)
+                    Piso 5: The Loft, bar y comida internacional"
+                    Dónde está The Loft o cuál es el horario de The Loft;The Loft es un Bar y Restaurante de comida internacional, está en el Piso 5 de MUT. Horario: Lunes y martes 12:30 – 01:00, Miércoles a sábado 12:30 – 02:00, Domingo 12:30 – 00:00.
                     Dónde está Meli Meló o cuál es el horario de Meli Meló;Meli Meló es un restaurante de cocina contemporánea que ofrece brunch, almuerzo, comida y bar. Está en el Piso 3 de MUT. Su horario es: 10:00 a 22:30
                     Dónde está Tamango o qué es Tamango;Tamango Brebajes es una cervecería artesanal que ofrece cervezas frescas y lupuladas. Está en el Piso -2 de MUT
                     Dónde puedo comer sushi en MUT;"En MUT puedes encontrar sushi en:
@@ -181,7 +180,8 @@ const csvContent = `pregunta;Respuesta
                     -piso -3: Antigua Fuente; MIT Burger
                     -piso -2: La Fiambrería, Don César, Santiago Cheesemongers, Rapaz, Emporio Schwencke
                     -piso 3: Rebelde"
-                    Hay tiendas de música o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música o disquerías:
+                    Hay tiendas de música, instrumentos musicales o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música, instrumentos musicales o disquerías:
+                    -piso -3: Casa Royal (audio, electrónica e instrumentos musicales). Horario: L-S 10:00–20:00, D y festivos 10:00–19:00
                     -piso -1: Plaza Música, Needle y Music Chile (instrumentos musicales)
                     -piso 3: La Disquería"
                     Hay locales o cocinerías de comida mexicana en MUT;Sí, en MUT está Chinga Tu Taco,  que es una taquerpia mexicana, en el piso -2
@@ -194,7 +194,7 @@ const csvContent = `pregunta;Respuesta
                     -piso 2: está la tienda deportiva Lippi"
                     ¿Hay restaurantes en MUT?;"Sí, en MUT hay varios restaurantes, entre ellos puedes encontrar:
                     -piso 5: Restaurante Diablo, que es de vinos y carnes;
-                    -piso 5: Bar y Restaurante The Loft. Horario: Lunes a Martes de 12:30 a 01:00 / Miércoles a Sábado de 12:30 a 02:00; 
+                    -piso 5: Bar y Restaurante The Loft. Horario: Lunes y martes 12:30 – 01:00, Miércoles a sábado 12:30 – 02:00, Domingo 12:30 – 00:00; 
                     -piso 4: Restaurante Toni Lautaro, que es de pizzas y comida italiana;
                     -piso 4: Restaurante Ambrosía Bistró, que es un restaurante de cocina de autor creativa;
                     -piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
@@ -276,7 +276,8 @@ const csvContent = `pregunta;Respuesta
                     -piso 2: Lens"
                     Qué tiendas de hogar, muebles y decoración hay en MUT;"En MUT hay varias tiendas de hogar, muebles y decoración:
                     -piso -3: Lipka
-                    -piso -1: Rincón Himalaya, Simple by Puro, Creado en Chile, Bumy Lifestyle, The Plant Store , Bath and Blanc, Lycos Vounó, Ojo por Ojo,  Karungen y Pasquín
+                    -piso -1: Rincón Himalaya, Simple by Puro, Creado en Chile, The Plant Store , Bath and Blanc, Lycos Vounó, Ojo por Ojo,  Karungen y Pasquín
+                    -piso 1: Aqueveque (decoración, diseño y muebles, hacia la calle)
                     -piso 3: Larry y Las 7 Vidas del Mueble"
                     Hay tiendas de ropa usada o ropa de segunda mano en MUT;Sí, en MUT hay tiendas de ropa usada o ropa de segunda mano y están en el piso -1: Vestúa, Ecocitex, Sellos Vintage y Chile Vintage
                     Hay locales, tiendas o restaurantes de pescados y mariscos;"Sí, en MUT hay varios lugares para comer o comrpar pescados y mariscos:
@@ -292,7 +293,7 @@ const csvContent = `pregunta;Respuesta
                     Dónde está la tienda Flores o qué es Flores;"IMPORTANTE: 'Flores' es el NOMBRE de una tienda de lencería y ropa interior en el piso -3. Siempre mencionar PRIMERO la tienda Flores (lencería, piso -3). Solo si el usuario busca flores naturales, mencionar florerías del piso -1: El Florista, The Plant Store y Karungen."
                     Dónde puedo tomar jugos en MUT;"En MUT puedes encontrar jugos y juguerías en:
                     -Piso -2: Juguera Peruana y Bar Oculto (cafetería y juguería)"
-                    Dónde puedo comer tapas o comida española en MUT;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT
+                    Dónde puedo comer tapas o comida española en MUT;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT. Horario: 10:00 – 21:30.
                     Dónde puedo comprar o tomar vinos en MUT;"En MUT puedes encontrar vinos en:
                     -Piso -2: Vique Club, club y venta de vinos
                     -Piso 3: Les Dix Vins, bar de vinos y quesos
@@ -303,22 +304,53 @@ const csvContent = `pregunta;Respuesta
                     -Piso 5: The Loft, bar y restaurante
                     -Piso 5: Restaurante Diablo
                     -Piso 3: Meli Meló"
-                    Qué locales o restaurantes venden alcohol en MUT;"En MUT hay varios locales y restaurantes que venden alcohol:
-                    -Piso -2: Tierra Cervecera (cervecería), Tamango Brebajes (cervecería artesanal), Vique Club (vinos), Embarcadero 41 (restaurante peruano)
-                    -Piso 3: Les Dix Vins (bar de vinos y quesos), Meli Meló (brunch, almuerzo, comida y bar)
-                    -Piso 4: Ambrosía Bistró, Toni Lautaro
-                    -Piso 5: The Loft (bar y restaurante), Restaurante Diablo (vinos y carnes)"
+                    Qué locales o restaurantes venden alcohol en MUT;"En MUT hay muchos locales que venden alcohol y bebidas alcohólicas:
+                    Piso -3: Antigua Fuente, Pizzario, MIT Burger, Spid
+                    Piso -2: Embarcadero, La Vermutería, Vique Club, Tierra Cervecera, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Santiago Cheesemongers, Rienda Suelta
+                    Piso -1: Aura
+                    Piso 1: Barra Fundición
+                    Piso 3: Les Dix Vins, Rebelde, Meli Meló
+                    Piso 4: Toni Lautaro, Ambrosía
+                    Piso 5: Diablo, The Loft"
                     Dónde está Bar Oculto;Bar Oculto es una cafetería y juguería, ubicada en el piso -2 de MUT
                     Dónde está La Verita;La Verita es un local de cannoli italiano, ubicado en el piso -2 de MUT
                     Dónde puedo comer papas fritas en MUT;Potato Patatas es un local de papas fritas naturales en cono, ubicado en el piso -2 de MUT
-                    Dónde está el Valenciano;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT
+                    Dónde está el Valenciano;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT. Horario: 10:00 – 21:30.
                     Dónde está Je sui Raclette;Je sui Raclette es un local de comida internacional, ubicado en el piso -2 de MUT
                     Dónde está Music Chile;Music Chile es una tienda especialista en instrumentos musicales, ubicada en el piso -1 de MUT
+                    Dónde está Casa Royal;Casa Royal es una tienda de audio, electrónica e instrumentos musicales, ubicada en el piso -3 de MUT. Horario: Lunes a sábado 10:00–20:00, Domingo y festivos 10:00–19:00.
+                    Dónde está Pichara;Pichara es una tienda de insumos de pelo y belleza, ubicada en el piso -3 de MUT.
+                    Dónde está Bumi Lifestyle;Bumi Lifestyle es una tienda de jabones y cuidado personal, ubicada en el piso -1 de MUT.
+                    Dónde está Aqueveque;Aqueveque es una tienda de decoración, diseño y muebles, ubicada en el piso 1 de MUT hacia la calle.
                     Dónde está Ranty Tablas;Ranty Tablas es una tienda con amplia selección de utensilios de cocina y parrilla, ubicada en el piso -2 de MUT
                     Dónde está Vique Club;Vique Club es un club y tienda de venta de vinos, ubicado en el piso -2 de MUT
                     Dónde está Mer Coop;Mer Coop es una cooperativa de frutos, conservas y granel, ubicada en el piso -2 de MUT
                     Dónde está Casa de las Infusiones;Casa de las Infusiones es una tienda con variedad de infusiones, mate, hierbas y accesorios, ubicada en el piso -2 de MUT
-                    Hay tiendas de utensilios de cocina en MUT;Sí, en MUT está Ranty Tablas, una tienda con amplia selección de utensilios de cocina y parrilla, ubicada en el piso -2"`;
+                    Hay tiendas de utensilios de cocina en MUT;Sí, en MUT está Ranty Tablas, una tienda con amplia selección de utensilios de cocina y parrilla, ubicada en el piso -2"
+                    Dónde está Scarf Me o Scarfme;Scarf Me Chile es una tienda de pañuelos, pareos y accesorios textiles de origen brasileño, ubicada en el piso 1 de MUT. Se enfoca en diseño, calidad y versatilidad, con piezas que combinan elegancia y una estética atemporal.
+                    Dónde está La Vermutería o Pobre Vermut;La Vermutería está en el piso -2 de MUT. Es la única vermutería de Chile, a cargo de Pobre Vermut, un vermut artesanal chileno con botánicos endémicos. Horario: 10:00 – 21:30.
+                    Dónde está Mercado Paine;Mercado Paine es un local de venta de fruta y verdura fresca en el piso -2 de MUT. Horario: 10:00 – 20:00.
+                    Cuál es el horario de Diablo;Diablo está en el piso 5. Horario: Lunes a miércoles 12:30 – 22:30, Jueves a sábado 12:30 – 23:30, Domingo 13:00 – 17:30.
+                    Cuál es el horario de Toni Lautaro;Toni Lautaro está en el piso 4. Horario: Lunes a sábado 12:30 – 22:30, Domingo 12:30 – 17:30. Brunch sábados y domingos 10:00 – 12:00.
+                    Cuál es el horario de Ambrosía;Ambrosía Bistró está en el piso 4. Horario: Lunes a sábado 12:30 – 22:30 (cierre de local 00:00). Domingo hasta las 17:30.
+                    Cuál es el horario de Les Dix Vins;Les Dix Vins está en el piso 3. Horario: Lunes a sábado 09:30 – 23:30 (cocina cierra a las 22:30), Domingo 09:30 – 20:00.
+                    Cuál es el horario de Rebelde;Rebelde está en el piso 3. Horario: Lunes a viernes 09:00 – 21:00, Sábado 10:00 – 21:00, Domingo 10:00 – 20:00.
+                    Cuál es el horario de Barra Fundición;Barra Fundición está en el piso 1. Horario: Lunes y martes 08:00 – 21:30, Miércoles a viernes 08:00 – 22:30, Sábado 10:00 – 22:30, Domingo 10:00 – 21:30.
+                    Cuál es el horario del supermercado Spid;El supermercado Spid está en el piso -3. Horario: Lunes a sábado 08:00 – 20:00, Domingo 09:00 – 20:00.
+                    Cuál es el horario de Loca Pasta;Loca Pasta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
+                    Cuál es el horario de Don César;Don César está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
+                    Cuál es el horario de Tierra Cervecera;Tierra Cervecera está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
+                    Cuál es el horario de Embarcadero 41;Embarcadero 41 está en el piso -2. Horario: Lunes a miércoles 12:00 – 21:30, Jueves a sábado 12:00 – 23:30, Domingo 12:00 – 20:00.
+                    Cuál es el horario de Vique Club;Vique Club está en el piso -2. Horario: Lunes a domingo 10:00 – 20:00.
+                    Cuál es el horario de Pan León;Pan León está en el piso -2. Horario: Lunes a sábado 07:30 – 21:00, Domingo y festivos 10:00 – 19:00.
+                    Cuál es el horario de La Flaca;La Flaca está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Rapaz;Rapaz está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Santiago Cheesemongers;Santiago Cheesemongers está en el piso -2. Horario: Lunes a domingo 10:00 – 20:00.
+                    Cuál es el horario de Chancho N1;Chancho N°1 está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Rienda Suelta;Rienda Suelta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Antigua Fuente;Antigua Fuente está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Pizzario;Pizzario está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de MIT Burger;MIT Burger está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.`;
 
 const PROMPT_TEMPLATES = {
     extractInfo: {
