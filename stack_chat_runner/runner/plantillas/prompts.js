@@ -130,12 +130,14 @@ const csvContent = `pregunta;Respuesta
                     -piso -3: All Nutrition, Farmacias Ahumada, Knop y Salcobrand"
                     Qué tiendas de relojes o relojerías hay en MUT;"En MUT está la tienda ""La Relojería"" en el piso -3"
                     Qué tiendas de manualidades, lápices y artículos de librería hay en MUT;"En MUT hay varias tiendas de manualidades, lápices y articulos de librería:
-                    -piso -1: Cordelia, Premium Paper, The Color Shop, Lamy y Revesderecho"
+                    -piso -1: Cordelia, Sin Enredos, Premium Paper, The Color Shop, Lamy y Revesderecho"
+                    Qué tiendas de lanas, tejidos o hilados hay en MUT;"En MUT hay varias tiendas de lanas, tejidos e hilados:
+                    -piso -1: Cordelia, Sin Enredos, Ecocitex y Revés Derecho"
                     Qué librerías o tiendas de libros hay en MUT;"En MUT están las siguientes librerías:
                     -piso 3: Librería Antártica y Librería Azafrán
                     -piso -1: Libro Verde y Teraideas"
                     Dónde están las industrias creativas ó living project, cómo llego;Las industrias creativas de MUT están en el piso -1, al fondo, entre la tienda La Plage y la cafetería Aura
-                    Qué tiendas hay en las Industrias Creativas;Las Industrias Creativas son el sector del piso -1 de MUT, donde se concentran tiendas de diseño de autor, emprendedores y creadores nacionales. Están las siguientes tiendas: Joia, Atómica, Kahlu, Bumi Lifestyle, Blum Kids, Bom Beauty, Blue Blood, Cantarina Joyas, Cons, Comm, Cocó de la Vega, Karungen, Lycos Vounó, Museo Garment, NS Leather, Ojo por Ojo, Rita Lira, Snog, Silvestre, Sellos Vintange, Teraideas, Vístete Local, Vestuá y Zucca
+                    Qué tiendas hay en las Industrias Creativas;Las Industrias Creativas son el sector del piso -1 de MUT, donde se concentran tiendas de diseño de autor, emprendedores y creadores nacionales. Están las siguientes tiendas: Joia, Atómica, Kahlu, Bumi Lifestyle, Blum Kids, Bom Beauty, Blue Blood, Buena Vista, Cantarina Joyas, Cons, Comm, Cocó de la Vega, Karungen, Lycos Vounó, Museo Garment, NS Leather, Ojo por Ojo, Rita Lira, Sin Enredos, Snog, Silvestre, Sellos Vintange, Teraideas, Vístete Local, Vestuá y Zucca
                     Qué florerías o tiendas de plantas hay en MUT;"En MUT hay varias florerías y tiendas de plantas:
                     -piso -1: El Florista, The Plant Store y la tienda de terrarios Karungen.
                     NOTA: No confundir con la tienda 'Flores' del piso -3, que es de lencería y ropa interior."
@@ -263,7 +265,8 @@ const csvContent = `pregunta;Respuesta
                     ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT
                     Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
                     -piso -3: PSK Joyas, Humana, Todomoda, Isadora
-                    -piso -1: Cantarina joyas, Toty Stone, Cocó de la Vega, Viale Joyas"
+                    -piso -1: Cantarina joyas, Toty Stone (especialista en lapis lazuli), Cocó de la Vega, Viale Joyas"
+                    Dónde puedo encontrar joyas de lapis lazuli en MUT;En MUT puedes encontrar joyas de lapis lazuli en la tienda Toty Stone, ubicada en el piso -1
                     Qué tiendas de lencería, ropa interior o sostenes hay en MUT;En MUT está la tienda Flores, especializada en lencería y ropa interior, ubicada en el piso -3. Si buscas flores o florerías, en el piso -1 están El Florista, The Plant Store y Karungen
                     Qué tiendas de vestuario o ropa de mujer (femenino) hay en MUT;"En MUT hay varias tiendas de ropa o vestuario de mujer o femenino:
                     -piso -3: Humana, Flores (ropa interior)
@@ -284,13 +287,16 @@ const csvContent = `pregunta;Respuesta
                     -piso -3: Selfish, cocinería de pescados.
                     -piso -2: Restaurante Embarcadero, de comida peruana que tiene pescados y sushi;  la cevichería, que es un local de ceviche; Sushilab de sushi; Arigato de comida Nike y Caleta de Locos de pescados y mariscos
                     -piso 1: tienda Catch, pescadería especializada en productos del mar, se encuentra hacia la calle por Roger de Flor"
-                    Hay tiendas de mochilas y accesorios de mujer y hombre en MUT?;"Sí, en MUT cuentas con varias tiendas de accesorios, mochilas y variadas cosas:
+                    Hay tiendas de mochilas y accesorios de mujer y hombre en MUT?;"Sí, en MUT cuentas con varias tiendas de accesorios, mochilas, carteras y variadas cosas:
                     -piso -3: HUMANA
-                    -piso -1: By buenavista; Joia; Oneaco; Ucon Acrobatics; Zucca; NS Leather; De la Mafia
+                    -piso -1: Buena Vista (mochilas, accesorios y carteras); Joia; Oneaco; Ucon Acrobatics; Zucca; NS Leather; De la Mafia
                     -Piso 1: Black; Bubba"
+                    Dónde está Buena Vista o qué es Buena Vista;Buena Vista es una tienda de mochilas, accesorios y carteras, ubicada en el piso -1 de MUT, en Industrias Creativas
+                    Dónde está Museo o qué es Museo Garment;Museo Garment es una tienda de vestuario, ubicada en el piso -1 de MUT, en Industrias Creativas
                     Dónde está El Taller o qué es El Taller;"IMPORTANTE: El Taller es principalmente una heladería, ubicada en el piso 1 de MUT (hacia la calle por Encomenderos). Adicionalmente, el piso -1 de MUT lleva el mismo nombre 'El Taller', donde hay industrias creativas, tiendas, cafeterías, el bici hub y baños públicos."
                     Flores;"IMPORTANTE: 'Flores' es el NOMBRE de una tienda de lencería y ropa interior en el piso -3. Siempre mencionar PRIMERO la tienda Flores (lencería, piso -3). Solo si el usuario busca flores naturales, mencionar florerías del piso -1: El Florista, The Plant Store y Karungen."
                     Dónde está la tienda Flores o qué es Flores;"IMPORTANTE: 'Flores' es el NOMBRE de una tienda de lencería y ropa interior en el piso -3. Siempre mencionar PRIMERO la tienda Flores (lencería, piso -3). Solo si el usuario busca flores naturales, mencionar florerías del piso -1: El Florista, The Plant Store y Karungen."
+                    Dónde puedo encontrar inciensos o productos de la India en MUT;En MUT puedes encontrar inciensos y productos de la India en la tienda Rincón Himalaya, ubicada en el piso -1
                     Dónde puedo tomar jugos en MUT;"En MUT puedes encontrar jugos y juguerías en:
                     -Piso -2: Juguera Peruana y Bar Oculto (cafetería y juguería)"
                     Dónde puedo comer tapas o comida española en MUT;El Valenciano es un restaurante de gastronomía española y tapas, ubicado en el piso -2 de MUT. Horario: 10:00 – 21:30.
