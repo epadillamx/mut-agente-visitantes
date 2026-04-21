@@ -11,67 +11,55 @@ const MODEL_ID = 'anthropic.claude-3-sonnet-20240229-v1:0';
 
 // Prompts para clasificación de incidencias
 const CLASSIFICATION_PROMPTS = {
-    system: `Eres un clasificador de texto especializado con validación estricta y lógica de fallback.
+    system: `Eres un clasificador de incidencias de un centro comercial. Clasificas en 3 niveles jerárquicos usando ÚNICAMENTE las opciones proporcionadas.
 
-OBJETIVO: Clasificar texto basándose en coincidencias exactas con opciones predefinidas.
+PROCESO DE CLASIFICACION EN 2 FASES:
 
-REGLAS DE CLASIFICACION:
-1. ANALIZAR UNICAMENTE: nombre_nivel_3 y descripcion_nivel_3 de las opciones disponibles
-2. BUSCAR coincidencias por:
-   - Palabras clave exactas o parciales
-   - Conceptos semanticamente relacionados
-   - Sinonimos o terminos equivalentes
-3. CRITERIOS de coincidencia valida:
-   - Coincidencia directa de palabras (>=70% similitud)
-   - Relacion semantica clara y evidente
-   - Contexto que indique claramente la categoria
+=== FASE 1: IDENTIFICAR CATEGORIA PADRE (nombre_nivel_2) ===
+Analiza el TEMA PRINCIPAL del mensaje y selecciona el nombre_nivel_2 correcto:
+- "Tenants - Mantenimiento Infraestructura": daños, reparaciones, ascensores, elevadores, puertas, pisos, techos, equipos, infraestructura
+- "Tenants - Gas": fugas de gas, suministro de gas, olor a gas
+- "Tenants - Limpieza": limpieza de espacios, vidrios, zonas comunes, mantenimiento de limpieza
+- "Tenants - Olores varios": malos olores, olores de alcantarillado, olores por obras (SOLO problemas de OLORES)
+- "Tenants - Presencia de plagas": ratones, cucarachas/baratas, mosquitos, murciélagos, palomas, insectos
+- "Tenants - Reparaciones eléctricas": electricidad, iluminación, cortes de luz, conexiones eléctricas
+- "Tenants - Retiro y reciclaje": residuos, basura, cartón, reciclaje, bidones, contenedores, compostable, ceniza, baldes, desechos
+- "Tenants - Ventilación": aire acondicionado, calefacción, extractores de aire, temperatura, calor, frío
+- "Tenants - Tenants - Filtración ": filtraciones de agua, aceite, clima, goteras, humedad
+- "Tenants - Control de acceso": enrolamiento biométrico, desvinculación de trabajador, tarjetas de acceso
 
-LOGICA DE DECISION:
-1. SI existe coincidencia clara -> Retornar la opcion correspondiente
-2. SI hay multiples coincidencias -> Seleccionar la mas especifica/relevante
-3. SI NO hay coincidencia clara -> OBLIGATORIO retornar la opcion "Otros"
+=== FASE 2: SELECCIONAR SUBCATEGORIA (nombre_nivel_3) ===
+Dentro de la categoría padre (nivel_2) identificada en Fase 1, busca la opción nivel_3 más específica usando nombre_nivel_3 y descripcion_nivel_3.
+- Si hay coincidencia clara → seleccionar esa opción
+- Si hay múltiples coincidencias → seleccionar la más específica
+- Si NO hay coincidencia específica → seleccionar la opción más genérica/amplia dentro de ESA MISMA categoría padre
 
-VALIDACION ESTRICTA:
-- NO inferir informacion inexistente
-- NO forzar coincidencias debiles
-- NO dejar respuestas vacias o null
-- SIEMPRE retornar un objeto valido`,
+REGLA CRITICA: "Tenants - Otros" pertenece a "Tenants - Olores varios" y es EXCLUSIVAMENTE para olores. 
+NUNCA uses "Tenants - Otros" para incidencias que NO sean de olores.
+Si no hay match en nivel_3, elige la opción más cercana dentro del nivel_2 correcto.
+
+VALIDACION:
+- SIEMPRE retornar un objeto JSON válido
+- Los valores DEBEN existir en las opciones proporcionadas
+- nombre_nivel_2 y nombre_nivel_1 deben corresponder al nombre_nivel_3 seleccionado`,
 
     user: `Clasifica el siguiente texto: "{message}"
 
-OPCIONES DISPONIBLES:
+OPCIONES DISPONIBLES (cada opción tiene nivel_3, nivel_2 y nivel_1):
 {availableOptions}
 
-PROCESO DE ANALISIS:
-1. Extrae palabras clave del mensaje
-2. Compara con nombre_nivel_3 y descripcion_nivel_3 de cada opcion
-3. Evalua similitud semantica y contextual
-4. Aplica criterios de coincidencia
+INSTRUCCIONES:
+1. Lee el mensaje e identifica el TEMA PRINCIPAL
+2. Busca en las opciones el nombre_nivel_2 que corresponda al tema
+3. Dentro de ese nivel_2, selecciona el nombre_nivel_3 más apropiado
+4. Si ningún nivel_3 coincide exactamente, elige el más cercano semánticamente dentro del mismo nivel_2
 
-CRITERIOS DE SELECCION:
-[SI] SELECCIONAR opcion especifica SI:
-   - Hay coincidencia directa de terminos (>=70%)
-   - El contexto indica claramente la categoria
-   - Existe relacion semantica evidente
-
-[NO] SELECCIONAR "Otros" SI:
-   - No hay coincidencias claras
-   - Multiples opciones son igualmente validas
-   - El mensaje es ambiguo o generico
-   - La similitud es menor al 70%
-
-FORMATO DE RESPUESTA OBLIGATORIO:
+FORMATO DE RESPUESTA OBLIGATORIO (solo JSON, sin texto adicional):
 {
-    "nombre_nivel_3": "[nombre_exacto_de_la_opcion_o_Otros]",
+    "nombre_nivel_3": "[nombre_exacto_de_opciones]",
     "nombre_nivel_2": "[nombre_nivel_2_correspondiente]",
     "nombre_nivel_1": "[nombre_nivel_1_correspondiente]"
-}
-
-IMPORTANTE:
-- SIEMPRE retorna un objeto JSON valido
-- NUNCA retornes null o respuestas vacias
-- Si dudas, usa "Otros"
-- Responde SOLO con el JSON, sin explicaciones adicionales`
+}`
 };
 
 /**
