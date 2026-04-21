@@ -111,7 +111,7 @@ const csvContent = `pregunta;Respuesta
                     - piso -1: Ibikes
                     - piso 1: Adidas, Skechers, Fjall Raven
                     - piso 2: Decathlon, Nike, Lippi, Drops"
-                    Qué tiendas de perfumería hay en MUT;En MUT puedes encontrar la tienda de perfumes LODORO en el piso -3 y la tienda de aromas Bath and Blanc en el piso -1 y Madison en el piso 3
+                    Qué tiendas de perfumería hay en MUT;En MUT puedes encontrar la tienda de perfumes LODORO en el piso -3 y la tienda de aromas Bath and Blanc en el piso -1
                     Qué tiendas de chocolates o chocolaterías hay en MUT;"En MUT hay varias tiendas de chocolates o chocolaterías:
                     -piso -3: Feroz, Jo Pastelería
                     -piso -2: Macarons Riches, Entre lagos
@@ -180,7 +180,7 @@ const csvContent = `pregunta;Respuesta
                     -piso -2: cocinería La Flaca, la sanguchería Don César, Emporio Schwencke ,Perritos Chao y Chancho 1."
                     Cuáles son los restaurantes o locales de sandwich o sangucherías en MUT;"En MUT puedes encontrar varios locales de venta de sandwich o sangucherías, entre ellos están:
                     -piso -3: Antigua Fuente; MIT Burger
-                    -piso -2: La Fiambrería, Don César, Santiago Cheesemongers, Rapaz, Emporio Schwencke
+                    -piso -2: La Fiambrería, Don César, Rapaz, Emporio Schwencke
                     -piso 3: Rebelde"
                     Hay tiendas de música, instrumentos musicales o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música, instrumentos musicales o disquerías:
                     -piso -3: Casa Royal (audio, electrónica e instrumentos musicales). Horario: L-S 10:00–20:00, D y festivos 10:00–19:00
@@ -215,7 +215,7 @@ const csvContent = `pregunta;Respuesta
                     -Piso -2: Green Lab y Fortuna
                     -Piso -1: Oakberry Acai"
                     Hay queserías o locales de venta de quesos en MUT;"Sí, en MUT puedes encontrar las siguientes queserías:
-                    -piso -2: Central Orgánica y Santiago Cheesemongers;
+                    -piso -2: Central Orgánica
                     -piso 3: Le Dix Vins, que es un bar de quesos y vino"
                     Qué significa MUT o qué es MUT;MUT significa Mercado Urbano Tobalaba. MUT es el primer mercado Urbano de Chile. Es un proyecto de uso mixto, que combina una mercado urbano con oficinas y áreas verdes.
                     ¿MUT es un mall o un centro comercial?;MUT es un Mercado Urbano, no es un mall.
@@ -312,7 +312,7 @@ const csvContent = `pregunta;Respuesta
                     -Piso 3: Meli Meló"
                     Qué locales o restaurantes venden alcohol en MUT;"En MUT hay muchos locales que venden alcohol y bebidas alcohólicas:
                     Piso -3: Antigua Fuente, Pizzario, MIT Burger, Spid
-                    Piso -2: Embarcadero, La Vermutería, Vique Club, Tierra Cervecera, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Santiago Cheesemongers, Rienda Suelta
+                    Piso -2: Embarcadero, La Vermutería, Vique Club, Tierra Cervecera, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Rienda Suelta
                     Piso -1: Aura
                     Piso 1: Barra Fundición
                     Piso 3: Les Dix Vins, Rebelde, Meli Meló
@@ -351,7 +351,6 @@ const csvContent = `pregunta;Respuesta
                     Cuál es el horario de Pan León;Pan León está en el piso -2. Horario: Lunes a sábado 07:30 – 21:00, Domingo y festivos 10:00 – 19:00.
                     Cuál es el horario de La Flaca;La Flaca está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de Rapaz;Rapaz está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
-                    Cuál es el horario de Santiago Cheesemongers;Santiago Cheesemongers está en el piso -2. Horario: Lunes a domingo 10:00 – 20:00.
                     Cuál es el horario de Chancho N1;Chancho N°1 está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de Rienda Suelta;Rienda Suelta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de Antigua Fuente;Antigua Fuente está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.
