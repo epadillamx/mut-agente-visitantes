@@ -11,6 +11,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+import hashlib
 
 class ChatRunnerNodeStack(Stack):
 
@@ -58,11 +59,18 @@ class ChatRunnerNodeStack(Stack):
         # Default values for configuration
         DEFAULT_AGENT_ID = agent_id
 
+        # Hash prompts file so any content change triggers a CloudFormation diff
+        prompts_path = os.path.join(os.path.dirname(__file__), "runner", "plantillas", "prompts.js")
+        with open(prompts_path, "rb") as prompts_file:
+            prompts_version = hashlib.sha256(prompts_file.read()).hexdigest()[:16]
+
         # Build environment variables for App Runner
         environment_vars = {
             # Bedrock Agent configuration
             "AGENT_ID": DEFAULT_AGENT_ID,
             "AGENT_ALIAS_ID": 'change',
+            # Deploy fingerprint for prompt updates
+            "PROMPTS_VERSION": prompts_version,
             # S3 Cache bucket
             "CACHE_BUCKET_NAME": self.cache_bucket.bucket_name,
             # Configure transformers to use /tmp for model cache
