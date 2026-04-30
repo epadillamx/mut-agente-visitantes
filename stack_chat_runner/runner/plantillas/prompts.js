@@ -160,7 +160,7 @@ const csvContent = `pregunta;Respuesta
                     -Piso -2: Tony Pizzería, Loca Pasta, Pizzería Savoia
                     -Piso 4: Toni Lautaro"
                     Hay algún BAR en MUT;"Sí, en MUT hay varios bares:
-                    Piso -2: La Vermutería (vermut artesanal), Vique Club (vinos), Tierra Cervecera (cerveza artesanal), Tamango Brebajes (cerveza artesanal)
+                    Piso -2: La Vermutería (vermut artesanal), Vique Club (vinos), Tamango Brebajes (cerveza artesanal)
                     Piso 1: Barra Fundición
                     Piso 3: Les Dix Vins, bar de vinos y quesos; Meli Meló (brunch, almuerzo, comida y bar)
                     Piso 5: The Loft, bar y comida internacional"
@@ -305,14 +305,13 @@ const csvContent = `pregunta;Respuesta
                     -Piso 3: Les Dix Vins, bar de vinos y quesos
                     -Piso 5: Restaurante Diablo, que tiene carta de vinos"
                     Dónde puedo tomar cerveza en MUT;"En MUT puedes encontrar cerveza en:
-                    -Piso -2: Tierra Cervecera, cervecería especializada
                     -Piso -2: Tamango Brebajes, cervecería artesanal
                     -Piso 5: The Loft, bar y restaurante
                     -Piso 5: Restaurante Diablo
                     -Piso 3: Meli Meló"
                     Qué locales o restaurantes venden alcohol en MUT;"En MUT hay muchos locales que venden alcohol y bebidas alcohólicas:
                     Piso -3: Antigua Fuente, Pizzario, MIT Burger, Spid
-                    Piso -2: Embarcadero, La Vermutería, Vique Club, Tierra Cervecera, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Rienda Suelta
+                    Piso -2: Embarcadero, La Vermutería, Vique Club, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Rienda Suelta
                     Piso -1: Aura
                     Piso 1: Barra Fundición
                     Piso 3: Les Dix Vins, Rebelde, Meli Meló
@@ -345,7 +344,6 @@ const csvContent = `pregunta;Respuesta
                     Cuál es el horario del supermercado Spid;El supermercado Spid está en el piso -3. Horario: Lunes a sábado 08:00 – 20:00, Domingo 09:00 – 20:00.
                     Cuál es el horario de Loca Pasta;Loca Pasta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
                     Cuál es el horario de Don César;Don César está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
-                    Cuál es el horario de Tierra Cervecera;Tierra Cervecera está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
                     Cuál es el horario de Embarcadero 41;Embarcadero 41 está en el piso -2. Horario: Lunes a miércoles 12:00 – 21:30, Jueves a sábado 12:00 – 23:30, Domingo 12:00 – 20:00.
                     Cuál es el horario de Vique Club;Vique Club está en el piso -2. Horario: Lunes a domingo 10:00 – 20:00.
                     Cuál es el horario de Pan León;Pan León está en el piso -2. Horario: Lunes a sábado 07:30 – 21:00, Domingo y festivos 10:00 – 19:00.
