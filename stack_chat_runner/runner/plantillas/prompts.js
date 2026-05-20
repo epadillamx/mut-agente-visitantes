@@ -1,4 +1,7 @@
 const csvContent = `pregunta;Respuesta
+                    Búsqueda de tiendas;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
+                    Tiendas;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
+                    Qué tiendas hay en MUT;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
                     Dónde está Adidas;Adidas está en el nivel 1 calle, puedes entrar por dentro de MUT o por la calle Apoquindo
                     Dónde está Natura;Natura está en el nivel -3 
                     Dónde están los baños de MUT;"Hay baños en los siguientes pisos:
@@ -23,10 +26,33 @@ const csvContent = `pregunta;Respuesta
                     Cómo salgo a la calle Roger de flor desde MUT;Para salir a la calle ROGER DE FLOR, debes ir al piso 1 y caminar a la izquierda, salida donde está la tienda LA FETE
                     Cómo salgo a la calle Apoquindo desde MUT;Para salir a la calle APOQUINDO, debes ir al piso 1 y caminar a la derecha, hacia salida donde está la tienda FJALL RAVEN
                     Cómo salgo a la calle Encomenderos desde MUT;Para salir a la calle ENCOMENDEROS: debes ir al piso -1 y al lado de la cafetería AURA, está la escalera que sale a Encomenderos
-                    Cómo llego a las oficinas de MUT;"Para ir al edificio de oficinas MUT Roger de Flor, debes ir al piso 1 y salir hacia la izquierda, donde está la tienda de chocolates La Fete. Ahí te econtrarás con una puerta roja que es la entrada al edificio
-                    Para ir al edificio de oficinas MUT Apoquindo, debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven. Ahí te econtrarás con una puerta roja que es la entrada al edificio"
-                    Cómo llego a las oficinas de MUT Roger de Flor;Para ir al edificio de oficinas MUT Roger de Flor, debes ir al piso 1 y salir hacia la izquierda, donde está la tienda de chocolates La Fete. Ahí te econtrarás con una puerta roja que es la entrada al edificio
-                    Cómo llego a las oficinas de MUT Apoquindo;Para ir al edificio de oficinas MUT Apoquindo, debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven. Ahí te econtrarás con una puerta roja que es la entrada al edificio
+                    Oficinas MUT;"🏢 MUT tiene cuatro edificios de oficinas:
+                    *MUT Roger de Flor* 🚪 Puerta naranja - Roger de Flor 2775
+                    *MUT Apoquindo* 🚪 Puerta roja - Apoquindo 2730
+                    *MUT Encomenderos* 🚪 Puerta azul - Roger de Flor 2725
+                    *MUT El Bosque* - El Bosque Norte 50
+                    Empresas: METLIFE, PROVIDA, BUK, SIMPLI, SIERRA GORDA, ALBEMARLE, ISDIN, SCHNEIDER ELECTRIC, SMA, ENEL, SII GROUP, MUREX, AVIRON, GRENERGY, BCI NACE.
+                    ¿Buscas alguna empresa en específico? 🔍"
+                    Ubicación de oficinas;"🏢 MUT tiene cuatro edificios de oficinas:
+                    *MUT Roger de Flor* 🚪 Puerta naranja - Roger de Flor 2775
+                    *MUT Apoquindo* 🚪 Puerta roja - Apoquindo 2730
+                    *MUT Encomenderos* 🚪 Puerta azul - Roger de Flor 2725
+                    *MUT El Bosque* - El Bosque Norte 50
+                    Empresas: METLIFE, PROVIDA, BUK, SIMPLI, SIERRA GORDA, ALBEMARLE, ISDIN, SCHNEIDER ELECTRIC, SMA, ENEL, SII GROUP, MUREX, AVIRON, GRENERGY, BCI NACE.
+                    ¿Buscas alguna empresa en específico? 🔍"
+                    Cuáles son los edificios de oficinas de MUT;"🏢 MUT tiene cuatro edificios de oficinas:
+                    *MUT Roger de Flor* (Puerta naranja, Roger de Flor 2775)
+                    *MUT Apoquindo* (Puerta roja, Apoquindo 2730)
+                    *MUT Encomenderos* (Puerta azul, Roger de Flor 2725)
+                    *MUT El Bosque* (El Bosque Norte 50)"
+                    Cómo llego a las oficinas de MUT;"Para ir al edificio de oficinas *MUT Roger de Flor* (puerta naranja), debes ir al piso 1 y salir hacia la izquierda, donde está la tienda de chocolates La Fete.
+                    Para ir al edificio de oficinas *MUT Apoquindo* (puerta roja), debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven.
+                    Para ir al edificio de oficinas *MUT Encomenderos* (puerta azul), su entrada está en Roger de Flor 2725.
+                    Para ir a *MUT El Bosque*, su dirección es El Bosque Norte 50, esquina con Apoquindo."
+                    Cómo llego a las oficinas de MUT Roger de Flor;Para ir al edificio de oficinas MUT Roger de Flor (puerta naranja), debes ir al piso 1 y salir hacia la izquierda, donde está la tienda de chocolates La Fete. Ahí te encontrarás con la puerta naranja que es la entrada al edificio.
+                    Cómo llego a las oficinas de MUT Apoquindo;Para ir al edificio de oficinas MUT Apoquindo (puerta roja), debes ir al piso 1 y salir hacia la derecha, donde está la tienda deportiva Fjall Raven. Ahí te encontrarás con la puerta roja que es la entrada al edificio.
+                    Cómo llego a las oficinas de MUT Encomenderos;El edificio de oficinas MUT Encomenderos (puerta azul) tiene su entrada en la calle Roger de Flor 2725.
+                    Cómo llego a MUT El Bosque;El edificio MUT El Bosque está en El Bosque Norte 50, esquina con Apoquindo.
                     Cómo llego al estacionamiento de bicicletas MUT (Bicihub);"Para ir al estacionamiento de bicicletas o ""bici hub""  MUT, debes: 
                     - ir caminando al piso -1 y lo encontrarás al fondo (donde está la tienda de bicicletas)
                     - entrar caminando o en bicicleta por la calle Roger de Flor ó
@@ -49,8 +75,7 @@ const csvContent = `pregunta;Respuesta
                     Si vienes en camión, debes estacionarte en el andén de carga, piso -2, previo registro. Cualquier duda adicional, debes comunicarte con tu solicitante"
                     Cuál es la dirección de MUT;La dirección de MUT es: Apoquindo 2730
                     Cuál es la dirección de las oficinas MUT Apoquindo;La dirección de MUT Apoquindo es: Apoquindo 2730
-                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON - GRENERGY
-                    Dónde queda la oficina de Territoria en MUT;La oficina de Territoria queda en Roger de Flor 2736, piso 7, Las Condes.
+                    Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE - PROVIDA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON - GRENERGY - BCI NACE
                     Dónde quedan las oficinas de Enel en MUT;La oficina de Enel queda en el edificio MUT Encomenderos (puerta azul). Su dirección es Roger de Flor 2725
                     Dónde quedan las oficinas de ISDIN en MUT;La oficina de ISDIN queda en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 10.
                     Dónde quedan las oficinas de SIMPLI en MUT;La oficina de SIMPLI está en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 12.
@@ -62,12 +87,14 @@ const csvContent = `pregunta;Respuesta
                     Dónde quedan las oficinas de ALBEMARLE en MUT;Las oficinas de ALBEMARLE están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, pisos 9 y 10.
                     Dónde quedan las oficinas de MUREX en MUT;Las oficinas de MUREX están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 11.
                     Dónde quedan las oficinas de SII GROUP en MUT;Las oficinas de SII GROUP están en el edificio MUT Apoquindo (puerta roja). Su dirección es Apoquindo 2730, piso 12.
-                    Dónde quedan las oficinas de AVIRON en MUT;Las oficinas de AVIRON están en la Torre 4 de MUT, esquina El Bosque con Apoquindo. Su dirección es El Bosque Norte 50, oficinas 1101 y 1102, piso 11.
-                    Dónde quedan las oficinas de GRENERGY en MUT;Las oficinas de GRENERGY están en la Torre 4 de MUT. Su dirección es El Bosque Norte 50, pisos del 12 al 16.
+                    Dónde quedan las oficinas de AVIRON en MUT;Las oficinas de AVIRON están en el edificio *MUT El Bosque*, esquina El Bosque Norte con Apoquindo. Su dirección es El Bosque Norte 50, oficinas 1101 y 1102, piso 11.
+                    Dónde quedan las oficinas de GRENERGY en MUT;Las oficinas de GRENERGY están en el edificio *MUT El Bosque*. Su dirección es El Bosque Norte 50, pisos del 12 al 16.
+                    Dónde quedan las oficinas de BCI Nace en MUT;Las oficinas de *BCI Nace* están en el edificio *MUT El Bosque*. Su dirección es El Bosque Norte 50.
+                    Qué empresas están en MUT El Bosque;En el edificio *MUT El Bosque* (El Bosque Norte 50) están las oficinas de *Grenergy*, *BCI Nace* y *Aviron*.
                     Qué tiendas de Belleza y Maquillaje hay en MUT?;"En MUT hay varias tiendas de Belleza y Maquillaje:
                     -Piso 1: Blush Bar
                     -Piso -1: Newen, Majen, Bath and Blanc, Bom Beauty
-                    -Piso -3: Natura, The Body Shop, Pichara (insumos de pelo y belleza), Pink Lady, Farmacias Ahumada, Knop y Salcobrand
+                    -Piso -3: Natura, The Body Shop, Pichara (insumos de pelo y belleza), Pink Lady, Farmacias Ahumada, Knop, Salcobrand y Rock My Love (manicure, masajes y maquillaje)
                     -Piso -1: Bumi Lifestyle (jabones y cuidado personal)"
                     Cuáles son los horarios de MUT;Horario general MUT: 10:00 – 20:00. Tiendas retail calle MUT: 10:00 – 20:30. Cocinerías pisos -2 y -3: generalmente 10:00 – 21:00/21:30. Restaurantes pisos 3, 4 y 5: horarios varían por restaurante, puedes preguntarme por uno en específico.
                     "Cuáles son los valores o tarifas del estacionamiento de bicicletas o ""bici hub"" de MUT";Público general: 0 a 3 horas: gratis. Valor por minuto adicional: $8. Valor día completo. $5.000 (desde las 13 hrs. en adelante)
@@ -101,8 +128,19 @@ const csvContent = `pregunta;Respuesta
                     Pisos-5 y -6: estacionamientos de oficinas
                     Pisos -7 al -9: estacionamientos públicos"
                     Hay supermercado en MUT;En el piso -3 está el supermercado SPID.
-                    Hay peluquería y manicure en MUT;Sí, hay peluquería y manicure en MUT. En el piso -3 está la peluquería MIMI.
-                    Hay SPA en MUT;En el piso -3, está el spa Infinity Soul, de masajes faciales
+                    Hay peluquería y manicure en MUT;"Sí, hay peluquería y manicure en MUT en el piso -3:
+                    - Peluquería MIMI
+                    - Rock My Love (manicure, masajes y maquillaje, al costado de Lodoro)"
+                    Hay SPA en MUT;"En el piso -3 hay opciones de spa, masajes y bienestar:
+                    - Infinity Soul (masajes faciales)
+                    - Rock My Love (manicure, masajes y maquillaje, al costado de Lodoro)"
+                    Hay manicure en MUT;"Sí, en MUT puedes hacerte manicure en el piso -3:
+                    - Rock My Love (manicure, masajes y maquillaje, al costado de Lodoro). _Horario: L-D 10:00 - 20:00_
+                    - Peluquería MIMI"
+                    Hay masajes en MUT;"Sí, en MUT puedes recibir masajes en el piso -3:
+                    - Rock My Love (manicure, masajes y maquillaje, al costado de Lodoro). _Horario: L-D 10:00 - 20:00_
+                    - Infinity Soul (masajes faciales)"
+                    Dónde está Rock My Love o qué es Rock My Love;Rock My Love es una tienda de belleza especializada en *manicure, masajes y maquillaje*, ubicada en el *Piso -3* de MUT, al costado de Lodoro. _Horario: L-D 10:00 - 20:00_
                     Hay farmacias en MUT;En MUT hay 3 farmacias: Salcobrand, Knop y Farmacias Ahumada, todas están en el piso -3 de MUT
                     Cuál es la página web de mut;La página web de mut es www.mut.cl
                     Dónde está el lobby o recepción del edificio de oficinas de MUT;"El lobby o recepción del edifcio de oficinas de MUT Roger de Flor está en el piso 3
@@ -156,7 +194,6 @@ const csvContent = `pregunta;Respuesta
                     -piso -2: Huentelauquén y Sama
                     -piso -3: Castaño"
                     Cuántas pizzerías y restaurantes o cocinerías de comida italiana hay en MUT;"En MUT puedes encontrar variedad de coicinerías y restaurantes de comida italiana, están:
-                    -Piso -3: Pizzario
                     -Piso -2: Tony Pizzería, Loca Pasta, Pizzería Savoia
                     -Piso 4: Toni Lautaro"
                     Hay algún BAR en MUT;"Sí, en MUT hay varios bares:
@@ -165,7 +202,7 @@ const csvContent = `pregunta;Respuesta
                     Piso 3: Les Dix Vins, bar de vinos y quesos; Meli Meló (brunch, almuerzo, comida y bar)
                     Piso 5: The Loft, bar y comida internacional"
                     Dónde está The Loft o cuál es el horario de The Loft;The Loft es un Bar y Restaurante de comida internacional, está en el Piso 5 de MUT. Horario: Lunes y martes 12:30 – 01:00, Miércoles a sábado 12:30 – 02:00, Domingo 12:30 – 00:00.
-                    Dónde está Meli Meló o cuál es el horario de Meli Meló;Meli Meló es un restaurante de cocina contemporánea que ofrece brunch, almuerzo, comida y bar. Está en el Piso 3 de MUT. Su horario es: 10:00 a 22:30
+                    Dónde está Meli Meló o cuál es el horario de Meli Meló;Meli Meló es un restaurante de cocina contemporánea que ofrece brunch, almuerzo, comida y bar. Está en el Piso 3 de MUT. Horario: Lunes a sábado 10:00 – 23:00, Domingo 10:00 – 22:30.
                     Dónde está Tamango o qué es Tamango;Tamango Brebajes es una cervecería artesanal que ofrece cervezas frescas y lupuladas. Está en el Piso -2 de MUT
                     Dónde puedo comer sushi en MUT;"En MUT puedes encontrar sushi en:
                     -Piso -2: Sushilab, Arigato y Restaurante Embarcadero 41 (comida peruana con sushi)"
@@ -180,7 +217,7 @@ const csvContent = `pregunta;Respuesta
                     -piso -2: cocinería La Flaca, la sanguchería Don César, Emporio Schwencke ,Perritos Chao y Chancho 1."
                     Cuáles son los restaurantes o locales de sandwich o sangucherías en MUT;"En MUT puedes encontrar varios locales de venta de sandwich o sangucherías, entre ellos están:
                     -piso -3: Antigua Fuente; MIT Burger
-                    -piso -2: La Fiambrería, Don César, Rapaz, Emporio Schwencke
+                    -piso -2: La Fiambrería, Don César, Rapaz, Emporio Schwencke, Chancho N°1
                     -piso 3: Rebelde"
                     Hay tiendas de música, instrumentos musicales o disquerías en MUT;"Sí, en MUT están las siguientes tiendas de música, instrumentos musicales o disquerías:
                     -piso -3: Casa Royal (audio, electrónica e instrumentos musicales). Horario: L-S 10:00–20:00, D y festivos 10:00–19:00
@@ -196,14 +233,14 @@ const csvContent = `pregunta;Respuesta
                     -piso 2: está la tienda deportiva Lippi"
                     ¿Hay restaurantes en MUT?;"Sí, en MUT hay varios restaurantes, entre ellos puedes encontrar:
                     -piso 5: Restaurante Diablo, que es de vinos y carnes;
-                    -piso 5: Bar y Restaurante The Loft. Horario: Lunes y martes 12:30 – 01:00, Miércoles a sábado 12:30 – 02:00, Domingo 12:30 – 00:00; 
+                    -piso 5: Bar y Restaurante The Loft;
                     -piso 4: Restaurante Toni Lautaro, que es de pizzas y comida italiana;
-                    -piso 4: Restaurante Ambrosía Bistró, que es un restaurante de cocina de autor creativa;
-                    -piso 3: Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30);
-                    -piso 3: Les Dix Vins, bar de vinos y quesos;
-                    -piso -2: Restaurante Embarcadero 41, que es de comida Peruana;
+                    -piso 4: Restaurante Ambrosía Bistró, de cocina de autor creativa;
+                    -piso 3: *Les Dix Vins*, restaurante y tienda de vinos (también ofrece quesos);
+                    -piso 3: Meli Meló (brunch, almuerzo, comida y bar);
+                    -piso -2: Restaurante Embarcadero 41, de comida peruana;
                     -piso -2: Tamango Brebajes, cervecería artesanal;
-                    -piso -3: Antigua Fuente, que es una sanguchería típica chilena"
+                    -piso -3: Antigua Fuente, sanguchería típica chilena"
                     Hay algún restaurante de comida peruana en MUT;Sí, en MUT está el Restaurante de comida peruana Embarcadero 41, en el piso -2
                     Hay algún restaurante o local de comida India en MUT;Sí, en MUT hay un local de comida India que se llama Naresh y está en el piso -2
                     Hay panaderías y pastelerías en MUT;"Sí, en MUT hay varias panaderías y pastelerías, entre ellas puedes encontrar:
@@ -236,7 +273,7 @@ const csvContent = `pregunta;Respuesta
                     Piso -1: Aura, The Coffee
                     Piso 1: Barra Fundición, Pascucci, El Taller (hacia la calle por Encomenderos)
                     Piso 2: Starbucks
-                    Piso 3: Rebelde, Meli Meló (brunch, almuerzo, comida y bar. Horario: 10:00 a 22:30)"
+                    Piso 3: Rebelde, Meli Meló (brunch, almuerzo, comida y bar. Horario: L-S 10:00 – 23:00, D 10:00 – 22:30)"
                     Tengo emergencia, necesito un numero de emergencia o qué hago en una emergencia o cómo contacto a seguridad;Si necesitas asistencia por cualquier tipo de problema, favor acércate al módulo de servicio al cliente, ubicado en el piso -3 de MUT, al fondo, entre Pastelería Jo y Farmacias Ahumada
                     Donde puedo comprar accesorios de telefónia, accesorios de celular, una carcasa, un cargador de celular para mi teléfono;"Si necesitas productos de telefonía, puedes ir a:
                     -piso 2: Maconline
@@ -310,7 +347,7 @@ const csvContent = `pregunta;Respuesta
                     -Piso 5: Restaurante Diablo
                     -Piso 3: Meli Meló"
                     Qué locales o restaurantes venden alcohol en MUT;"En MUT hay muchos locales que venden alcohol y bebidas alcohólicas:
-                    Piso -3: Antigua Fuente, Pizzario, MIT Burger, Spid
+                    Piso -3: Antigua Fuente, MIT Burger, Spid
                     Piso -2: Embarcadero, La Vermutería, Vique Club, Tamango Brebajes, El Valenciano, Ranty Tablas, La Verita, Tamango, Chancho N1, Rapaz, Chinga Tu Taco, Mercado Paine, Loca Pasta, Don César, Pan León, La Flaca, Rienda Suelta
                     Piso -1: Aura
                     Piso 1: Barra Fundición
@@ -335,24 +372,24 @@ const csvContent = `pregunta;Respuesta
                     Dónde está Scarf Me o Scarfme;Scarf Me Chile es una tienda de pañuelos, pareos y accesorios textiles de origen brasileño, ubicada en el piso 1 de MUT. Se enfoca en diseño, calidad y versatilidad, con piezas que combinan elegancia y una estética atemporal.
                     Dónde está La Vermutería o Pobre Vermut;La Vermutería está en el piso -2 de MUT. Es la única vermutería de Chile, a cargo de Pobre Vermut, un vermut artesanal chileno con botánicos endémicos. Horario: 10:00 – 21:30.
                     Dónde está Mercado Paine;Mercado Paine es un local de venta de fruta y verdura fresca en el piso -2 de MUT. Horario: 10:00 – 20:00.
-                    Cuál es el horario de Diablo;Diablo está en el piso 5. Horario: Lunes a miércoles 12:30 – 22:30, Jueves a sábado 12:30 – 23:30, Domingo 13:00 – 17:30.
-                    Cuál es el horario de Toni Lautaro;Toni Lautaro está en el piso 4. Horario: Lunes a sábado 12:30 – 22:30, Domingo 12:30 – 17:30. Brunch sábados y domingos 10:00 – 12:00.
+                    Cuál es el horario de Diablo;Diablo está en el piso 5. Horario: Lunes a sábado 12:30 – 23:00, Domingo 13:00 – 17:30.
+                    Cuál es el horario de Toni Lautaro;Toni Lautaro está en el piso 4. Horario: Lunes a sábado 12:30 – 23:00, Domingo 12:30 – 17:30. Brunch sábados y domingos 10:00 – 12:00.
                     Cuál es el horario de Ambrosía;Ambrosía Bistró está en el piso 4. Horario: Lunes a sábado 12:30 – 22:30 (cierre de local 00:00). Domingo hasta las 17:30.
-                    Cuál es el horario de Les Dix Vins;Les Dix Vins está en el piso 3. Horario: Lunes a sábado 09:30 – 23:30 (cocina cierra a las 22:30), Domingo 09:30 – 20:00.
+                    Cuál es el horario de Les Dix Vins;Les Dix Vins está en el piso 3. Horario: Lunes a sábado 09:30 – 23:00 (cocina cierra a las 22:30), Domingo 09:30 – 20:00.
                     Cuál es el horario de Rebelde;Rebelde está en el piso 3. Horario: Lunes a viernes 09:00 – 21:00, Sábado 10:00 – 21:00, Domingo 10:00 – 20:00.
                     Cuál es el horario de Barra Fundición;Barra Fundición está en el piso 1. Horario: Lunes y martes 08:00 – 21:30, Miércoles a viernes 08:00 – 22:30, Sábado 10:00 – 22:30, Domingo 10:00 – 21:30.
                     Cuál es el horario del supermercado Spid;El supermercado Spid está en el piso -3. Horario: Lunes a sábado 08:00 – 20:00, Domingo 09:00 – 20:00.
                     Cuál es el horario de Loca Pasta;Loca Pasta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
                     Cuál es el horario de Don César;Don César está en el piso -2. Horario: Lunes a domingo 10:00 – 21:00.
-                    Cuál es el horario de Embarcadero 41;Embarcadero 41 está en el piso -2. Horario: Lunes a miércoles 12:00 – 21:30, Jueves a sábado 12:00 – 23:30, Domingo 12:00 – 20:00.
+                    Cuál es el horario de Embarcadero 41;Embarcadero 41 está en el piso -2. Horario: Lunes a sábado 12:00 – 23:30, Domingo 12:00 – 20:00.
                     Cuál es el horario de Vique Club;Vique Club está en el piso -2. Horario: Lunes a domingo 10:00 – 20:00.
                     Cuál es el horario de Pan León;Pan León está en el piso -2. Horario: Lunes a sábado 07:30 – 21:00, Domingo y festivos 10:00 – 19:00.
                     Cuál es el horario de La Flaca;La Flaca está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de Rapaz;Rapaz está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
-                    Cuál es el horario de Chancho N1;Chancho N°1 está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
+                    Cuál es el horario de Chancho N1;Chancho N°1 está en el piso -2. Horario: Lunes a domingo 12:00 – 21:30.
+                    Dónde está Chancho N°1 o qué es Chancho;Chancho N°1 es una *sanguchería y cocina de oficio* dedicada al chancho completo (sánguches, platos y charcutería), ubicada en el *Piso -2* de MUT. _Horario: L-D 12:00 - 21:30._ Web: www.chancho1.com
                     Cuál es el horario de Rienda Suelta;Rienda Suelta está en el piso -2. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de Antigua Fuente;Antigua Fuente está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.
-                    Cuál es el horario de Pizzario;Pizzario está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.
                     Cuál es el horario de MIT Burger;MIT Burger está en el piso -3. Horario: Lunes a domingo 10:00 – 21:30.`;
 
 const PROMPT_TEMPLATES = {
@@ -388,6 +425,14 @@ const PROMPT_TEMPLATES = {
             Cuando el usuario pregunte por CATEGORÍAS de tiendas (ropa, joyas, deporte, tecnología, niños, infantil, etc.):
             1. No recomendar tiendas específicas
             2. Listar las tiendas que correspondan a esa categoría, indicando su piso , tienda, horario (ej: "Piso -1,Black; Bubba, 10:00 - 20:00")
+
+            ## REGLA CRÍTICA - CONSULTAS GENÉRICAS DE TIENDAS (NO sugerir nombres)
+            Cuando el mensaje del usuario sea ambiguo, genérico o de selección del menú (ej: "Búsqueda de tiendas", "tiendas", "Qué tiendas hay", "Comprar", "Ver tiendas"), SIN especificar una categoría, producto, marca o tipo:
+            1. NUNCA enumeres nombres de tiendas específicas (ni siquiera como "ejemplos")
+            2. NUNCA inventes tiendas que no estén en los datos CSV
+            3. Devuelve SOLO la pregunta de seguimiento con las CATEGORÍAS disponibles (ropa, zapatos, tecnología, belleza, libros, accesorios, deportes, hogar)
+            4. Usa exactamente el formato del Q/A "Búsqueda de tiendas" del CSV
+            Solo enumera tiendas concretas cuando el usuario ya haya indicado un tipo, marca o producto específico.
 
             ## REGLA DE CONSULTAS INFORMALES O PALABRAS SUELTAS
             Cuando el usuario envíe una sola palabra, una frase informal o una consulta mal formulada (ej: "sushi", "pizza", "café", "hola donde como sushi", "quiero hamburguesa"):
@@ -475,6 +520,17 @@ const PROMPT_TEMPLATES = {
             - "restaurantes": consultas sobre comida, menús, locales gastronómicos
             - "tienda": consultas sobre retail, compras, productos
 
+            ## REGLA CRÍTICA - RESPUESTA CUANDO NO SE ENCUENTRA
+            Cuando NO encuentres la tienda/restaurante/producto que el usuario pregunta:
+            1. isEncontrada DEBE ser false
+            2. El campo "respuesta" NUNCA debe quedar vacío ni decir solo "no se encuentra"
+            3. Redacta una respuesta corta y natural que:
+               a) Mencione específicamente el nombre o tipo que el usuario buscó (ej: "Pizzario", "tiendas de instrumentos", "Cookie Lab")
+               b) Aclare que no está en MUT o no lo conocemos
+               c) Derive al SAC del Piso -3 (al fondo, junto a Pastelería Jo y Farmacias Ahumada)
+            4. Mantén tono cálido y formato WhatsApp (*nombre*, emoji 😔 o 📍)
+            5. Si el usuario pregunta por una CATEGORÍA general sin marca específica (ej: "tiendas de joyas"), prefiere sugerir alternativas reales del listado antes de derivar al SAC.
+
             ## ESTRUCTURA JSON OBLIGATORIA
                 Responde SIEMPRE con esta estructura exacta:
                 {
@@ -491,11 +547,25 @@ const PROMPT_TEMPLATES = {
                 "typeQuestions": "restaurantes"
                 }
 
-                Pregunta: "Donde esta La Michuacana?"
+                Pregunta: "Donde esta La Michoacana?"
                 {
-                "respuesta": "No se eencutra el restaurante solicitado.",
+                "respuesta": "No tenemos *La Michoacana* en MUT 😔. Para más información puedes visitar el *SAC* 📍 en *Piso -3*, al fondo junto a *Pastelería Jo* y *Farmacias Ahumada*.",
                 "isEncontrada": false,
-                "typeQuestions": "otros"
+                "typeQuestions": "restaurantes"
+                }
+
+                Pregunta: "Donde está pizzario"
+                {
+                "respuesta": "*Pizzario* ya no se encuentra en MUT 😔. Para sugerencias de pizzerías o más información, visita el *SAC* 📍 en *Piso -3*, al fondo junto a *Pastelería Jo* y *Farmacias Ahumada*.",
+                "isEncontrada": false,
+                "typeQuestions": "restaurantes"
+                }
+
+                Pregunta: "Hay tiendas de instrumentos musicales raros"
+                {
+                "respuesta": "No tenemos una tienda específica de *instrumentos musicales raros* en MUT 😔. Tenemos Casa Royal (*Piso -3*), Plaza Música, Needle y Music Chile (*Piso -1*) que podrían interesarte. Si buscas algo muy específico, visita el *SAC* en *Piso -3*.",
+                "isEncontrada": false,
+                "typeQuestions": "tienda"
                 }
 
             ## RECORDATORIO FINAL
