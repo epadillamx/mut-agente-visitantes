@@ -53,8 +53,8 @@ Si vienes en camión, debes estacionarte en el andén de carga, piso -2, previo 
 Cuál es la dirección de MUT;La dirección de MUT es: Apoquindo 2730;10 Otras preguntas;;
 Cuál es la dirección de las oficinas MUT Roger de Flor;La dirección de MUT Roger de Flor es: Roger de Flor 2775;7 Información sobre ubicación de oficinas MUT;;
 Cuál es la dirección de las oficinas MUT Apoquindo;La dirección de MUT Apoquindo es: Apoquindo 2730;7 Información sobre ubicación de oficinas MUT;;
-Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE- PROVIDA- TERRITORIA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX;7 Información sobre ubicación de oficinas MUT;;
-Dónde queda la oficina de Territoria en MUT;La oficina de Territoria queda en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 14.;7 Información sobre ubicación de oficinas MUT;;
+Qué empresas hay en los edificios de oficinas de MUT;En MUT hay oficinas de las siguientes empresas: METLIFE - PROVIDA - BUK - SIMPLI - SIERRA GORDA - ALBEMARLE - ISDIN - SCHNEIDER ELECTRIC - SMA - ENEL - SII GROUP - MUREX - AVIRON - GRENERGY - BCI NACE;7 Información sobre ubicación de oficinas MUT;;
+Dónde quedan las oficinas de BCI Nace en MUT;Las oficinas de BCI Nace están en el edificio MUT El Bosque. Su dirección es El Bosque Norte 50.;7 Información sobre ubicación de oficinas MUT;;
 Dónde quedan las oficinas de Enel en MUT;La oficina de Enel queda en el edificio MUT Encomenderos (puerta azul). Su dirección es Roger de Flor 2725;7 Información sobre ubicación de oficinas MUT;;
 Dónde quedan las oficinas de ISDIN en MUT;La oficina de ISDIN queda en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 10.;7 Información sobre ubicación de oficinas MUT;;
 Dónde quedan las oficinas de SIMPLI en MUT;La oficina de SIMPLI está en el edificio MUT Roger de Flor (puerta naranja). Su dirección es Roger de Flor 2775, piso 12.;7 Información sobre ubicación de oficinas MUT;;
@@ -145,7 +145,6 @@ Qué tiendas de relojes o relojerías hay en MUT;"En MUT está la tienda ""La Re
 Qué tiendas de hogar, muebles y decoración hay en MUT;"En MUT hay varias tiendas de hogar, muebles y decoración:
 -piso -3: Lipka
 -piso -1: Rincón Himalaya, Simple by Puro, Creado en Chile, Bumy Lifestyle, The Plant Store , Bath and Blanc, Lycos Vounó, Ojo por Ojo, Kabinet, Karungen y Pasquín
--piso 1: Brando
 -piso 3: Larry y Las 7 Vidas del Mueble";1 preguntas sobre búsqueda de tiendas;;
 Qué tiendas de manualidades, lápices y artículos de librería hay en MUT;"En MUT hay varias tiendas de manualidades, lápices y articulos de librería:
 -piso -1: Cordelia, Premium Paper, The Color Shop, Lamy y Revesderecho";1 preguntas sobre búsqueda de tiendas;;
@@ -172,7 +171,6 @@ Hay locales de venta de empanadas en MUT;"Sí, en MUT hay locales de empanadas, 
 -piso -2: Huentelauquén y Sama
 -piso -3: Castaño";;;
 Cuántas pizzerías y restaurantes o cocinerías de comida italiana hay en MUT;"En MUT puedes encontrar variedad de coicinerías y restaurantes de comida italiana, están:
--Piso -3: Pizzario
 -Piso -2: Tony Pizzería, Loca Pasta, Pizzería Savoia
 -Piso 4: Toni Lautaro";1 preguntas sobre búsqueda de tiendas;;
 Cuántas cocinerías y restaurantes de comida asiática hay en MUT;"En MUT puedes encontrar variedad de coicinerías y restaurantes de comida Asiática, están:

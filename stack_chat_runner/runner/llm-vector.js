@@ -145,7 +145,9 @@ async function inputLlm(inputTextuser) {
         // Solo llamar a búsqueda vectorial si es restaurante/tienda
         logger.info(`🔎 Buscando en base vectorial (tipo: ${messagePreguntas.typeQuestions})...`);
         const messageStore = await vectorial(inputTextuser);
-        if (messageStore.isEncontrada) {
+        if (messageStore.respuesta && messageStore.respuesta.trim()) {
+            // Confiamos en la respuesta del LLM (esté isEncontrada o no): el prompt
+            // extractRestaurante ya genera un texto personalizado cuando no encuentra
             respuestaFinal = messageStore.respuesta;
         } else {
             respuestaFinal = 'Para esa consulta específica, puedes visitar nuestro *SAC* 📍 en *Piso -3* al fondo, junto a *Pastelería Jo* y *Farmacias Ahumada*';
