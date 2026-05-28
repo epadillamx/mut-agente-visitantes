@@ -279,7 +279,9 @@ async function handleWhatsAppMessage(event) {
                                     logger.warn(`===============MSS ${from}: ${messageBody} || ${messageId}`);
 
                                     let startTime = Date.now();
-                                    const agentResponse = await inputLlm(messageBody);
+                                    // Pasamos `from` (teléfono) como userId para que inputLlm
+                                    // cargue el historial conversacional reciente del usuario.
+                                    const agentResponse = await inputLlm(messageBody, from);
 
 
                                     logger.warn(`===============RESPUESTA ${from}: RE: ${agentResponse}  || ${messageId}`);
@@ -367,11 +369,21 @@ async function handleDirectChat(event) {
         logger.info(`Prueba directa - SessionId: ${userId}, Question: ${userQuestion}`);
 
         // Llamar directamente a inputLlm (flujo local sin Bedrock Agent)
+        // Pasamos userId para activar memoria conversacional también en pruebas
         const startTime = Date.now();
-        const agentResponse = await inputLlm(userQuestion);
+        const agentResponse = await inputLlm(userQuestion, userId);
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-        
+
         logger.info(`✅ Respuesta generada en ${elapsed}s`);
+
+        // Guardar el turno en DynamoDB para que la memoria conversacional funcione
+        // en pruebas multi-turn vía /chat (fire-and-forget, como el webhook real).
+        // El messageId aquí es sintético porque /chat no tiene message_id de WhatsApp.
+        const syntheticMessageId = `chat-${userId}-${Date.now()}`;
+        const conversationService = new ConversationService();
+        conversationService.saveMessage(userId, userQuestion, agentResponse, syntheticMessageId, {
+            agentMetadata: { sessionId: userId, processingTimeMs: Date.now() - startTime, source: 'direct-chat' }
+        }).catch(err => logger.error('Error guardando mensaje /chat (background):', err));
 
         return createResponse(200, {
             sessionId: userId,

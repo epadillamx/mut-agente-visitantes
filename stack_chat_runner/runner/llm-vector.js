@@ -2,7 +2,57 @@ import { invokeClaude } from './bedrock/claude.service.js';
 import { PROMPT_TEMPLATES } from './plantillas/prompts.js';
 import { searchVectorStore, formatSearchResults, isCacheActive, initAllVectorStores } from './vectorial.service.js';
 import { getEventosContexto } from './eventos.service.js';
+import { ConversationService } from './conversationService.js';
 import logger from './logger.js';
+
+// Ventana de memoria conversacional: cuántos turnos previos pasarle al LLM
+const MEMORY_WINDOW = 5;
+// Cuántos turnos pedir a DynamoDB (más grande que la ventana para tener margen
+// después de filtrar MENU_BIENVENIDA y turnos del bot de incidencias)
+const MEMORY_FETCH_LIMIT = 12;
+
+// Preguntas sobre datos físicos cerrados (baños, SAC, estacionamiento) NO deben
+// usar el contexto conversacional para evitar que el LLM "adapte" ubicaciones al
+// piso del que se venía hablando. Cuando detectamos estas keywords, se omite
+// el bloque de CONVERSACIÓN PREVIA al pasarle el input al LLM.
+const CLOSED_DATA_PATTERNS = /\b(baño|baños|bathroom|toilet|wc|servicios sanitarios)\b/i;
+
+function shouldBypassMemory(text) {
+    return CLOSED_DATA_PATTERNS.test(text);
+}
+
+/**
+ * Lee el historial reciente del usuario desde DynamoDB y lo formatea como
+ * bloque de contexto para inyectar al LLM. Falla blanda: si algo sale mal,
+ * devuelve string vacío y el bot sigue funcionando sin memoria.
+ *
+ * Filtros aplicados:
+ *  - chat_type === 'visitantes'  (la tabla la comparte con el bot de incidencias)
+ *  - agent_response !== 'MENU_BIENVENIDA' (no aporta como contexto)
+ */
+async function loadConversationContext(userId) {
+    if (!userId) return '';
+    try {
+        const cs = new ConversationService();
+        const history = await cs.getConversationHistory(userId, MEMORY_FETCH_LIMIT);
+        const useful = (history || [])
+            .filter(m => m && m.chat_type === 'visitantes')
+            .filter(m => m.agent_response && m.agent_response !== 'MENU_BIENVENIDA')
+            .filter(m => m.user_message && m.user_message.trim())
+            .slice(-MEMORY_WINDOW);
+
+        if (useful.length === 0) return '';
+
+        const turns = useful.map(m =>
+            `Usuario: ${m.user_message}\nBot: ${m.agent_response}`
+        ).join('\n---\n');
+
+        return `\n## CONVERSACIÓN PREVIA RECIENTE\n${turns}\n## FIN CONVERSACIÓN PREVIA\n`;
+    } catch (err) {
+        logger.warn(`No se pudo cargar historial para ${userId}: ${err.message}`);
+        return '';
+    }
+}
 
 // Detectar saludos simples sin llamar al LLM
 function isSimpleGreeting(text) {
@@ -93,12 +143,12 @@ Usa esta información de restaurantes cuando sea relevante para la pregunta del 
     return resultlocalerroneo;
 }
 
-async function inputLlm(inputTextuser) {
+async function inputLlm(inputTextuser, userId = null) {
     let startTime = Date.now();
-    
+
     logger.info('');
     logger.info('🚀 ============================================');
-    logger.info(`📩 INPUT: "${inputTextuser}"`);
+    logger.info(`📩 INPUT: "${inputTextuser}" (userId=${userId || 'n/a'})`);
     logger.info('🚀 ============================================');
 
     // Validar si el cache está activo antes de procesar
@@ -116,8 +166,8 @@ async function inputLlm(inputTextuser) {
     }
 
     let respuestaFinal = "";
-    
-    // OPTIMIZACIÓN: Detectar saludos simples SIN llamar al LLM
+
+    // OPTIMIZACIÓN: Detectar saludos simples SIN llamar al LLM (ni leer historial)
     if (isSimpleGreeting(inputTextuser)) {
         respuestaFinal = getWelcomeMessage();
         logger.info('👋 Saludo detectado - respuesta automática');
@@ -126,17 +176,39 @@ async function inputLlm(inputTextuser) {
         return respuestaFinal;
     }
 
+    // Cargar historial conversacional y construir input enriquecido
+    // (en paralelo con la clasificación no se puede porque enrichedInput la alimenta)
+    const memStart = Date.now();
+    const conversationContext = await loadConversationContext(userId);
+    const memTime = ((Date.now() - memStart) / 1000).toFixed(2);
+    const turnos = conversationContext ? conversationContext.split('---').length : 0;
+    logger.info(`🧠 Contexto cargado (${memTime}s): ${turnos} turnos previos`);
+
+    // Bypass: si la pregunta es sobre datos físicos cerrados (baños, etc.) no
+    // pasamos el contexto previo para evitar que el LLM "adapte" la respuesta
+    // al piso del que se venía hablando (caso real: contexto "Rock My Love P-3"
+    // hace que el LLM agregue "Piso -3" a la lista de baños, que es incorrecto).
+    const bypassMemory = shouldBypassMemory(inputTextuser);
+    if (bypassMemory && conversationContext) {
+        logger.info('🚫 Bypass de memoria: pregunta sobre datos cerrados (baños/servicios)');
+    }
+
+    const enrichedInput = (conversationContext && !bypassMemory)
+        ? `${conversationContext}\n## MENSAJE ACTUAL DEL USUARIO\n${inputTextuser}`
+        : inputTextuser;
+
     // OPTIMIZACIÓN: Una sola llamada inicial para clasificar
     const classifyStart = Date.now();
     logger.info('🔍 Clasificando pregunta...');
-    const messagePreguntas = await invokeQuestions(inputTextuser);
+    const messagePreguntas = await invokeQuestions(enrichedInput);
     const classifyTime = ((Date.now() - classifyStart) / 1000).toFixed(2);
-    
+
     logger.info(`🤖 Clasificación (${classifyTime}s): tipo="${messagePreguntas.typeQuestions}", encontrada=${messagePreguntas.isEncontrada}`);
-    
+
     // Manejar según el tipo de pregunta
     if (messagePreguntas.typeQuestions === 'eventos') {
-        // Flujo de eventos: filtrado semántico con LLM
+        // Flujo de eventos: filtrado semántico con LLM (mantiene input original; los
+        // eventos no se ciclan como tiendas, no hace falta inyectar memoria aquí)
         respuestaFinal = await consultarEventos(inputTextuser);
     } else if (messagePreguntas.isEncontrada) {
         logger.info('✅ Respuesta encontrada en clasificación');
@@ -144,7 +216,7 @@ async function inputLlm(inputTextuser) {
     } else if (messagePreguntas.typeQuestions !== 'otros') {
         // Solo llamar a búsqueda vectorial si es restaurante/tienda
         logger.info(`🔎 Buscando en base vectorial (tipo: ${messagePreguntas.typeQuestions})...`);
-        const messageStore = await vectorial(inputTextuser);
+        const messageStore = await vectorial(enrichedInput);
         if (messageStore.respuesta && messageStore.respuesta.trim()) {
             // Confiamos en la respuesta del LLM (esté isEncontrada o no): el prompt
             // extractRestaurante ya genera un texto personalizado cuando no encuentra
@@ -153,8 +225,16 @@ async function inputLlm(inputTextuser) {
             respuestaFinal = 'Para esa consulta específica, puedes visitar nuestro *SAC* 📍 en *Piso -3* al fondo, junto a *Pastelería Jo* y *Farmacias Ahumada*';
         }
     } else {
-        logger.info('❓ Tipo "otros" - derivando a SAC');
-        respuestaFinal = 'El equipo de *Servicio al Cliente* en *Piso -3* te puede ayudar mejor con eso. Están al fondo, al lado de *Pastelería Jo* 😊';
+        // Tipo "otros": confiar en la respuesta del LLM si trae una personalizada
+        // (cuando el usuario menciona un nombre concreto que no existe, extractInfo
+        // ya genera una respuesta personalizada con el nombre). Fallback solo si viene vacía.
+        if (messagePreguntas.respuesta && messagePreguntas.respuesta.trim()) {
+            logger.info('❓ Tipo "otros" - usando respuesta personalizada del LLM');
+            respuestaFinal = messagePreguntas.respuesta;
+        } else {
+            logger.info('❓ Tipo "otros" sin respuesta - fallback SAC');
+            respuestaFinal = 'El equipo de *Servicio al Cliente* en *Piso -3* te puede ayudar mejor con eso. Están al fondo, al lado de *Pastelería Jo* 😊';
+        }
     }
 
     let wordCount = respuestaFinal.split(/\s+/).length;
