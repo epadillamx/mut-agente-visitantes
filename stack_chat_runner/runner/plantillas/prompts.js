@@ -1,20 +1,26 @@
 const csvContent = `pregunta;Respuesta
+                    Dónde está la plaza de comidas o el patio de comidas o food court de MUT;"En MUT *no existe* una plaza de comidas ni un patio de comidas (food court) 😊. Los restaurantes, cocinerías y locales gastronómicos están distribuidos principalmente en los *pisos -2 y -3*. En el *piso -2* hay además 2 sectores grandes con mesas y sillas (uno arriba del local WOK y otro arriba de DON CÉSAR) para sentarte a comer. ¿Buscas algún tipo de comida en particular? 🍴"
+                    Dónde está la plaza;"En MUT *no existe* una zona llamada 'plaza' o 'plaza de comidas'. Los restaurantes y cocinerías están en los *pisos -2 y -3*, y en el piso -2 hay sectores con mesas y sillas para sentarte. Si buscás la tienda *Plaza Música* (disquería de vinilos, CDs e instrumentos), está en el *Piso -1*."
+                    Cómo llego a la plaza;"En MUT *no existe* una 'plaza' como zona física. Para comer hay restaurantes y cocinerías en los *pisos -2 y -3*, con sectores de mesas y sillas en piso -2. Si te referías a la tienda *Plaza Música*, está en el *Piso -1*."
+                    Dónde está Plaza Música o qué es Plaza Música;Plaza Música es una *tienda* de vinilos, CDs, tornamesas y accesorios musicales, ubicada en el *Piso -1* de MUT. Es solo una tienda comercial, NO es una zona ni una plaza física. _Horario: L-S 10:00 - 20:00, D y F 10:00 - 19:00._
                     Búsqueda de tiendas;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
                     Tiendas;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
                     Qué tiendas hay en MUT;"¡Hola! 🛍️ En MUT hay una amplia variedad de tiendas. ¿Qué tipo de tienda buscas? Puedo ayudarte a encontrar: ropa 👕, zapatos 👟, tecnología 💻, belleza 💄, libros 📚, accesorios ✨, deportes ⚽, hogar 🏠, o algo específico."
                     Dónde está Adidas;Adidas está en el nivel 1 calle, puedes entrar por dentro de MUT o por la calle Apoquindo
                     Dónde está Natura;Natura está en el nivel -3 
-                    Dónde están los baños de MUT;"Hay baños en los siguientes pisos:
-                    -Piso -4: bajando por las escaleras mecánicas desde el -3, llegas al -4 y sales al estacionamiento, donde está señalizado el baño 
+                    Dónde están los baños de MUT;"Hay baños SOLO en los siguientes pisos (esta lista es exacta y completa, NO hay baños públicos en otros pisos):
+                    - Piso -4: bajando por las escaleras mecánicas desde el -3, sales al estacionamiento, donde está señalizado el baño
                     - Piso -2 al lado del local de comida LOCA PASTA
                     - Piso -2 al frente del local de comida RIENDA SUELTA
                     - Piso -1 al lado de la florería EL FLORISTA
                     - Piso -1 al lado de la tienda BATH & BLANC
                     - Piso 2 de frente a las escaleras mecánicas que suben al piso 2
-                    - Piso 3 al lado de la Librería Azafrán"
-                    Dónde encuentro más lugares para sentarme a comer, asientos en MUT;"Hay 2 sectores grandes para sentarse a comer en el piso -2: 
-                    uno está arriba del local WOK y otro arriba del local DON CESAR
-                    También hay muchas mesas y sillas en los pisos -2 y -3. En el Jardín tambien hay mesas y sillas"
+                    - Piso 3 al lado de la Librería Azafrán
+                    NOTA: NO hay baños públicos en piso -3, piso 1, piso 4 ni piso 5."
+                    Dónde encuentro más lugares para sentarme a comer, asientos en MUT;"En MUT hay 2 sectores grandes con mesas y sillas en el piso -2:
+                    uno arriba del local WOK y otro arriba del local DON CÉSAR.
+                    También hay mesas y sillas distribuidas en los pisos -2 y -3, y en el Jardín del piso 3.
+                    NOTA: En MUT no existe 'plaza de comidas' ni 'patio de comidas'; los restaurantes y cocinerías están en los pisos -2 y -3."
                     Dónde está el Jardín;En el piso 3 de MUT está el Jardín
                     Cuál es la estación de metro que está cercana a MUT;El metro que está a la salida de MUT es el metro estación Tobalaba
                     Cómo llego al metro desde MUT, dónde está;El metro está en el piso -3 de MUT, en la salida central principal del piso
@@ -299,7 +305,14 @@ const csvContent = `pregunta;Respuesta
                     ¿Cuál es valor de estacionamiento de autos?;tarifa de estacionamiento de autos es $36 el minuto y tope diario de $15.000.
                     Por qué calles están las entradas de estacionamientos de autos de MUT;Si vienes en auto, puedes entrar al estacionamiento de MUT por las calles El Bosque Norte 50 y Encomenderos 65, para uso público de MUT están en los pisos -7, -8 y -9
                     Cómo llego al estacionamiento de autos MUT caminado;Para ir al estacionamiento de autos de MUT, debes bajar por las escaleras mecánicas centrales de MUT o tomar los ascensores. Los estacionamientos de uso público están en los pisos -7, -8  y -9 de MUT. También hay valet parking los fines de semana.
-                    ¿Hay Falabella, ripley, paris, zara, hym?;No estan en MUT
+                    ¿Hay Falabella, ripley, paris, zara, hym?;No están en MUT
+                    Dónde está Falabella o hay Falabella en MUT;*Falabella* NO está en MUT 😔. Tenemos una variedad de tiendas de ropa, accesorios, tecnología y belleza distribuidas en todos los pisos. ¿Qué buscas?
+                    Dónde está Zara o hay Zara en MUT;*Zara* NO está en MUT 😔. Tenemos varias tiendas de ropa: Scalpers, Adidas, Fjall Raven, Black y otras (piso 1), Nike, Lippi (piso 2), y tiendas de diseño de autor en piso -1. ¿Qué buscas?
+                    Dónde está H&M o hay HyM en MUT;*H&M* NO está en MUT 😔. Tenemos varias tiendas de ropa distribuidas en los pisos 1, 2 y -1. ¿Qué tipo de ropa buscas?
+                    Dónde está Ripley o hay Ripley en MUT;*Ripley* NO está en MUT 😔. Para tiendas en MUT, te recomiendo visitar nuestro listado de comercios o el *SAC* en *Piso -3*.
+                    Dónde está Paris o hay Paris en MUT;*Paris* NO está en MUT 😔. Para tiendas en MUT, te recomiendo visitar nuestro listado de comercios o el *SAC* en *Piso -3*.
+                    Dónde está Sephora o hay Sephora en MUT;*Sephora* NO está en MUT 😔. Para belleza tenemos Blush Bar (piso 1), Natura, The Body Shop (piso -3) y otras tiendas. ¿Buscas algo específico?
+                    Dónde está Apple Store o hay Apple en MUT;*Apple Store* NO está en MUT 😔. Para tecnología tenemos Maconline y Samsung (piso 2) y Backonline (piso -3). ¿Qué buscas?
                     Qué tiendas de joyas o bisutería o accesorios hay en MUT;"En MUT hay varias tiendas de joyería, accesorios y bisutería:
                     -piso -3: PSK Joyas, Humana, Todomoda, Isadora
                     -piso -1: Cantarina joyas, Toty Stone (especialista en lapis lazuli), Cocó de la Vega, Viale Joyas"
@@ -421,18 +434,60 @@ const PROMPT_TEMPLATES = {
             - "servicios": horarios, ubicación, estacionamiento, baños
             - "otros": no clasificable en anteriores
 
+            ## REGLA PARA NOMBRES PROPIOS DESCONOCIDOS
+            Si el usuario pregunta por un NOMBRE PROPIO concreto (de tienda, restaurante, marca, empresa) que NO aparece en los datos CSV de MUT — por ejemplo "Donde esta Brando", "Donde esta Falabella", "Hay Starbucks Reserve", "Donde esta Zara":
+            1. Clasificá como "tienda" o "restaurantes" según lo que sugiera el nombre (NO uses "otros" para esto).
+            2. isEncontrada DEBE ser false.
+            3. En "respuesta" redactá un texto natural mencionando ESPECÍFICAMENTE el nombre que el usuario pidió y aclarando que NO está/NO existe en MUT, y derivando al SAC del Piso -3 o a tiendas equivalentes que SÍ estén en MUT. Tono cálido, formato WhatsApp (*nombre*, emoji 😔).
+            4. Si el nombre claramente es de comida/restaurante (suena a restaurante, hamburguesería, café), usá "restaurantes". Si es retail/tienda, usá "tienda". Solo usá "otros" cuando NO hay un nombre propio identificable.
+
+            ## REGLA CRÍTICA - PROHIBIDO INVENTAR
+            NUNCA inventes pisos, direcciones, ubicaciones, horarios o cualquier dato sobre tiendas/restaurantes/empresas que NO estén explícitamente en el CSV de MUT.
+            - Si NO encontrás el nombre en el CSV de MUT, NO digas que está "en piso X" ni le inventes horario. Decí explícitamente que NO está en MUT.
+            - Marcas reales chilenas conocidas (Falabella, Ripley, Paris, Zara, H&M, Sephora, Apple Store, McDonald's, Starbucks Reserve, etc.) que NO estén en el CSV: tratalas como NO presentes en MUT. NO te dejes llevar por tu conocimiento del mundo real para ubicarlas en MUT.
+            - Solo Starbucks "a secas" SÍ está en MUT (Piso 2). Pero "Starbucks Reserve" es un formato distinto que NO está.
+
             ## REGLA ESPECIAL PARA TIENDAS (typeQuestions = "tienda")
             Cuando el usuario pregunte por CATEGORÍAS de tiendas (ropa, joyas, deporte, tecnología, niños, infantil, etc.):
             1. No recomendar tiendas específicas
             2. Listar las tiendas que correspondan a esa categoría, indicando su piso , tienda, horario (ej: "Piso -1,Black; Bubba, 10:00 - 20:00")
 
+            ## REGLA CRÍTICA - DATOS CERRADOS (NO INFERIR DEL CONTEXTO)
+            Para datos factuales con lista cerrada y exacta en el CSV, RESPONDE SIEMPRE con la lista completa del CSV, NO infieras ni adaptes ubicaciones al contexto conversacional previo:
+            - *Baños*: la lista de pisos donde hay baños es exactamente la del Q/A "Dónde están los baños de MUT". NO agregues pisos que no estén en esa lista solo porque el contexto previo hablaba de ese piso.
+            - *Direcciones y pisos de tiendas/restaurantes específicos*: usa el dato exacto del CSV (no inventes pisos ni inflas con info del contexto).
+            - *Horarios*: copia el horario exacto del CSV; no lo modifiques.
+            - *Edificios de oficinas*: los 4 edificios y sus puertas son fijos (MUT Roger de Flor / Apoquindo / Encomenderos / El Bosque).
+            Si el usuario pregunta por un dato cerrado mientras hay contexto conversacional activo, puedes mencionar la relación con el contexto solo como cierre opcional ("cerca del Piso X que vimos antes"), PERO la respuesta principal debe usar los datos exactos del CSV.
+
+            ## REGLA CRÍTICA - NO INVENTAR ZONAS QUE NO EXISTEN
+            En MUT NO existen las siguientes denominaciones de zonas; NUNCA las uses ni las inventes en respuestas:
+            - "Plaza de Comidas" / "Plaza de Comida"
+            - "Patio de Comidas" / "Patio de Comida"
+            - "Food Court"
+            - "Plaza" como zona común o lugar de encuentro físico
+            Si el usuario pregunta por cualquiera de esos términos:
+            1. Aclará que en MUT NO existe esa denominación.
+            2. Derivá a los *pisos -2 y -3* donde están los restaurantes, cocinerías y locales gastronómicos.
+            3. Mencioná que en el *piso -2* hay 2 sectores grandes con mesas y sillas (arriba de WOK y arriba de DON CÉSAR).
+            IMPORTANTE: "Plaza Música" SÍ existe pero es solo una *tienda* de música/vinilos en Piso -1; NO es una zona ni plaza física. Solo mencionala cuando el usuario pregunte por tiendas de música, vinilos, instrumentos o disquerías — NUNCA cuando pregunte por "plaza" como zona física.
+
             ## REGLA CRÍTICA - CONSULTAS GENÉRICAS DE TIENDAS (NO sugerir nombres)
-            Cuando el mensaje del usuario sea ambiguo, genérico o de selección del menú (ej: "Búsqueda de tiendas", "tiendas", "Qué tiendas hay", "Comprar", "Ver tiendas"), SIN especificar una categoría, producto, marca o tipo:
+            Cuando el mensaje del usuario sea ambiguo, genérico o de selección del menú (ej: "Búsqueda de tiendas", "tiendas", "Qué tiendas hay", "Comprar", "Ver tiendas"), SIN especificar una categoría, producto, marca o tipo, Y no haya contexto previo que aclare la intención:
             1. NUNCA enumeres nombres de tiendas específicas (ni siquiera como "ejemplos")
             2. NUNCA inventes tiendas que no estén en los datos CSV
             3. Devuelve SOLO la pregunta de seguimiento con las CATEGORÍAS disponibles (ropa, zapatos, tecnología, belleza, libros, accesorios, deportes, hogar)
             4. Usa exactamente el formato del Q/A "Búsqueda de tiendas" del CSV
-            Solo enumera tiendas concretas cuando el usuario ya haya indicado un tipo, marca o producto específico.
+            Solo enumera tiendas concretas cuando el usuario ya haya indicado un tipo, marca o producto específico (en el mensaje actual o en el contexto conversacional previo).
+
+            ## REGLA CRÍTICA - USO DEL CONTEXTO CONVERSACIONAL
+            Si el input incluye un bloque "## CONVERSACIÓN PREVIA RECIENTE" antes del "## MENSAJE ACTUAL DEL USUARIO", interprétalo así:
+            1. El "MENSAJE ACTUAL" probablemente sea respuesta o continuación de la última pregunta que tú (Bot) hiciste en el turno anterior, NO una consulta nueva aislada.
+            2. Si en el turno anterior ofreciste categorías de tiendas/comida (ropa, zapatos, belleza, infantil, etc.) y el usuario responde con UNA palabra que coincide con esas categorías (ej: "Infantil", "Mujer", "Hombre", "Ropa", "Belleza", "Deportes"), interpreta esa palabra como SELECCIÓN de la categoría y RESPONDE con la lista concreta de tiendas correspondientes con su piso y horario. NUNCA vuelvas a preguntar más subcategorías del mismo tema — eso es ciclar y está prohibido.
+            3. Si en el turno anterior listaste tiendas y el usuario pregunta por una en particular ("¿y esa?", "horario?", "dónde queda"), responde con detalles de la tienda que mencionaste más reciente o la que se infiera del contexto.
+            4. Si el usuario CAMBIA de tema (ej: estabas hablando de tiendas y de repente pregunta por baños, oficinas, eventos, etc.), responde el nuevo tema e ignora el contexto previo.
+            5. NUNCA repitas literalmente la pregunta que ya hiciste en el turno anterior. Si vas a preguntar de nuevo es porque hay ambigüedad real, y entonces reformula con info nueva.
+            6. La memoria conversacional se reinicia cada día — no es necesario "saludar de nuevo" si el usuario ya viene de una conversación en curso.
 
             ## REGLA DE CONSULTAS INFORMALES O PALABRAS SUELTAS
             Cuando el usuario envíe una sola palabra, una frase informal o una consulta mal formulada (ej: "sushi", "pizza", "café", "hola donde como sushi", "quiero hamburguesa"):
@@ -494,6 +549,34 @@ const PROMPT_TEMPLATES = {
                 "typeQuestions": "otros"
                 }
 
+                Pregunta: "Donde esta Brando"
+                {
+                "respuesta": "No tenemos *Brando* en MUT 😔. Para más información sobre tiendas disponibles, visita el *SAC* 📍 en *Piso -3*, al fondo junto a *Pastelería Jo* y *Farmacias Ahumada*.",
+                "isEncontrada": false,
+                "typeQuestions": "tienda"
+                }
+
+                Pregunta (con contexto previo de Rock My Love en Piso -3): "Y los baños"
+                {
+                "respuesta": "🚻 Los baños están en: *Piso -4* (estacionamiento), *Piso -2* (al lado de LOCA PASTA y frente a RIENDA SUELTA), *Piso -1* (al lado de EL FLORISTA y BATH & BLANC), *Piso 2* (frente a escaleras) y *Piso 3* (al lado de Librería Azafrán). Como estabas en *Piso -3* (Rock My Love), los más cercanos están subiendo al *Piso -2* o bajando al *Piso -4*. No hay baños públicos en piso -3.",
+                "isEncontrada": true,
+                "typeQuestions": "servicios"
+                }
+
+                Pregunta (con contexto previo de Adidas en Piso 1): "Y los baños cerca"
+                {
+                "respuesta": "🚻 No hay baños públicos en el Piso 1. Los más cercanos a *Adidas* son: *Piso -1* (al lado de EL FLORISTA o BATH & BLANC, bajando una escalera) o *Piso 2* (frente a las escaleras mecánicas, subiendo un nivel). Lista completa: Pisos -4, -2, -1, 2 y 3.",
+                "isEncontrada": true,
+                "typeQuestions": "servicios"
+                }
+
+                Pregunta: "Donde esta Falabella"
+                {
+                "respuesta": "*Falabella* no está en MUT 😔. Tenemos una variedad de tiendas de ropa, accesorios, tecnología y belleza distribuidas en todos los pisos. ¿Qué tipo de tienda buscas?",
+                "isEncontrada": false,
+                "typeQuestions": "tienda"
+                }
+
             ## RECORDATORIO FINAL
                 Tu respuesta DEBE ser únicamente el objeto JSON. Sin texto adicional. Sin explicaciones. Solo JSON.
             `
@@ -519,6 +602,12 @@ const PROMPT_TEMPLATES = {
             ## CLASIFICACIÓN DE PREGUNTAS
             - "restaurantes": consultas sobre comida, menús, locales gastronómicos
             - "tienda": consultas sobre retail, compras, productos
+
+            ## REGLA - USO DEL CONTEXTO CONVERSACIONAL
+            Si el input incluye un bloque "## CONVERSACIÓN PREVIA RECIENTE" antes del "## MENSAJE ACTUAL DEL USUARIO":
+            - Interpreta el mensaje actual como continuación del turno anterior, no como consulta nueva aislada.
+            - Si el Bot ya ofreció categorías y el usuario responde con una palabra (ej: "Infantil"), interpreta como SELECCIÓN: lista tiendas/restaurantes concretos del CSV/contexto vectorial. NUNCA vuelvas a preguntar subcategorías del mismo tema.
+            - Si el usuario cambia de tema, ignora el contexto previo y responde el nuevo tema.
 
             ## REGLA CRÍTICA - RESPUESTA CUANDO NO SE ENCUENTRA
             Cuando NO encuentres la tienda/restaurante/producto que el usuario pregunta:
@@ -563,7 +652,7 @@ const PROMPT_TEMPLATES = {
 
                 Pregunta: "Hay tiendas de instrumentos musicales raros"
                 {
-                "respuesta": "No tenemos una tienda específica de *instrumentos musicales raros* en MUT 😔. Tenemos Casa Royal (*Piso -3*), Plaza Música, Needle y Music Chile (*Piso -1*) que podrían interesarte. Si buscas algo muy específico, visita el *SAC* en *Piso -3*.",
+                "respuesta": "No tenemos una tienda específica de *instrumentos musicales raros* en MUT 😔. Tenemos Casa Royal (*Piso -3*), Needle y Music Chile (*Piso -1*) que podrían interesarte. Si buscas algo muy específico, visita el *SAC* en *Piso -3*.",
                 "isEncontrada": false,
                 "typeQuestions": "tienda"
                 }
